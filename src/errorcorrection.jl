@@ -1,15 +1,15 @@
 module Polynomial
 
-export Poly
+export Poly, logtable, antilogtable, generator, mult, geterrorcorrection
 
 struct Poly
-    coeff::Array{UInt8,1}
+    coeff::Array{Int,1}
 end
 
 const modulo = 285
 
 function makelogtable()
-    t = ones(UInt8, 256)
+    t = ones(Int, 256)
     v = 1
     for i in 2:256
         v = 2 * v
@@ -21,11 +21,11 @@ function makelogtable()
     return t
 end
 
-const logtable = Dict{UInt8,UInt8}(zip(0:255, makelogtable()))
+const logtable = Dict{Int,Int}(zip(0:255, makelogtable()))
 
-const antilogtable = Dict{UInt8,UInt8}(zip(makelogtable(), 0:254))
+const antilogtable = Dict{Int,Int}(zip(makelogtable(), 0:254))
 
-function mult(a::UInt8, b::UInt8)
+function mult(a::Int, b::Int)
     if a == 0 || b == 0
         return 0
     end
@@ -34,8 +34,17 @@ function mult(a::UInt8, b::UInt8)
     return logtable[(xa + xb) % 255]
 end
 
+function divi(a::Int, b::Int)
+    if a == 0 || b == 0
+        return 0
+    end
+    xa = antilogtable[a]
+    xb = antilogtable[b]
+    return logtable[mod(xa - xb, 255)]
+end
 
-import Base: length, +, *, iterate, vcat, ==
+
+import Base: length, +, *, divrem, iterate, vcat, ==
 
 ==(a::Poly, b::Poly) = a.coeff == b.coeff
 
@@ -48,7 +57,7 @@ function +(a::Poly, b::Poly)
     return Poly([xor(get(a.coeff, i, 0), get(b.coeff, i, 0)) for i in 1:l])
 end
 
-*(a::UInt8, p::Poly) = Poly(map(x->mult(a, x), p.coeff))
+*(a::Int, p::Poly) = Poly(map(x->mult(a, x), p.coeff))
 
 iterate(p::Poly) = iterate(p.coeff)
 iterate(p::Poly, i) = iterate(p.coeff, i)
@@ -56,12 +65,29 @@ iterate(p::Poly, i) = iterate(p.coeff, i)
 vcat(p::Poly, a::Array{Float64,1}) = Poly(vcat(p.coeff, a))
 vcat(a::Array{Float64,1}, p::Poly) = Poly(vcat(a, p.coeff))
 
-function Base.:*(a::Poly, b::Poly)
+function *(a::Poly, b::Poly)
     return +([ c * vcat(zeros(p - 1), a) for (p, c) in enumerate(b.coeff)]...)
 end
 
 function generator(n::Int64)
     *([Poly([logtable[i - 1], 1]) for i in 1:n]...)
 end
+
+lead(p::Poly) = last(p.coeff)
+init(p::Poly) = Poly(deleteat!(p.coeff, length(p)))
+tail(p::Poly) = Poly(deleteat!(p.coeff, 1))
+
+function geterrorcorrection(a::Poly, n::Int)
+    la = length(a)
+    a = vcat(zeros(n), a)
+    g = vcat(zeros(length(a)-n), generator(n))
+
+    for _ in 1:la
+        tail(g)
+        a = init(lead(a) * g + a)
+    end
+    return a
+end
+
 
 end

@@ -1,19 +1,18 @@
 module QRCode
 
-export Poly
+# export Poly, logtable, antilogtable, generator, mult
 
-struct Numeric end
-struct Alphanumeric end
-struct Byte end
+abstract type Mode end
+struct Numeric <: Mode end
+struct Alphanumeric <: Mode end
+struct Byte <: Mode end
 #TODO struct Kanji <: Mode end
-const Mode = Union{Numeric,Alphanumeric,Byte}
 
-
-struct Low end
-struct Medium end
-struct Quartile end
-struct High end
-const ErrCorrLevel = Union{Low,Medium,Quartile,High}
+abstract type ErrCorrLevel end
+struct Low <: ErrCorrLevel end
+struct Medium <: ErrCorrLevel end
+struct Quartile <: ErrCorrLevel end
+struct High <: ErrCorrLevel end
 
 include("tables.jl")
 include("errorcorrection.jl")
@@ -89,20 +88,20 @@ function encodedata(message::AbstractString, mode::Alphanumeric)
     return vcat(binchunks...)
 end
 
+function int2bitarray(:: BitArray, n::UInt8)
+    return  BitArray(reverse(digits(n, base = 2, pad = 8)))
+end
+
+
 function encodedata(message::AbstractString, mode::Byte)
     bytes = Array{UInt8}(message)
-
-    function toBin(n::UInt8) :: BitArray
-        return  BitArray(reverse(digits(n, base = 2, pad = 8)))
-    end
-
-    bin = map(toBin, bytes)
+    bin = map(int2bitarray, bytes)
     return vcat(bin...)
 end
 
 function getrequiredbits(level::ErrCorrLevel, version::Int64)
-    vars = ecblockinfo[level][version, :]
-    return 8 * (vars[2]*vars[3] + vars[4]*vars[5])
+    _, nb1, dc1, nb2, dc2 = ecblockinfo[level][version, :]
+    return 8 * (nb1 * dc1 + nb2 * dc2)
 end
 
 function padencodedmessage(data::BitArray{1}, requiredlentgh::Int64)
@@ -120,6 +119,28 @@ function padencodedmessage(data::BitArray{1}, requiredlentgh::Int64)
     data = vcat(data, pad[1:requiredlentgh - length(data)])
 
     return data
+end
+
+function makeblocks(b::BitArray{2},level::ErrCorrLevel, version::Int64)
+    _, nb1, dc1, nb2, dc2 = ecblockinfo[level][version, :]
+    i = 1
+    blocks = BitArray{2}[]
+    for n in 1:nb1
+        push!(blocks, b[:, i:i+dc1-1])
+        i += dc1
+    end
+    for n in 1:nb2
+        push!(blocks, b[:, i:i+dc2-1])
+        i += dc2
+    end
+    return blocks
+end
+
+function geterrcorrblocks(blocks::Array{BitArray{2}, 1},level::ErrCorrLevel, version::Int64)
+    l = ecblockinfo[level][version, 1]
+    bitarray2int(b) = reduce((acc, n) -> 2 * acc + n, b, init=0, dims=1)
+    errcorr = map(b -> geterrorcorrection(Poly(reverse(bitarray2int(b)[:])), l), blocks)
+    return errcorr
 end
 
 function qrcode(message::AbstractString, eclevel = Medium()::ErrCorrLevel)
@@ -143,7 +164,13 @@ function qrcode(message::AbstractString, eclevel = Medium()::ErrCorrLevel)
     encoded = vcat(modeindicator, ccindicator, encodeddata)
     encoded = padencodedmessage(encoded, requiredbits)
 
-    return encoded
+    # Getting error correction codes
+    array = reshape(encoded, (8, div(requiredbits, 8)))
+    blocks = makeblocks(array, eclevel, version)
+    errcorrblocks = geterrcorrblocks(blocks, eclevel, version)
+
+
+    return errcorrblocks
 end
 
 end # module
