@@ -1,9 +1,11 @@
 module QRCode
 
+export Poly
+
 struct Numeric end
 struct Alphanumeric end
 struct Byte end
-# struct Kanji <: Mode end
+#TODO struct Kanji <: Mode end
 const Mode = Union{Numeric,Alphanumeric,Byte}
 
 
@@ -14,6 +16,8 @@ struct High end
 const ErrCorrLevel = Union{Low,Medium,Quartile,High}
 
 include("tables.jl")
+include("errorcorrection.jl")
+using .Polynomial
 
 function getmode(message::AbstractString)
     if all([isdigit(c) for c in message])

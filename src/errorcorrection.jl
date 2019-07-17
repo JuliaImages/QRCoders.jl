@@ -1,3 +1,10 @@
+module Polynomial
+
+export Poly
+
+struct Poly
+    coeff::Array{UInt8,1}
+end
 
 const modulo = 285
 
@@ -19,32 +26,42 @@ const logtable = Dict{UInt8,UInt8}(zip(0:255, makelogtable()))
 const antilogtable = Dict{UInt8,UInt8}(zip(makelogtable(), 0:254))
 
 function mult(a::UInt8, b::UInt8)
+    if a == 0 || b == 0
+        return 0
+    end
     xa = antilogtable[a]
     xb = antilogtable[b]
-    return logtable[(xa + xb) % 256]
+    return logtable[(xa + xb) % 255]
 end
 
-struct Poly
-    coeff::Array{UInt8, 1}
-end
 
-function Base.:length(p::Poly)
-    return length(p.coeff)
-end
+import Base: length, +, *, iterate, vcat, ==
 
-function Base.:+(a::Poly, b::Poly)
+==(a::Poly, b::Poly) = a.coeff == b.coeff
+
+length(p::Poly) = length(p.coeff)
+
++(p::Poly) = p
+
+function +(a::Poly, b::Poly)
     l = max(length(a), length(b))
-    return Poly([xor(get(a.coeff,i,0),get(b.coeff,i,0)) for i in 1:l])
+    return Poly([xor(get(a.coeff, i, 0), get(b.coeff, i, 0)) for i in 1:l])
 end
 
-function Base.:*(a::UInt8, p::Poly)
-    return Poly(map(x -> mult(a, x), p.coeff))
-end
+*(a::UInt8, p::Poly) = Poly(map(x->mult(a, x), p.coeff))
 
-function Base.:iterate(p::Poly)
-    return Poly(iterate(p.coeff))
-end
+iterate(p::Poly) = iterate(p.coeff)
+iterate(p::Poly, i) = iterate(p.coeff, i)
+
+vcat(p::Poly, a::Array{Float64,1}) = Poly(vcat(p.coeff, a))
+vcat(a::Array{Float64,1}, p::Poly) = Poly(vcat(a, p.coeff))
 
 function Base.:*(a::Poly, b::Poly)
-    return +([ c*prepend!(zeros(p), a) for (p, c) in enumerate(b.coeff)]...)
+    return +([ c * vcat(zeros(p - 1), a) for (p, c) in enumerate(b.coeff)]...)
+end
+
+function generator(n::Int64)
+    *([Poly([logtable[i - 1], 1]) for i in 1:n]...)
+end
+
 end
