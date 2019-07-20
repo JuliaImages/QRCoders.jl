@@ -1,12 +1,14 @@
 module QRCode
 
-export Poly, logtable, antilogtable, generator, mult
+export Mode, Numeric, Alphanumeric, Byte
+export ErrCorrLevel, Low, Medium, Quartile, High
+export getmode, getversion, qrcode
 
 abstract type Mode end
 struct Numeric <: Mode end
 struct Alphanumeric <: Mode end
 struct Byte <: Mode end
-#TODO struct Kanji <: Mode end
+# struct Kanji <: Mode end
 
 abstract type ErrCorrLevel end
 struct Low <: ErrCorrLevel end
@@ -16,9 +18,9 @@ struct High <: ErrCorrLevel end
 
 include("tables.jl")
 include("errorcorrection.jl")
-using .Polynomial
 include("matrix.jl")
 
+using .Polynomial
 
 function getmode(message::AbstractString)::Mode
     if all([isdigit(c) for c in message])

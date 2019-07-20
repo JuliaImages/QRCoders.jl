@@ -1,9 +1,8 @@
 using QRCode
 using Test
 
-import QRCode: getmode, Numeric, Alphanumeric, Byte, makeblocks,
-               geterrcorrblock, interleave, emptymatrix, getpath
-import QRCode.Polynomial: antilogtable, logtable, generator, Poly,
+import QRCode: makeblocks, geterrcorrblock, interleave, emptymatrix, getpath
+import QRCode.Polynomial: Poly, antilogtable, logtable, generator,
                           geterrorcorrection
 
 @testset "Test set for encoding modes" begin
