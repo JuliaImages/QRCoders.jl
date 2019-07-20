@@ -1,7 +1,10 @@
 using QRCode
 using Test
+using Images
+using Random
 
-import QRCode: makeblocks, geterrcorrblock, interleave, emptymatrix, getpath
+import QRCode: makeblocks, geterrcorrblock, interleave, emptymatrix,
+               characterscapacity
 import QRCode.Polynomial: Poly, antilogtable, logtable, generator,
                           geterrorcorrection
 
@@ -102,4 +105,31 @@ end
     data = interleave(blocks, errcorrblocks, 18, 2, 15, 2, 16, 5)
 
     @test data == bits5Qf
+end
+
+@testset "Generating QR codes to test with QR codes reader" begin
+    s = 185 # maximum width of a QR code
+    for eclevel in [Low(), Medium(), Quartile(), High()]
+        for mode in [Numeric(), Alphanumeric(), Byte()]
+            image = falses(s*5, s*8)
+            for i in 0:4, j in 0:7
+                version = i*8 + j + 1
+                l = characterscapacity[(eclevel, mode)][version]
+                if mode == Numeric()
+                    str = randstring('0':'9', l)
+                elseif mode == Alphanumeric()
+                    str = randstring(vcat('0':'9', 'A':'Z', collect(" %*+-./:\$")), l)
+                else
+                    str = randstring(l)
+                end
+                matrix = qrcode(str, eclevel = eclevel)
+                nm = size(matrix, 2)
+                image[i*s+1:i*s+nm, j*s+1:j*s+nm] = matrix
+            end
+            img = colorview(Gray, .! image);
+            save("qrcode-$(typeof(mode))-$(typeof(eclevel)).png", img);
+            println("qrcode-$(typeof(mode))-$(typeof(eclevel)).png created")
+        end
+    end
+    @test true
 end

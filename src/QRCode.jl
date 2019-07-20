@@ -176,7 +176,9 @@ function interleave( blocks::Array{BitArray{2},1}
     return data
 end
 
-function qrcode(message::AbstractString, eclevel::ErrCorrLevel = Medium())
+function qrcode( message::AbstractString
+               ; eclevel::ErrCorrLevel = Medium()
+               , compact::Bool = false )
     # Determining QR code mode and version
     l = length(message)
     mode = getmode(message)
@@ -222,7 +224,13 @@ function qrcode(message::AbstractString, eclevel::ErrCorrLevel = Medium())
     # Format and version information
     matrix = addformat(matrix, mask, version, eclevel)
 
-    return matrix
+    if compact
+        return matrix
+    else
+        background = falses(size(matrix) .+ (8, 8))
+        background[5:end-4, 5:end-4] = matrix
+        return background
+    end
 end
 
 end # module
