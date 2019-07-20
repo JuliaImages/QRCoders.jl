@@ -1,8 +1,6 @@
 module QRCode
 
-using Revise
-using Plots
-# export Poly, logtable, antilogtable, generator, mult
+export Poly, logtable, antilogtable, generator, mult
 
 abstract type Mode end
 struct Numeric <: Mode end
@@ -22,7 +20,7 @@ using .Polynomial
 include("matrix.jl")
 
 
-function getmode(message::AbstractString)
+function getmode(message::AbstractString)::Mode
     if all([isdigit(c) for c in message])
         return Numeric()
     elseif all([haskey(alphanumeric, c) for c in message])
@@ -36,8 +34,7 @@ function getversion(length::Int64, mode::Mode, level::ErrCorrLevel)::Int64
     return findfirst(v->v >= length, characterscapacity[(level, mode)])
 end
 
-
-function getcharactercountlength(version::Int64, mode::Mode)::Int64
+function getcharactercountindicator(l::Int64, version::Int64, mode::Mode)::BitArray{1}
     if 1 <= version <= 9
         i = 1
     elseif version <= 26
@@ -45,22 +42,17 @@ function getcharactercountlength(version::Int64, mode::Mode)::Int64
     else
         i = 3
     end
-    return charactercountlength[mode][i]
+    cclength = charactercountlength[mode][i]
+    indicator = BitArray(reverse(digits(l, base = 2, pad = cclength)))
+
+    return indicator
 end
 
-function lpadbitarray(b::BitArray, l::Int64)
-    if length(b) >= l
-        return b
-    else
-        return vcat(falses(l - length(b)), b)
-    end
-end
-
-function encodedata(message::AbstractString, ::Numeric)
+function encodedata(message::AbstractString, ::Numeric)::BitArray{1}
     l = length(message)
     chunks = [SubString(message, i, min(i + 2, l)) for i in 1:3:l]
 
-    function toBin(n::Int64) :: BitArray
+    function toBin(n::Int64)::BitArray
         if n < 10
             return  BitArray(reverse(digits(n, base = 2, pad = 4)))
         elseif n < 100
@@ -70,21 +62,21 @@ function encodedata(message::AbstractString, ::Numeric)
         end
     end
 
-    binchunks = map(s -> toBin(parse(Int64, s)), chunks)
+    binchunks = map(s->toBin(parse(Int64, s)), chunks)
     return vcat(binchunks...)
 end
 
-function encodedata(message::AbstractString, ::Alphanumeric)
+function encodedata(message::AbstractString, ::Alphanumeric)::BitArray{1}
     l = length(message)
     chunks = [SubString(message, i, min(i + 1, l)) for i in 1:2:l]
 
-    function toBin(s::SubString) :: BitArray
+    function toBin(s::SubString)::BitArray{1}
         if length(s) == 1
             n = alphanumeric[s[1]]
-            return  BitArray(reverse(digits(n, base = 2, pad = 6)))
+            return  BitArray{1}(reverse(digits(n, base = 2, pad = 6)))
         else
             n = 45 * alphanumeric[s[1]] + alphanumeric[s[2]]
-            return  BitArray(reverse(digits(n, base = 2, pad = 11)))
+            return  BitArray{1}(reverse(digits(n, base = 2, pad = 11)))
         end
     end
 
@@ -92,16 +84,15 @@ function encodedata(message::AbstractString, ::Alphanumeric)
     return vcat(binchunks...)
 end
 
-function int2bitarray(n::Int)
-    return  BitArray(reverse(digits(n, base = 2, pad = 8)))
-end
-
-function encodedata(message::AbstractString, ::Byte)
+function encodedata(message::AbstractString, ::Byte)::BitArray{1}
     bytes = Array{UInt8}(message)
-    bin = map(int2bitarray, Array{Int64, 1}(bytes))
+    bin = map(int2bitarray, Array{Int64,1}(bytes))
     return vcat(bin...)
 end
 
+function int2bitarray(n::Int64)::BitArray{1}
+    return  BitArray(reverse(digits(n, base = 2, pad = 8)))
+end
 
 function padencodedmessage(data::BitArray{1}, requiredlentgh::Int64)
     # Add up to 4 zeros to terminate the message
@@ -120,68 +111,70 @@ function padencodedmessage(data::BitArray{1}, requiredlentgh::Int64)
     return data
 end
 
-function makeblocks(b::BitArray{1},nb1::Int64, dc1::Int64, nb2::Int64, dc2::Int64)
-    array = reshape(b, (8, div(length(b), 8)))
+function makeblocks(bits::BitArray{1},
+                    nb1::Int64,
+                    dc1::Int64,
+                    nb2::Int64,
+                    dc2::Int64)::Array{BitArray{2},1}
+    array = reshape(bits, (8, length(bits) ÷ 8))
     i = 1
     blocks = BitArray{2}[]
     for n in 1:nb1
-        push!(blocks, array[:, i:i+dc1-1])
+        push!(blocks, array[:, i:i + dc1 - 1])
         i += dc1
     end
     for n in 1:nb2
-        push!(blocks, array[:, i:i+dc2-1])
+        push!(blocks, array[:, i:i + dc2 - 1])
         i += dc2
     end
     return blocks
 end
 
-function geterrcorrblock(block::BitArray{2}, cw::Int64)
-    bitarray2ints(b) = reduce((acc, n) -> 2 * acc + n, b, init=0, dims=1)
+function geterrcorrblock(block::BitArray{2}, ncodewords::Int64)::BitArray{2}
+    # Helper functions
+    bitarray2ints(b) = reduce((acc, n)->2 * acc + n, b, init = 0, dims = 1)
     array2poly(a) =  Poly(reverse(a[:]))
 
-    ecpoly = geterrorcorrection(array2poly(bitarray2ints(block)), cw)
-    ecarr = map(int2bitarray, reverse(ecpoly.coeff))
-    bits = foldl(vcat, ecarr, init = BitArray[])
-    return BitArray{2}(reshape(bits, (8, div(length(bits), 8))))
+    poly = array2poly(bitarray2ints(block))
+    ecpoly = geterrorcorrection(poly, ncodewords)
+    ecarray = map(int2bitarray, reverse(ecpoly.coeff))
+    ecbits = foldl(vcat, ecarray, init = BitArray{1}())
+    return reshape(ecbits, (8, length(ecbits) ÷ 8))
 end
 
-function interleave( blocks::Array{BitArray{2}, 1}
-                   , ecblocks::Array{BitArray{2}, 1}
-                   , ncodewords::Int64
-                   , nb1::Int64
+function interleave( blocks::Array{BitArray{2},1}
+                   , ecblocks::Array{BitArray{2},1}
+                   , ncodewords::Int64, nb1::Int64
                    , dc1::Int64
                    , nb2::Int64
                    , dc2::Int64
-                   , version::Int64)
+                   , version::Int64
+                   )::BitArray{1}
 
     data = BitArray{1}()
+
+    slice(i) = (acc, block) -> vcat(acc, block[:, i])
+
+    # Encoded data
     for i in 1:dc1
-        data = foldl( (acc, block) -> vcat(acc, block[:, i])
-                    , blocks
-                    , init = data
-                    )
+        data = foldl(slice(i), blocks, init = data)
     end
     if dc2 > dc1
-        data = foldl( (acc, block) -> vcat(acc, block[:, dc2])
-                    , blocks[nb1 + 1 : nb1 + nb2]
-                    , init = data
-                    )
+        data = foldl(slice(dc2), blocks[nb1 + 1 : nb1 + nb2], init = data)
     end
 
+    # Error correction data
     for i in 1:ncodewords
-        data = foldl( (acc, block) -> vcat(acc, block[:, i])
-                    , ecblocks
-                    , init = data
-                    )
+        data = foldl(slice(i), ecblocks, init = data)
     end
 
+    # Extra padding
     data = vcat(data, falses(remainerbits[version]))
 
     return data
 end
 
-
-function qrcode(message::AbstractString, eclevel = Medium()::ErrCorrLevel)
+function qrcode(message::AbstractString, eclevel::ErrCorrLevel = Medium())
     # Determining QR code mode and version
     l = length(message)
     mode = getmode(message)
@@ -191,13 +184,14 @@ function qrcode(message::AbstractString, eclevel = Medium()::ErrCorrLevel)
     modeindicator = modeindicators[mode]
 
     # Character count: part of the encoded message
-    cclength = getcharactercountlength(version, mode)
-    ccindicator = BitArray(reverse(digits(l, base = 2, pad = cclength)))
+    ccindicator = getcharactercountindicator(l, version, mode)
 
     # Encoded data: main part of the encoded message
     encodeddata = encodedata(message, mode)
 
     # Getting parameters for the error correction
+    # Number of error correction codewords per block, number of blocks in
+    # group 1/2, number of data codewords per block in group 1/2
     ncodewords, nb1, dc1, nb2, dc2 = ecblockinfo[eclevel][version, :]
     requiredbits = 8 * (nb1 * dc1 + nb2 * dc2)
 
@@ -207,16 +201,15 @@ function qrcode(message::AbstractString, eclevel = Medium()::ErrCorrLevel)
 
     # Getting error correction codes
     blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
-    errcorrblocks = map(b -> geterrcorrblock(b, ncodewords), blocks)
+    ecblocks = map(b->geterrcorrblock(b, ncodewords), blocks)
 
     # Interleave code blocks
-    data = interleave(blocks, errcorrblocks, ncodewords, nb1, dc1, nb2, dc2, version)
+    data = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)
 
     # Generate qr code matrix, masks and fill it
     matrix = emptymatrix(version)
     masks = makemasks(matrix)
-    path = getpath(matrix)
-    matrix = placedata!(matrix, path, data)
+    matrix = placedata!(matrix, data)
 
     # Pick the best mask
     candidates = map(enumerate(masks)) do (i, m)
@@ -228,7 +221,6 @@ function qrcode(message::AbstractString, eclevel = Medium()::ErrCorrLevel)
     matrix = addformat(matrix, mask, version, eclevel)
 
     return matrix
-
 end
 
 end # module

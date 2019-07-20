@@ -57,6 +57,7 @@ end
     r = [235, 159, 5, 173, 24, 147, 59, 33, 106, 40, 255, 172, 82, 2,
          131, 32, 178, 236]
     @test geterrorcorrection(Poly(reverse(msg)), 18) == Poly(reverse(r))
+end
 
 @testset "Test set for error correction and interleaving" begin
 
@@ -95,21 +96,11 @@ end
 
     char2bit(c) = c == '0' ? false : true
     bits5Q = BitArray(map(char2bit, collect(data5Q)))
+    bits5Qf = BitArray(map(char2bit, collect(final5Q)))
 
-    # Getting error correction codes
     blocks = makeblocks(bits5Q, 2, 15, 2, 16)
     errcorrblocks = map(b -> geterrcorrblock(b, 18), blocks)
-    # Interleave code blocks
     data = interleave(blocks, errcorrblocks, 18, 2, 15, 2, 16, 5)
 
-    @test data == BitArray(map(char2bit, collect(final5Q)))
-
-    matrix = emptymatrix(5)
-    path = getpath(matrix)
-    @test length(path) == length(data)
-
-
-
-end
-
+    @test data == bits5Qf
 end
