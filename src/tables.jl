@@ -1,8 +1,15 @@
 # Data tables from the specificatioms
 
+"""
+Allowed characters for `Alphanumeric()` mode and their number.
+"""
 const alphanumeric = Dict{AbstractChar, Int64}(
   zip(vcat('0':'9', 'A':'Z', collect(" %*+-./:\$")), 0:44))
 
+"""
+Number of characters allowed for a given mode, error correction level and
+version.
+"""
 const characterscapacity = Dict{Tuple{ErrCorrLevel, Mode}, Array{Int64, 1}}(
     (Low(), Numeric()) =>
         [41, 77, 127, 187, 255, 322, 370, 461, 552, 652, 772, 883, 1022, 1101,
@@ -59,18 +66,27 @@ const characterscapacity = Dict{Tuple{ErrCorrLevel, Mode}, Array{Int64, 1}}(
          790, 842, 898, 958, 983, 1051, 1093, 1139, 1219, 1273]
   )
 
+"""
+Mode indicators.
+"""
 const modeindicators = Dict{Mode, BitArray{1}}(
-    Numeric() => BitArray([0, 0, 0, 1])
+    Numeric()      => BitArray([0, 0, 0, 1])
   , Alphanumeric() => BitArray([0, 0, 1, 0])
-  , Byte() => BitArray([0, 1, 0, 0])
+  , Byte()         => BitArray([0, 1, 0, 0])
   )
 
+"""
+Character count length for different mode and version groups.
+"""
 const charactercountlength = Dict{Mode, Array{Int64, 1}}(
-    Numeric() => [10, 12, 14]
+    Numeric()      => [10, 12, 14]
   , Alphanumeric() => [9, 11, 13]
-  , Byte() => [8, 16, 16]
+  , Byte()         => [8, 16, 16]
   )
 
+"""
+Information about the error correction codeblocks per level and version.
+"""
 const ecblockinfo = Dict{ErrCorrLevel,Array{Int64,2}}(
     Low() =>
       [7 1 19 0 0; 10 1 34 0 0; 15 1 55 0 0; 20 1 80 0 0; 26 1 108 0 0;
@@ -117,10 +133,16 @@ const ecblockinfo = Dict{ErrCorrLevel,Array{Int64,2}}(
        30 20 15 61 16]
   )
 
-const remainerbits = Array{Int64, 1}(
+"""
+Remainder bits per version.
+"""
+const remainderbits = Array{Int64, 1}(
     [0, 7, 7, 7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3,
      4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0])
 
+"""
+Location of the alignment patterns per version.
+"""
 const alignmentlocation = Array{Array{Int64, 1}, 1}(
     [ []
     , [6, 18]
@@ -165,6 +187,9 @@ const alignmentlocation = Array{Array{Int64, 1}, 1}(
     ]
   )
 
+"""
+Format information per mode and mask number.
+"""
 const formatinfo = Dict{Tuple{ErrCorrLevel, Int64}, BitArray{1}}(
     [ (Low(), 0) => [1,1,1,0,1,1,1,1,1,0,0,0,1,0,0]
     , (Low(), 1) => [1,1,1,0,0,1,0,1,1,1,1,0,0,1,1]
@@ -201,6 +226,9 @@ const formatinfo = Dict{Tuple{ErrCorrLevel, Int64}, BitArray{1}}(
     ]
   )
 
+"""
+Version information.
+"""
 const versioninfo = Array{Array{Bool, 1}, 1}(
     [ []
     , []

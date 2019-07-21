@@ -1,5 +1,8 @@
 # Manipulations for creating the QR code matrix
 
+"""
+Finder patterns in the corner of QR codes.
+"""
 const finderpattern =
     BitArray{2}([1 1 1 1 1 1 1;
                  1 0 0 0 0 0 1;
@@ -9,6 +12,9 @@ const finderpattern =
                  1 0 0 0 0 0 1;
                  1 1 1 1 1 1 1])
 
+"""
+Alignment pattern in the center of large QR codes.
+"""
 const alignmentpattern =
     BitArray{2}([1 1 1 1 1;
                  1 0 0 0 1;
@@ -16,6 +22,12 @@ const alignmentpattern =
                  1 0 0 0 1;
                  1 1 1 1 1])
 
+"""
+    emptymatrix(version::Int64)
+
+Return a matrix for the QR code filled with data-independent elements. `nothing`
+matrix elements act as a placeholder for the data.
+"""
 function emptymatrix(version::Int64)::Array{Union{Bool,Nothing},2}
     n = (version - 1) * 4 + 21
     # nothing is used as a placeholder for the data
@@ -64,6 +76,11 @@ function emptymatrix(version::Int64)::Array{Union{Bool,Nothing},2}
     return matrix
 end
 
+"""
+    placedata!( matrix::Array{Union{Bool,Nothing},2}, data::BitArray{1})
+
+Fill the matrix with the data.
+"""
 function placedata!( matrix::Array{Union{Bool,Nothing},2}
                    , data::BitArray{1}
                    )::BitArray{2}
@@ -100,6 +117,11 @@ function placedata!( matrix::Array{Union{Bool,Nothing},2}
     return BitArray{2}(matrix)
 end
 
+"""
+    makemasks(matrix::Array{Union{Bool,Nothing},2})
+
+Create 8 bitmasks for a given matrix.
+"""
 function makemasks(matrix::Array{Union{Bool,Nothing},2})::Array{BitArray{2},1}
     n = size(matrix, 1)
     masks = [falses(size(matrix)) for _ in 1:8]
@@ -138,6 +160,11 @@ function makemasks(matrix::Array{Union{Bool,Nothing},2})::Array{BitArray{2},1}
     return masks
 end
 
+"""
+    penalty(matrix::BitArray{2})
+
+Calculate a penalty score in order to pick the best mask.
+"""
 function penalty(matrix::BitArray{2})::Int64
     rows, cols = size(matrix)
 
@@ -189,6 +216,11 @@ function penalty(matrix::BitArray{2})::Int64
     return p1 + p2 + p3 + p4
 end
 
+"""
+    addformat(matrix::BitArray{2}, mask::Int64, version::Int64, eclevel::ErrCorrLevel)
+
+Add information about the `version` and mask number in `matrix`.
+"""
 function addformat( matrix::BitArray{2}
                   , mask::Int64
                   , version::Int64
