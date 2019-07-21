@@ -4,7 +4,9 @@ using Images
 using Random
 
 import QRCode: makeblocks, geterrcorrblock, interleave, emptymatrix,
-               characterscapacity
+               characterscapacity, modeindicators, getcharactercountindicator,
+               encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
+               placedata!
 import QRCode.Polynomial: Poly, antilogtable, logtable, generator,
                           geterrorcorrection
 
@@ -112,7 +114,7 @@ end
     for eclevel in [Low(), Medium(), Quartile(), High()]
         for mode in [Numeric(), Alphanumeric(), Byte()]
             image = falses(s*5, s*8)
-            for i in 0:4, j in 0:7
+            for i in  0:4, j in 0:7
                 version = i*8 + j + 1
                 l = characterscapacity[(eclevel, mode)][version]
                 if mode == Numeric()
@@ -127,9 +129,42 @@ end
                 image[i*s+1:i*s+nm, j*s+1:j*s+nm] = matrix
             end
             img = colorview(Gray, .! image);
-            save("qrcode-$(typeof(mode))-$(typeof(eclevel)).png", img);
+            save("qrcode-$(typeof(mode))-$(typeof(eclevel)).png", img)
             println("qrcode-$(typeof(mode))-$(typeof(eclevel)).png created")
         end
     end
+    @test true
+end
+
+@testset "Generating QR codes to test different masks" begin
+    message = "To be or not to be a QR code?"
+    eclevel = Quartile()
+    mode = Byte()
+    l = length(message)
+    version = getversion(l, mode, eclevel)
+    modeindicator = modeindicators[mode]
+    ccindicator = getcharactercountindicator(l, version, mode)
+    encodeddata = encodedata(message, mode)
+    ncodewords, nb1, dc1, nb2, dc2 = ecblockinfo[eclevel][version, :]
+    requiredbits = 8 * (nb1 * dc1 + nb2 * dc2)
+    encoded = vcat(modeindicator, ccindicator, encodeddata)
+    encoded = padencodedmessage(encoded, requiredbits)
+    blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
+    ecblocks = map(b->geterrcorrblock(b, ncodewords), blocks)
+    data0 = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)
+    matrix0 = emptymatrix(version)
+    masks = makemasks(matrix0)
+    image = falses((39,39*8))
+    for (i, mask) in enumerate(masks)
+        matrix = deepcopy(matrix0)
+        data = deepcopy(data0)
+        matrix = placedata!(matrix, data)
+        matrix = xor.(mask, matrix)
+        matrix = addformat(matrix, i-1, version, eclevel)
+        image[5:33, (i-1)*39+1:(i-1)*39+29] = matrix
+    end
+    img = colorview(Gray, .! image)
+    save("qrcode-masks.png", img)
+    println("qrcode-masks.png created")
     @test true
 end
