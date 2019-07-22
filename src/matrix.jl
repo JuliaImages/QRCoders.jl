@@ -1,7 +1,7 @@
 # Manipulations for creating the QR code matrix
 
 """
-Finder patterns in the corner of QR codes.
+Finder patterns in the corners of QR codes.
 """
 const finderpattern =
     BitArray{2}([1 1 1 1 1 1 1;
