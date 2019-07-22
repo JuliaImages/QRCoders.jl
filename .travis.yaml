@@ -19,7 +19,7 @@ julia:
 notifications:
   email: false
 
-#script: # the default script is equivalent to the following
+script: # the default script is equivalent to the following
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --project -e 'using Pkg; Pkg.build(); Pkg.test(; coverage=true)';
 
@@ -37,3 +37,11 @@ jobs:
                                     Pkg.develop(PackageSpec(path=pwd()))'
         - julia --project=docs/ docs/make.jl
       after_success: skip
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: "QRCode.jl Doc Token"
+  keep_history: true
+  on:
+    branch: master
