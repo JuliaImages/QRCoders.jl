@@ -6,3 +6,7 @@ makedocs(
     sitename="QRCode.jl"
     , modules = [QRCode]
     )
+
+deploydocs(
+    repo = "github.com/jiegillet/QRCode.jl.git",
+)

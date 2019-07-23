@@ -16,9 +16,9 @@ There are three several encoding mode currently supported.
 
 ```@docs
 Mode
-Byte
 Numeric
 Alphanumeric
+Byte
 ```
 
 ## Error Correction
