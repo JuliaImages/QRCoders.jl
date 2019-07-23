@@ -8,6 +8,8 @@ export ErrCorrLevel, Low, Medium, Quartile, High
 export getmode, getversion, qrcode, exportqrcode
 
 using Images
+using FileIO
+add_saver(format"PNG", :ImageMagick)
 
 """
 Abstract type that groups the three supported encoding modes `Numeric`,
@@ -357,7 +359,7 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 function exportqrcode( message::AbstractString
                      , path::AbstractString = "qrcode.png"
                      , eclevel::ErrCorrLevel = Medium()
-                     ; targetsize = 5
+                     ; targetsize::Int64 = 5
                      , compact::Bool = false )
 
     matrix = qrcode(message, eclevel, compact = compact)
