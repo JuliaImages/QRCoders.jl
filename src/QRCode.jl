@@ -340,7 +340,6 @@ function qrcode( message::AbstractString
     end
 end
 
-
 """
     exportqrcode( message::AbstractString
                 , path = "qrcode.png"
