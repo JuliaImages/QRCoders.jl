@@ -6,3 +6,5 @@ test/*.png
 
 /docs/build/
 /docs/Manifest.toml
+
+.DS_Store
