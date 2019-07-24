@@ -39,19 +39,19 @@ Abstract type that groups the four error correction levels `Low`, `Medium`,
 """
 abstract type ErrCorrLevel end
 """
-Error correction level that can restor up to 7% of missing codewords.
+Error correction level that can restore up to 7% of missing codewords.
 """
 struct Low <: ErrCorrLevel end
 """
-Error correction level that can restor up to 15% of missing codewords.
+Error correction level that can restore up to 15% of missing codewords.
 """
 struct Medium <: ErrCorrLevel end
 """
-Error correction level that can restor up to 25% of missing codewords.
+Error correction level that can restore up to 25% of missing codewords.
 """
 struct Quartile <: ErrCorrLevel end
 """
-Error correction level that can restor up to 30% of missing codewords.
+Error correction level that can restore up to 30% of missing codewords.
 """
 struct High <: ErrCorrLevel end
 
