@@ -46,7 +46,7 @@ julia> exportqrcode("Hello world!")
 
 A file will be saved at `./qrcode.png`.
 
-![QRCode1](https://user-images.githubusercontent.com/TODO.png)
+> ![QRCode1](https://raw.githubusercontent.com/jiegillet/QRCode.jl/966b11d0334e050992d4167bda34a495fb334a6c/qrcode.png)
 
 There are three optional parameters.
 
@@ -56,8 +56,7 @@ julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10, compact = 
 
 This file will be saved as `./img/hello.png`, have a size of (approximately) 10 centimeters and be compact.
 
-![QRCode2](https://user-images.githubusercontent.com/TODO.png)
-
+> ![QRCode2](https://raw.githubusercontent.com/jiegillet/QRCode.jl/966b11d0334e050992d4167bda34a495fb334a6c/hello.png)
 
 ### Error Correction Level
 
