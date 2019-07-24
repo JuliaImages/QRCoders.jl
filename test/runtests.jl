@@ -115,6 +115,16 @@ end
     @test true
 end
 
+@testset "Exporting all visible ISO-8859-1 characters" begin
+    message = *( "µÞþŽžZzŸÿÝýYyXxWwVvÜüÛûÙùÚúUu™TtßŠšSsRrQqPpŒœØøÕõÖöÔôÒòÓ"
+               , "óOoºÑñNnMmLlKkJjÏïÎîÌìÍíIiHhGgƒFfËëÊêÈèÉéEeÐðDdÇçCcBbÆæÃ"
+               , "ãÄäÅåÂâÀàÁáAaª¾³²¼½¹€¥£\$¢¤~¦|¬>=<×÷±+®©°ˆ¸¨¯^˜´`•‡†‰%#&\\/"
+               , "*@¶§}{][)(»«„”“\"›‹·….¿?¡!:;,—–-_9876543210"
+               )
+    exportqrcode(message, "qrcode-ISO-8859-1-test.png")
+    @test true
+end
+
 @testset "Generating QR codes to test different masks" begin
     message = "To be or not to be a QR code?"
     eclevel = Quartile()

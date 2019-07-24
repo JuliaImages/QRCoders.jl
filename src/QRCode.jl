@@ -94,7 +94,8 @@ julia> getversion("Hello World!", Alphanumeric(), High())
 ```
 """
 function getversion(message::AbstractString, mode::Mode, level::ErrCorrLevel)::Int64
-    return findfirst(v->v >= length(message), characterscapacity[(level, mode)])
+    cc = characterscapacity[(level, mode)]
+    return findfirst(v->v >= lastindex(message), cc)
 end
 
 """
@@ -127,17 +128,13 @@ function encodedata(message::AbstractString, ::Numeric)::BitArray{1}
     l = length(message)
     chunks = [SubString(message, i, min(i + 2, l)) for i in 1:3:l]
 
-    function toBin(n::Int64)::BitArray
-        if n < 10
-            return  BitArray(reverse(digits(n, base = 2, pad = 4)))
-        elseif n < 100
-            return  BitArray(reverse(digits(n, base = 2, pad = 7)))
-        else
-            return  BitArray(reverse(digits(n, base = 2, pad = 10)))
-        end
+    function toBin(chunk::SubString)::BitArray
+        pad = 1 + 3 * length(chunk)
+        n = parse(Int64, chunk)
+        return  BitArray(reverse(digits(n, base = 2, pad = pad)))
     end
 
-    binchunks = map(s->toBin(parse(Int64, s)), chunks)
+    binchunks = map(toBin, chunks)
     return vcat(binchunks...)
 end
 
@@ -299,7 +296,7 @@ function qrcode( message::AbstractString
     modeindicator = modeindicators[mode]
 
     # Character count: part of the encoded message
-    ccindicator = getcharactercountindicator(length(message), version, mode)
+    ccindicator = getcharactercountindicator(lastindex(message), version, mode)
 
     # Encoded data: main part of the encoded message
     encodeddata = encodedata(message, mode)
