@@ -51,10 +51,10 @@ A file will be saved at `./qrcode.png`.
 There are three optional parameters.
 
 ```julia
-julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10, compact = true)
+julia> exportqrcode("Hello world!", "img/hello.png", Medium(), targetsize = 10, compact = true)
 ```
 
-This file will be saved as `./img/hello.png`, have a size of (approximately) 10 centimeters and be compact.
+This file will be saved as `./img/hello.png` (if the `img` directory already exists), have a size of (approximately) 10 centimeters and be compact. Please note that compact codes may be hard to read depending on their background.
 
 > ![QRCode2](https://raw.githubusercontent.com/jiegillet/QRCode.jl/966b11d0334e050992d4167bda34a495fb334a6c/hello.png)
 
