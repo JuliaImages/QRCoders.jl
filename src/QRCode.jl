@@ -372,7 +372,7 @@ function exportqrcode( message::AbstractString
     scale = ceil(Int64, 72 * targetsize / 2.45 / pixels)
     matrix = kron(matrix, trues((scale, scale)))
 
-    save(path, colorview(Gray, .! matrix))
+    save(File(format"PNG",path), colorview(Gray, .! matrix))
 end
 
 end # module
