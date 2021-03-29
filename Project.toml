@@ -1,7 +1,7 @@
 name = "QRCode"
 uuid = "6cfbe66a-a49d-11e9-1842-750d329cfcbb"
 authors = ["Jérémie Gillet <jie.gillet@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
