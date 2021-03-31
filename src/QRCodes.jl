@@ -13,7 +13,6 @@ using FileIO
 using UnicodePlots
 # add_saver(format"PNG", :ImageMagick)
 
-using Compat # isnothing is not defined in Julia 1.0
 
 """
 Abstract type that groups the three supported encoding modes `Numeric`,
