@@ -1,13 +1,13 @@
-using QRCode
+using QRCodes
 using Test
 using Images
 using Random
 
-import QRCode: makeblocks, geterrcorrblock, interleave, emptymatrix,
+import QRCodes: makeblocks, geterrcorrblock, interleave, emptymatrix,
                characterscapacity, modeindicators, getcharactercountindicator,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!
-import QRCode.Polynomial: Poly, antilogtable, logtable, generator,
+import QRCodes.Polynomial: Poly, antilogtable, logtable, generator,
                           geterrorcorrection
 
 @testset "Test set for encoding modes" begin
