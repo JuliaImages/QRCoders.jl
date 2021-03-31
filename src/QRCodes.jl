@@ -1,12 +1,12 @@
 """
 Module that can create QR codes as data or images using `qrcode` or `exportqrcode`.
 """
-module QRCode
+module QRCodes
 
 export Mode, Numeric, Alphanumeric, Byte
 export ErrCorrLevel, Low, Medium, Quartile, High
 export getmode, getversion, qrcode#, exportqrcode
-export QRC # to show qr code in notebook and REPL
+export QRCode # to show qr code in notebook and REPL
 
 using Images
 using FileIO
