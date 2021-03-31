@@ -5,11 +5,13 @@ module QRCode
 
 export Mode, Numeric, Alphanumeric, Byte
 export ErrCorrLevel, Low, Medium, Quartile, High
-export getmode, getversion, qrcode, exportqrcode
+export getmode, getversion, qrcode#, exportqrcode
+export QRC # to show qr code in notebook and REPL
 
 using Images
 using FileIO
-add_saver(format"PNG", :ImageMagick)
+using UnicodePlots
+# add_saver(format"PNG", :ImageMagick)
 
 using Compat # isnothing is not defined in Julia 1.0
 
@@ -58,6 +60,7 @@ struct High <: ErrCorrLevel end
 include("tables.jl")
 include("errorcorrection.jl")
 include("matrix.jl")
+include("types.jl") # Added type to show QR code in separate file for now
 
 using .Polynomial
 
@@ -355,24 +358,24 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 (7% of missing data can be restored), `Medium()` (15%), `Quartile()` (25%) or
 `High()` (30%). Higher levels make denser QR codes.
 """
-function exportqrcode( message::AbstractString
-                     , path::AbstractString = "qrcode.png"
-                     , eclevel::ErrCorrLevel = Medium()
-                     ; targetsize::Int64 = 5
-                     , compact::Bool = false )
+# function exportqrcode( message::AbstractString
+#                      , path::AbstractString = "qrcode.png"
+#                      , eclevel::ErrCorrLevel = Medium()
+#                      ; targetsize::Int64 = 5
+#                      , compact::Bool = false )
 
-    matrix = qrcode(message, eclevel, compact = compact)
+#     matrix = qrcode(message, eclevel, compact = compact)
 
-    if !endswith(path, ".png")
-        path = "$path.png"
-    end
+#     if !endswith(path, ".png")
+#         path = "$path.png"
+#     end
 
-    # Seems the default setting is 72 DPI
-    pixels = size(matrix, 1)
-    scale = ceil(Int64, 72 * targetsize / 2.45 / pixels)
-    matrix = kron(matrix, trues((scale, scale)))
+#     # Seems the default setting is 72 DPI
+#     pixels = size(matrix, 1)
+#     scale = ceil(Int64, 72 * targetsize / 2.45 / pixels)
+#     matrix = kron(matrix, trues((scale, scale)))
 
-    save(path, colorview(Gray, .! matrix))
-end
+#     save(path, colorview(Gray, .! matrix))
+# end
 
 end # module
