@@ -48,6 +48,10 @@ function save(fn, qrc::QRCode, sz=5cm)
     ext = lowercase(last(splitext(fn))) 
     if ext == ".svg"
         draw(SVG(fn), composesvg(qrc, sz))
+    elseif ext == ".png"
+        open(fn, "w") do io
+            write(io, qrpng(qrc));
+        end
     else
         @error "File extension $ext not supported"
     end

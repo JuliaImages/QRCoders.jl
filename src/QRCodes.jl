@@ -3,17 +3,15 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 """
 module QRCodes
 
-export Mode, Numeric, Alphanumeric, Byte
+# export Mode, Numeric, Alphanumeric, Byte
 export ErrCorrLevel, Low, Medium, Quartile, High
-export getmode, getversion, qrcode#, exportqrcode
+# export getmode, getversion, qrcode
 export QRCode # to show qr code in notebook and REPL
 
 using Compose
 using Images
 using FileIO
 using UnicodePlots
-# add_saver(format"PNG", :ImageMagick)
-
 
 """
 Abstract type that groups the three supported encoding modes `Numeric`,
@@ -343,39 +341,5 @@ function qrcode( message::AbstractString
         return background
     end
 end
-
-"""
-    exportqrcode( message::AbstractString
-                , path = "qrcode.png"
-                , eclevel = Medium()
-                ; targetsize = 5
-                , compact = false )
-
-Create a `PNG` file with the encoded `message` of approximate size `targetsize`
-cm. If `compact` is `false`, white space is added around the QR code.
-
-The error correction level `eclevel` can be picked from four values: `Low()`
-(7% of missing data can be restored), `Medium()` (15%), `Quartile()` (25%) or
-`High()` (30%). Higher levels make denser QR codes.
-"""
-# function exportqrcode( message::AbstractString
-#                      , path::AbstractString = "qrcode.png"
-#                      , eclevel::ErrCorrLevel = Medium()
-#                      ; targetsize::Int64 = 5
-#                      , compact::Bool = false )
-
-#     matrix = qrcode(message, eclevel, compact = compact)
-
-#     if !endswith(path, ".png")
-#         path = "$path.png"
-#     end
-
-#     # Seems the default setting is 72 DPI
-#     pixels = size(matrix, 1)
-#     scale = ceil(Int64, 72 * targetsize / 2.45 / pixels)
-#     matrix = kron(matrix, trues((scale, scale)))
-
-#     save(path, colorview(Gray, .! matrix))
-# end
 
 end # module

@@ -3,10 +3,10 @@ using Test
 using Images
 using Random
 
-import QRCodes: makeblocks, geterrcorrblock, interleave, emptymatrix,
+import QRCodes: makeblocks, geterrcorrblock, getmode, getversion, interleave, emptymatrix,
                characterscapacity, modeindicators, getcharactercountindicator,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
-               placedata!
+               placedata!, qrcode, Byte, Numeric, Alphanumeric
 import QRCodes.Polynomial: Poly, antilogtable, logtable, generator,
                           geterrorcorrection
 
