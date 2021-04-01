@@ -34,7 +34,7 @@ function qrpng(qrc::QRCode)
     scale = Int(round(200/size(qrm,1)))
     qrm = Gray.(repeat(.!qrm, inner=(scale,scale)))
     png = IOBuffer()
-    save(Stream(format"PNG", png), qrm)
+    save(Stream{format"PNG"}(png), qrm)
     return take!(png)
 end
 
@@ -69,7 +69,7 @@ end
 
 Save PNG or SVG to file (`fn`) from `QRCode`
 """
-function save(fn, qrc::QRCode, sz=5cm)
+function exportqr(fn, qrc::QRCode, sz=5cm)
     ext = lowercase(last(splitext(fn))) 
     if ext == ".svg"
         draw(SVG(fn), composesvg(qrc, sz))
