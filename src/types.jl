@@ -16,6 +16,11 @@ function Base.getproperty(obj::QRCode, sym::Symbol)
     end
 end
 
+"""
+    Base.show(io::IO, ::MIME"text/plain", qrc::QRCode)
+
+Show `QRCode` as text using `UnicodePlots`.    
+"""
 function Base.show(io::IO, ::MIME"text/plain", qrc::QRCode)
     qrm = qrc.bitmap
     print(io, UnicodePlots.heatmap(qrm;
@@ -23,10 +28,20 @@ function Base.show(io::IO, ::MIME"text/plain", qrc::QRCode)
                         width=size(qrm,2),colormap=[(1,1,1),(0,0,0)],labels=false))
 end
 
+"""
+    Base.show(io::IO, ::MIME"image/png", qrc::QRCode)
+
+Show `QRCode` as PNG file where supported.    
+"""
 function Base.show(io::IO, ::MIME"image/png", qrc::QRCode)
     write(io, qrpng(qrc))
 end
 
+"""
+    Base.show(io::IO, ::MIME"image/svg+xml", qrc::QRCode)
+
+Show `QRCode` as SVG file where supported.    
+"""
 function Base.show(io::IO, ::MIME"image/svg+xml", qrc::QRCode)
     write(io, qrsvg(qrc))
 end
@@ -72,7 +87,7 @@ function composesvg(qrc::QRCode, sz=5cm)
 end
 
 """
-    save(fn, qrc::QRCode, sz=5cm)
+    exportqr(fn, qrc::QRCode, sz=5cm)
 
 Save PNG or SVG to file (`fn`) from `QRCode`
 """
