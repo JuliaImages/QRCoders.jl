@@ -1,3 +1,8 @@
+"""
+    QRCode
+
+Type to store text and error correction level and dispatch on e.g. for display (show).
+"""
 struct QRCode{T}
     s::String
     eclevel::T
@@ -19,6 +24,11 @@ function Base.show(io::IO, ::MIME"image/svg+xml", qrc::QRCode)
     write(io, qrsvg(qrc))
 end
 
+"""
+    qrpng(qrc::QRCode)
+
+Create PNG from `QRCode` to display or save to file.
+"""
 function qrpng(qrc::QRCode)
     qrm = qrcode(qrc.s, qrc.eclevel)
     scale = Int(round(200/size(qrm,1)))
@@ -28,6 +38,11 @@ function qrpng(qrc::QRCode)
     return take!(png)
 end
 
+"""
+    qrsvg(qrc::QRCode, sz=5cm)
+
+Create SVG from `QRCode` to display.
+"""
 function qrsvg(qrc::QRCode, sz=5cm)
     svg = IOBuffer()
     composition = composesvg(qrc, sz)
@@ -35,6 +50,11 @@ function qrsvg(qrc::QRCode, sz=5cm)
     return take!(svg)
 end
 
+"""
+    qrsvg(qrc::QRCode, sz=5cm)
+
+Create SVG with `Compose.jl` from `QRCode` to display or save to file.
+"""
 function composesvg(qrc::QRCode, sz=5cm)
     qrm = qrcode(qrc.s, qrc.eclevel)
     I, J = size(qrm)
@@ -44,6 +64,11 @@ function composesvg(qrc::QRCode, sz=5cm)
     )
 end
 
+"""
+    save(fn, qrc::QRCode, sz=5cm)
+
+Save PNG or SVG to file (`fn`) from `QRCode`
+"""
 function save(fn, qrc::QRCode, sz=5cm)
     ext = lowercase(last(splitext(fn))) 
     if ext == ".svg"
