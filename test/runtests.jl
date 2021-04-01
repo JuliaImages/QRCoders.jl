@@ -185,3 +185,24 @@ end
     @test true
 end
 
+@testset "Types and show methods" begin
+    
+    @test QRCode("QR").bitmap == QRCodes.qrcode("QR")
+    @test QRCode("QR").s == "QR"
+    @test QRCode("QR").eclevel == Medium()
+
+    io = IOBuffer()
+
+    show(io, MIME("text/plain"), QRCode("QR"))
+    s = String(take!(io))
+    @test length(s) == 543
+
+    show(io, MIME("image/svg+xml"), QRCode("QR"))
+    s = String(take!(io))
+    @test s[3:5] == "xml"
+
+    show(io, MIME("image/png"), QRCode("QR"))
+    s = take!(io)
+    @test Int(sum(s)) == 36133
+
+end

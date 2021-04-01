@@ -84,6 +84,7 @@ function composesvg(qrc::QRCode, sz=5cm)
     ((context((j-1)/I,(i-1)/J,1/J + 1e-3,1/I + 1e-3), rectangle()) 
         for i=1:size(qrm,1),j=1:size(qrm,2) if qrm[i,j]==1 )...
     )
+    return composition
 end
 
 """
