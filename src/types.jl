@@ -8,6 +8,13 @@ struct QRCode{T}
     eclevel::T
 end
 QRCode(s) = QRCode(s, Medium())
+function Base.getproperty(obj::QRCode, sym::Symbol)
+    if sym === :bitmap
+        return qrcode(obj.s, obj.eclevel)
+    else # fallback to getfield
+        return getfield(obj, sym)
+    end
+end
 
 function Base.show(io::IO, ::MIME"text/plain", qrc::QRCode)
     qrm = qrcode(qrc.s, qrc.eclevel)
