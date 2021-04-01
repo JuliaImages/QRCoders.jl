@@ -8,6 +8,7 @@ export ErrCorrLevel, Low, Medium, Quartile, High
 export getmode, getversion, qrcode#, exportqrcode
 export QRCode # to show qr code in notebook and REPL
 
+using Compose
 using Images
 using FileIO
 using UnicodePlots

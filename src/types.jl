@@ -20,6 +20,11 @@ function Base.show(io::IO, ::MIME"image/png", s::QRCode)
     write(io, take!(png))
 end
 
+function Base.show(io::IO, ::MIME"image/svg+xml", s::QRCode)
+    qrm = qrcode(s.s, s.eclevel)
+    write(io, qrsvg(s))
+end
+
 function qr(txt::String)
     qrm = plainqr(txt)
     scale = Int(round(200/size(qrm,1)))
@@ -28,4 +33,16 @@ end
 
 function plainqr(txt::String)
     return qrcode(txt)
+end
+
+function qrsvg(qrc::QRCode)
+    svg = IOBuffer()
+    qrm = qrcode(qrc.s, qrc.eclevel)
+    I, J = size(qrm)
+    composition = compose(context(), fill("black"),
+    ((context((i-1)/I,(j-1)/J,1/I + 1e-3,1/J + 1e-3), rectangle()) 
+        for i=1:size(qrm,1),j=1:size(qrm,2) if qrm[i,j]==1 )...
+    )
+    composition |> SVG(svg, 5cm, 5cm)
+    return take!(svg)
 end
