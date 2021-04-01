@@ -17,7 +17,7 @@ function Base.getproperty(obj::QRCode, sym::Symbol)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", qrc::QRCode)
-    qrm = qrcode(qrc.s, qrc.eclevel)
+    qrm = qrc.bitmap
     print(io, UnicodePlots.heatmap(qrm;
                         padding=0,margin=0,border=:none,
                         width=size(qrm,2),colormap=[(1,1,1),(0,0,0)],labels=false))
