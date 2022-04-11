@@ -4,7 +4,7 @@
 Allowed characters for `Alphanumeric()` mode and their number.
 """
 const alphanumeric = Dict{AbstractChar, Int}(
-  zip(vcat('0':'9', 'A':'Z', collect(" %*+-./:\$")), 0:44))
+  zip(vcat('0':'9', 'A':'Z', collect(" \$%*+-./:")), 0:44))
 
 """
 Number of characters allowed for a given mode, error correction level and
