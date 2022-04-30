@@ -7,11 +7,8 @@ export Mode, Numeric, Alphanumeric, Byte
 export ErrCorrLevel, Low, Medium, Quartile, High
 export getmode, getversion, qrcode, exportqrcode
 
-using Images
+using ImageCore
 using FileIO
-add_saver(format"PNG", :ImageMagick)
-
-using Compat # isnothing is not defined in Julia 1.0
 
 """
 Abstract type that groups the three supported encoding modes `Numeric`,
@@ -93,18 +90,18 @@ julia> getversion("Hello World!", Alphanumeric(), High())
 2
 ```
 """
-function getversion(message::AbstractString, mode::Mode, level::ErrCorrLevel)::Int64
+function getversion(message::AbstractString, mode::Mode, level::ErrCorrLevel)
     cc = characterscapacity[(level, mode)]
     return findfirst(v->v >= lastindex(message), cc)
 end
 
 """
-    getcharactercountindicator(msglength::Int64, version::Int64, mode::Mode)
+    getcharactercountindicator(msglength::Int, version::Int, mode::Mode)
 
 Return the bits for character count indicator.
 """
-function getcharactercountindicator(msglength::Int64,
-                                    version::Int64,
+function getcharactercountindicator(msglength::Int,
+                                    version::Int,
                                     mode::Mode)::BitArray{1}
     if 1 <= version <= 9
         i = 1
@@ -130,7 +127,7 @@ function encodedata(message::AbstractString, ::Numeric)::BitArray{1}
 
     function toBin(chunk::SubString)::BitArray
         pad = 1 + 3 * length(chunk)
-        n = parse(Int64, chunk)
+        n = parse(Int, chunk)
         return  BitArray(reverse(digits(n, base = 2, pad = pad)))
     end
 
@@ -158,25 +155,25 @@ end
 
 function encodedata(message::AbstractString, ::Byte)::BitArray{1}
     bytes = Array{UInt8}(message)
-    bin = map(int2bitarray, Array{Int64,1}(bytes))
+    bin = map(int2bitarray, Array{Int,1}(bytes))
     return vcat(bin...)
 end
 
 """
-    int2bitarray(n::Int64)
+    int2bitarray(n::Int)
 
 Encode an integer into a `BitArray`.
 """
-function int2bitarray(n::Int64)::BitArray{1}
+function int2bitarray(n::Int)::BitArray{1}
     return  BitArray(reverse(digits(n, base = 2, pad = 8)))
 end
 
 """
-    padencodedmessage(data::BitArray{1}, requiredlentgh::Int64)
+    padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
 
 Pad the encoded message.
 """
-function padencodedmessage(data::BitArray{1}, requiredlentgh::Int64)
+function padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
     # Add up to 4 zeros to terminate the message
     data = vcat(data, falses(min(4, requiredlentgh - length(data))))
 
@@ -187,23 +184,23 @@ function padencodedmessage(data::BitArray{1}, requiredlentgh::Int64)
 
     # Add the repeated pattern until reaching required length
     pattern = BitArray{1}([1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1])
-    pad = repeat(pattern, ceil(Int64, requiredlentgh - length(data) / 8))
+    pad = repeat(pattern, ceil(Int, requiredlentgh - length(data) / 8))
     data = vcat(data, pad[1:requiredlentgh - length(data)])
 
     return data
 end
 
 """
-    makeblocks(bits::BitArray{1}, nb1::Int64, dc1::Int64, nb2::Int64, dc2::Int64)
+    makeblocks(bits::BitArray{1}, nb1::Int, dc1::Int, nb2::Int, dc2::Int)
 
 Divide the encoded message into 1 or 2 blocks with `nbX` blocks in group `X` and
 `dcX` codewords per block.
 """
 function makeblocks(bits::BitArray{1},
-                    nb1::Int64,
-                    dc1::Int64,
-                    nb2::Int64,
-                    dc2::Int64)::Array{BitArray{2},1}
+                    nb1::Int,
+                    dc1::Int,
+                    nb2::Int,
+                    dc2::Int)::Array{BitArray{2},1}
     array = reshape(bits, (8, length(bits) ÷ 8))
     i = 1
     blocks = BitArray{2}[]
@@ -219,11 +216,11 @@ function makeblocks(bits::BitArray{1},
 end
 
 """
-    geterrcorrblock(block::BitArray{2}, ncodewords::Int64)
+    geterrcorrblock(block::BitArray{2}, ncodewords::Int)
 
 Return the error correction blocks, with `ncodewords` codewords per block.
 """
-function geterrcorrblock(block::BitArray{2}, ncodewords::Int64)::BitArray{2}
+function geterrcorrblock(block::BitArray{2}, ncodewords::Int)::BitArray{2}
     # Helper functions
     bitarray2ints(b) = reduce((acc, n)->2 * acc + n, b, init = 0, dims = 1)
     array2poly(a) =  Poly(reverse(a[:]))
@@ -237,18 +234,18 @@ end
 
 """
     interleave(blocks::Array{BitArray{2},1}, ecblocks::Array{BitArray{2},1},
-               ncodewords::Int64, nb1::Int64, dc1::Int64, nb2::Int64, dc2::Int64,
-               version::Int64)
+               ncodewords::Int, nb1::Int, dc1::Int, nb2::Int, dc2::Int,
+               version::Int)
 
 Mix the encoded data blocks and error correction blocks.
 """
 function interleave( blocks::Array{BitArray{2},1}
                    , ecblocks::Array{BitArray{2},1}
-                   , ncodewords::Int64, nb1::Int64
-                   , dc1::Int64
-                   , nb2::Int64
-                   , dc2::Int64
-                   , version::Int64
+                   , ncodewords::Int, nb1::Int
+                   , dc1::Int
+                   , nb2::Int
+                   , dc2::Int
+                   , version::Int
                    )::BitArray{1}
 
     data = BitArray{1}()
@@ -358,7 +355,7 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 function exportqrcode( message::AbstractString
                      , path::AbstractString = "qrcode.png"
                      , eclevel::ErrCorrLevel = Medium()
-                     ; targetsize::Int64 = 5
+                     ; targetsize::Int = 5
                      , compact::Bool = false )
 
     matrix = qrcode(message, eclevel, compact = compact)
@@ -369,10 +366,10 @@ function exportqrcode( message::AbstractString
 
     # Seems the default setting is 72 DPI
     pixels = size(matrix, 1)
-    scale = ceil(Int64, 72 * targetsize / 2.45 / pixels)
+    scale = ceil(Int, 72 * targetsize / 2.45 / pixels)
     matrix = kron(matrix, trues((scale, scale)))
 
-    save(path, colorview(Gray, .! matrix))
+    save(path, BitArray(.! matrix))
 end
 
 end # module

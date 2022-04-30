@@ -1,10 +1,12 @@
 # QRCode
 
+[![][action-img]][action-url]
+[![][pkgeval-img]][pkgeval-url]
+[![][codecov-img]][codecov-url]
+[![][docs-stable-img]][docs-stable-url]
+[![][docs-dev-img]][docs-dev-url]
+
 Create [QR Codes](https://en.wikipedia.org/wiki/QR_code) as data within Julia, or export as PNG.
-
-Documentation: [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://jiegillet.github.io/QRCode.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://jiegillet.github.io/QRCode.jl/dev)
-
-Master branch: [![Build Status](https://travis-ci.org/jiegillet/QRCode.jl.svg?branch=master)](https://travis-ci.org/jiegillet/QRCode.jl)
 
 ### Create a QR Code as data
 
@@ -17,7 +19,7 @@ julia> qrcode("Hello world!")
 29×29 BitArray{2}:
  false  false  false  false  …  false  false  false
  false  false  false  false     false  false  false
-     ⋮                       ⋱                     
+     ⋮                       ⋱
  false  false  false  false     false  false  false
  false  false  false  false     false  false  false
 ```
@@ -31,7 +33,7 @@ julia> qrcode("Hello world!", High(), compact = true)
 25×25 BitArray{2}:
  true   true   true   true  …   true   true   true
  true  false  false  false     false  false   true
-    ⋮                       ⋱                     
+    ⋮                       ⋱
  true  false  false  false     false  false  false
  true   true   true   true     false  false   true
 ```
@@ -80,3 +82,17 @@ QR Codes can encode data using several encoding schemes. `QRCode.jl` supports th
 `QRCode.jl` was built following this [excellent tutorial](https://www.thonky.com/qr-code-tutorial/).
 
 `QRCode.jl` was created during the [Efficient Scientific Computing with Julia](https://groups.oist.jp/grad/skill-pill-67) workshop, taught by [Valentin Churavy](https://github.com/vchuravy) at the [Okinawa Institute of Science and Technology](https://www.oist.jp) in July 2019. [Slides available here](https://github.com/JuliaLabs/Workshop-OIST).
+
+
+<!-- URLS -->
+
+[pkgeval-img]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/Q/QRCode.svg
+[pkgeval-url]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html
+[action-img]: https://github.com/JuliaImages/QRCode.jl/workflows/CI/badge.svg
+[action-url]: https://github.com/JuliaImages/QRCode.jl/actions
+[codecov-img]: https://codecov.io/github/JuliaImages/QRCode.jl/coverage.svg?branch=master
+[codecov-url]: https://codecov.io/github/JuliaImages/QRCode.jl?branch=master
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://JuliaImages.github.io/QRCode.jl/stable
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://JuliaImages.github.io/QRCode.jl/latest

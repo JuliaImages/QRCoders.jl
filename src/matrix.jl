@@ -23,12 +23,12 @@ const alignmentpattern =
                  1 1 1 1 1])
 
 """
-    emptymatrix(version::Int64)
+    emptymatrix(version::Int)
 
 Return a matrix for the QR code filled with data-independent elements. `nothing`
 matrix elements act as a placeholder for the data.
 """
-function emptymatrix(version::Int64)::Array{Union{Bool,Nothing},2}
+function emptymatrix(version::Int)::Array{Union{Bool,Nothing},2}
     n = (version - 1) * 4 + 21
     # nothing is used as a placeholder for the data
     matrix = Array{Union{Bool,Nothing},2}(nothing, (n, n))
@@ -165,7 +165,7 @@ end
 
 Calculate a penalty score in order to pick the best mask.
 """
-function penalty(matrix::BitArray{2})::Int64
+function penalty(matrix::BitArray{2})
     rows, cols = size(matrix)
 
     # Condition 1: 5+ in a row of the same color
@@ -222,13 +222,13 @@ function penalty(matrix::BitArray{2})::Int64
 end
 
 """
-    addformat(matrix::BitArray{2}, mask::Int64, version::Int64, eclevel::ErrCorrLevel)
+    addformat(matrix::BitArray{2}, mask::Int, version::Int, eclevel::ErrCorrLevel)
 
 Add information about the `version` and mask number in `matrix`.
 """
 function addformat( matrix::BitArray{2}
-                  , mask::Int64
-                  , version::Int64
+                  , mask::Int
+                  , version::Int
                   , eclevel::ErrCorrLevel)::BitArray{2}
 
     format = formatinfo[(eclevel, mask)]

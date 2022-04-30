@@ -8,5 +8,5 @@ makedocs(
     )
 
 deploydocs(
-    repo = "github.com/jiegillet/QRCode.jl.git",
+    repo = "github.com/JuliaImages/QRCode.jl.git",
 )

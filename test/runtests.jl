@@ -1,6 +1,7 @@
 using QRCode
 using Test
-using Images
+using FileIO
+using ImageCore
 using Random
 
 import QRCode: makeblocks, geterrcorrblock, interleave, emptymatrix,
