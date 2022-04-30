@@ -7,11 +7,8 @@ export Mode, Numeric, Alphanumeric, Byte
 export ErrCorrLevel, Low, Medium, Quartile, High
 export getmode, getversion, qrcode, exportqrcode
 
-using Images
+using ImageCore
 using FileIO
-add_saver(format"PNG", :ImageMagick)
-
-using Compat # isnothing is not defined in Julia 1.0
 
 """
 Abstract type that groups the three supported encoding modes `Numeric`,
@@ -372,7 +369,7 @@ function exportqrcode( message::AbstractString
     scale = ceil(Int64, 72 * targetsize / 2.45 / pixels)
     matrix = kron(matrix, trues((scale, scale)))
 
-    save(path, colorview(Gray, .! matrix))
+    save(path, BitArray(.! matrix))
 end
 
 end # module
