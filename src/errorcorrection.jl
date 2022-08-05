@@ -51,7 +51,21 @@ function mult(a::Int, b::Int)::Int
     return logtable[(xa + xb) % 255]
 end
 
-import Base: length, iterate, ==, <<, +, *
+"""
+    divide(a::Int, b::Int)
+
+Division of intergers in GF(256).
+"""
+function divide(a::Int, b::Int)
+    b == 0 && throw(DivideError())
+    b == 1 && return a
+    a == 0 && return 0
+    xa, xb = antilogtable[a], antilogtable[b]
+    ## use mod instead of "%" to avoid negative numbers
+    return logtable[mod(xa - xb, 255)]
+end
+
+import Base: length, iterate, ==, <<, +, *, ÷, %
 
 """
     length(p::Poly)
@@ -83,6 +97,43 @@ end
 
 function *(a::Poly, b::Poly)::Poly
     return sum([ c * (a << (p - 1)) for (p, c) in enumerate(b.coeff)])
+end
+
+"""
+    ÷(f::Poly, g::Poly)
+
+Quotient of Euclidean division.
+"""
+function ÷(f::Poly, g::Poly)
+    quodeg = length(f) - length(g) ## degree of the quotient polynomial
+    quodeg < 0 && return Poly([0])
+    g <<= quodeg
+    gn = lead(g) ## leading term of g(x)
+    quocoef = Vector{Int}(undef, quodeg + 1)
+    for i in 1:quodeg
+        quocoef[i] = divide(lead(f), gn)
+        f = init!(quocoef[i] * g + f)
+        tail!(g)
+    end
+    quocoef[end] = divide(lead(f), gn)
+    return Poly(reverse!(quocoef))
+end
+
+"""
+    %(f::Poly, g::Poly)
+
+Remainder of Euclidean division.
+"""
+function %(f::Poly, g::Poly)
+    quodeg = length(f) - length(g) ## degree of the quotient polynomial
+    quodeg < 0 && return f
+    g <<= quodeg
+    gn = lead(g) ## leading term of g(x)
+    for _ in 1:quodeg
+        f = init!(divide(lead(f), gn) * g + f)
+        tail!(g)
+    end
+    return init!(divide(lead(f), gn) * g + f)
 end
 
 """

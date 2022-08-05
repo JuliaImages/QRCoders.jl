@@ -9,7 +9,9 @@ import QRCode: makeblocks, geterrcorrblock, interleave, emptymatrix,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!
 import QRCode.Polynomial: Poly, antilogtable, logtable, generator,
-                          geterrorcorrection
+                          mult, divide, geterrorcorrection
+
+include("tst_operation.jl")
 
 @testset "Test set for encoding modes" begin
     @test getmode("2983712983") == Numeric()
