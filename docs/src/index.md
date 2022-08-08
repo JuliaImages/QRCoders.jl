@@ -1,4 +1,4 @@
-# QRCode.jl Documentation
+# QRCoders.jl Documentation
 
 Module that can create QR codes as data or images using `qrcode` or `exportqrcode`.
 

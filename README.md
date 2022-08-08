@@ -1,4 +1,4 @@
-# QRCode
+# QRCoders
 
 [![][action-img]][action-url]
 [![][pkgeval-img]][pkgeval-url]
@@ -13,7 +13,7 @@ Create [QR Codes](https://en.wikipedia.org/wiki/QR_code) as data within Julia, o
 Creating a QR Code couldn't be simpler.
 
 ```julia
-julia> using QRCode
+julia> using QRCoders
 
 julia> qrcode("Hello world!")
 29×29 BitArray{2}:
@@ -69,30 +69,30 @@ QR Codes and be encoded with four error correction levels `Low`, `Medium`, `Quar
 * `Quartile` can restore up to 25% of missing codewords.
 * `High` can restore up to 30% of missing codewords.
 
-The four levels are encoded as types in `QRCode.jl`, grouped under the abstract type `ErrCorrLevel`. Don't forget to use parentheses when you call the values: `qrcode("Hello", High())`.
+The four levels are encoded as types in `QRCoders.jl`, grouped under the abstract type `ErrCorrLevel`. Don't forget to use parentheses when you call the values: `qrcode("Hello", High())`.
 
 ### Encoding Modes
 
-QR Codes can encode data using several encoding schemes. `QRCode.jl` supports three of them: `Numeric`, `Alphanumeric` and `Byte`.
+QR Codes can encode data using several encoding schemes. `QRCoders.jl` supports three of them: `Numeric`, `Alphanumeric` and `Byte`.
 
 `Numeric` is used for messages composed of digits only, `Alphanumeric` for messages composed of digits, characters `A`-`Z` (capital only) space and `%` `*` `+` `-` `.` `/` `:` `\$`, and `Bytes` for messages composed of ISO 8859-1 or UTF-8 characters. Please not that QR Code reader don't always support arbitrary UTF-8 characters.
 
 ### Acknowledgments
 
-`QRCode.jl` was built following this [excellent tutorial](https://www.thonky.com/qr-code-tutorial/).
+`QRCoders.jl` was built following this [excellent tutorial](https://www.thonky.com/qr-code-tutorial/).
 
-`QRCode.jl` was created during the [Efficient Scientific Computing with Julia](https://groups.oist.jp/grad/skill-pill-67) workshop, taught by [Valentin Churavy](https://github.com/vchuravy) at the [Okinawa Institute of Science and Technology](https://www.oist.jp) in July 2019. [Slides available here](https://github.com/JuliaLabs/Workshop-OIST).
+`QRCoders.jl` was created during the [Efficient Scientific Computing with Julia](https://groups.oist.jp/grad/skill-pill-67) workshop, taught by [Valentin Churavy](https://github.com/vchuravy) at the [Okinawa Institute of Science and Technology](https://www.oist.jp) in July 2019. [Slides available here](https://github.com/JuliaLabs/Workshop-OIST).
 
 
 <!-- URLS -->
 
 [pkgeval-img]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/Q/QRCode.svg
 [pkgeval-url]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html
-[action-img]: https://github.com/JuliaImages/QRCode.jl/workflows/CI/badge.svg
-[action-url]: https://github.com/JuliaImages/QRCode.jl/actions
-[codecov-img]: https://codecov.io/github/JuliaImages/QRCode.jl/coverage.svg?branch=master
-[codecov-url]: https://codecov.io/github/JuliaImages/QRCode.jl?branch=master
+[action-img]: https://github.com/JuliaImages/QRCoders.jl/workflows/CI/badge.svg
+[action-url]: https://github.com/JuliaImages/QRCoders.jl/actions
+[codecov-img]: https://codecov.io/github/JuliaImages/QRCoders.jl/coverage.svg?branch=master
+[codecov-url]: https://codecov.io/github/JuliaImages/QRCoders.jl?branch=master
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://JuliaImages.github.io/QRCode.jl/stable
+[docs-stable-url]: https://JuliaImages.github.io/QRCoders.jl/stable
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[docs-dev-url]: https://JuliaImages.github.io/QRCode.jl/latest
+[docs-dev-url]: https://JuliaImages.github.io/QRCoders.jl/latest

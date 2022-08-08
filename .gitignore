@@ -5,6 +5,8 @@ test/*.png
 *.jl.mem
 
 /docs/build/
-/docs/Manifest.toml
+Manifest.toml
 
 .DS_Store
+.ipynb_checkpoints/
+
