@@ -1,12 +1,12 @@
-using Documenter, QRCode
+using Documenter, QRCoders
 
-DocMeta.setdocmeta!(QRCode, :DocTestSetup, :(using QRCode); recursive=true)
+DocMeta.setdocmeta!(QRCoders, :DocTestSetup, :(using QRCoders); recursive=true)
 
 makedocs(
-    sitename="QRCode.jl"
-    , modules = [QRCode]
+    sitename="QRCoders.jl"
+    , modules = [QRCoders]
     )
 
 deploydocs(
-    repo = "github.com/JuliaImages/QRCode.jl.git",
+    repo = "github.com/JuliaImages/QRCoders.jl.git",
 )
