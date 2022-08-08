@@ -1,14 +1,14 @@
-using QRCode
+using QRCoders
 using Test
 using FileIO
 using ImageCore
 using Random
 
-import QRCode: makeblocks, geterrcorrblock, interleave, emptymatrix,
+import QRCoders: makeblocks, geterrcorrblock, interleave, emptymatrix,
                characterscapacity, modeindicators, getcharactercountindicator,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!
-import QRCode.Polynomial: Poly, antilogtable, logtable, generator,
+import QRCoders.Polynomial: Poly, antilogtable, logtable, generator,
                           mult, divide, geterrorcorrection
 
 include("tst_operation.jl")

@@ -1,4 +1,4 @@
-name = "QRCode"
+name = "QRCoders"
 uuid = "6cfbe66a-a49d-11e9-1842-750d329cfcbb"
 authors = ["Jérémie Gillet <jie.gillet@gmail.com>"]
 version = "0.2.0"

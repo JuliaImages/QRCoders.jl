@@ -1,7 +1,7 @@
 """
 Module that can create QR codes as data or images using `qrcode` or `exportqrcode`.
 """
-module QRCode
+module QRCoders
 
 export Mode, Numeric, Alphanumeric, Byte
 export ErrCorrLevel, Low, Medium, Quartile, High
