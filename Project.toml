@@ -1,7 +1,7 @@
 name = "QRCoders"
-uuid = "6cfbe66a-a49d-11e9-1842-750d329cfcbb"
-authors = ["Jérémie Gillet <jie.gillet@gmail.com>"]
-version = "0.2.0"
+uuid = "f42e9828-16f3-11ed-2883-9126170b272d"
+authors = ["Jérémie Gillet <jie.gillet@gmail.com> and contributors"]
+version = "0.1.0"
 
 [deps]
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
