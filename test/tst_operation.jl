@@ -25,8 +25,8 @@ end
     c = divide(a, b)
     @test mult(b, c) == mult(c, b) == a
 
-    ## divide and antilogtable
+    ## divide and gfpow2
     ap, bp, cp = [rand(1:255) for _ in 1:3]
-    a, b, c = getindex.(Ref(logtable), [ap, bp, cp])
-    @test mult(divide(a, b), c) == logtable[mod(ap - bp + cp, 255)]
+    a, b, c = gfpow2.([ap, bp, cp])
+    @test mult(divide(a, b), c) == gfpow2(ap - bp + cp)
 end

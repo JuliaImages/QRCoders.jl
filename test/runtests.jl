@@ -9,7 +9,7 @@ import QRCoders: makeblocks, geterrcorrblock, interleave, emptymatrix,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!
 import QRCoders.Polynomial: Poly, antilogtable, logtable, generator,
-                          mult, divide, geterrorcorrection
+                            gfpow2, gflog2, mult, divide, geterrorcorrection
 
 include("tst_operation.jl")
 

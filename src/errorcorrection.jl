@@ -38,17 +38,30 @@ Anti-logarithm table for GF(256).
 const antilogtable = Dict{Int, Int}(zip(makelogtable(), 0:254))
 
 """
+    gfpow2(n::Int)
+
+Returns 2^n in GF256.
+"""
+gfpow2(n::Int) = logtable[mod(n, 255)]
+
+"""
+    gflog2(n::Int)
+
+Returns the logarithm of n to base 2 in GF256.
+"""
+function gflog2(n::Int)
+    1 ≤ n ≤ 255 || throw(DomainError("gflog2: n must be between 1 and 255"))
+    return antilogtable[n]
+end
+
+"""
     function mult(a::Int, b::Int)
 
 Multiplies two integers in GF(256).
 """
 function mult(a::Int, b::Int)::Int
-    if a == 0 || b == 0
-        return 0
-    end
-    xa = antilogtable[a]
-    xb = antilogtable[b]
-    return logtable[(xa + xb) % 255]
+    (a == 0 || b == 0) && return 0
+    return gfpow2(gflog2(a) + gflog2(b))
 end
 
 """
@@ -58,11 +71,8 @@ Division of intergers in GF(256).
 """
 function divide(a::Int, b::Int)
     b == 0 && throw(DivideError())
-    b == 1 && return a
-    a == 0 && return 0
-    xa, xb = antilogtable[a], antilogtable[b]
-    ## use mod instead of "%" to avoid negative numbers
-    return logtable[mod(xa - xb, 255)]
+    b == 1 && return a ## frequently used when dealing with generator polynomial
+    return gfpow2(gflog2(a) - gflog2(b))
 end
 
 import Base: length, iterate, ==, <<, +, *, ÷, %
@@ -142,7 +152,7 @@ end
 Create the Generator Polynomial of degree `n`.
 """
 function generator(n::Int)::Poly
-    prod([Poly([logtable[i - 1], 1]) for i in 1:n])
+    prod([Poly([gfpow2(i - 1), 1]) for i in 1:n])
 end
 
 """
