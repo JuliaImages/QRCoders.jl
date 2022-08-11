@@ -2,6 +2,8 @@ module Polynomial
 
 export Poly, geterrorcorrection
 
+import Base: length, iterate, ==, <<, +, *, ÷, %, copy
+
 """
 Data structure to encode polynomials to generate the error correction codewords.
 """
@@ -40,17 +42,17 @@ const antilogtable = Dict{Int, Int}(zip(makelogtable(), 0:254))
 """
     gfpow2(n::Int)
 
-Returns 2^n in GF256.
+Returns 2^n in GF(256).
 """
 gfpow2(n::Int) = logtable[mod(n, 255)]
 
 """
     gflog2(n::Int)
 
-Returns the logarithm of n to base 2 in GF256.
+Returns the logarithm of n to base 2 in GF(256).
 """
 function gflog2(n::Int)
-    1 ≤ n ≤ 255 || throw(DomainError("gflog2: n must be between 1 and 255"))
+    1 ≤ n ≤ 255 || throw(DomainError("gflog2: $n must be between 1 and 255"))
     return antilogtable[n]
 end
 
@@ -71,11 +73,44 @@ Division of intergers in GF(256).
 """
 function divide(a::Int, b::Int)
     b == 0 && throw(DivideError())
-    b == 1 && return a ## frequently used when dealing with generator polynomial
+    a == 0 && return 0
+    b == 1 && return a ## cases when dealing with generator polynomial
     return gfpow2(gflog2(a) - gflog2(b))
 end
 
-import Base: length, iterate, ==, <<, +, *, ÷, %
+"""
+    iszeropoly(p::Poly)
+
+Returns true if p is a zero polynomial.
+"""
+iszeropoly(p::Poly) = all(iszero, p)
+
+"""
+    rstripzeros(p::Poly)
+
+Remove trailing zeros from polynomial p.
+"""
+function rstripzeros(p::Poly)
+    iszeropoly(p) && return Poly([0])
+    return Poly(p.coeff[1:findlast(!iszero, p.coeff)])
+end
+
+"""
+    rpadzeros(p::Poly, n::Int)
+
+Add zeros to the right side of p(x) such that length(p) == n.
+"""
+function rpadzeros(p::Poly, n::Int)
+    length(p) > n && throw("rpadzeros: length(p) > n")
+    return Poly(vcat(p.coeff, zeros(Int, n - length(p))))
+end
+
+"""
+    copy(p::Poly)
+
+Create a copy of polynomial p.
+"""
+copy(p::Poly) = Poly(copy(p.coeff))
 
 """
     length(p::Poly)
@@ -110,41 +145,47 @@ function *(a::Poly, b::Poly)::Poly
 end
 
 """
+    euclidean_divide(f::Poly, g::Poly)
+
+Returns the quotient and the remainder of Euclidean division.
+"""
+function euclidean_divide(f::Poly, g::Poly)
+    ## remove trailing zeros
+    g, f = rstripzeros(g), rstripzeros(f)
+    g == Poly([0]) && throw(DivideError())
+    ## leading term of g(x)
+    gn = lead(g)
+    ## g(x) is a constant
+    length(g) == 1 && return Poly(divide.(f.coeff, gn)), Poly([0])
+    diffdeg = length(f) - length(g)
+    ## deg(f) < deg(g)
+    diffdeg < 0 && return Poly([0]), f
+    g <<= diffdeg # g(x)⋅x^{diffdeg}
+    ## quotient polynomial
+    quocoef = Vector{Int}(undef, diffdeg + 1)
+    for i in 1:diffdeg
+        quocoef[i] = divide(lead(f), gn)
+        f = init!(quocoef[i] * g + f)
+        popfirst!(g.coeff)
+    end
+    quocoef[end] = divide(lead(f), gn)
+    return Poly(reverse!(quocoef)), init!(divide(lead(f), gn) * g + f)
+end
+
+"""
     ÷(f::Poly, g::Poly)
 
 Quotient of Euclidean division.
 """
-function ÷(f::Poly, g::Poly)
-    quodeg = length(f) - length(g) ## degree of the quotient polynomial
-    quodeg < 0 && return Poly([0])
-    g <<= quodeg
-    gn = lead(g) ## leading term of g(x)
-    quocoef = Vector{Int}(undef, quodeg + 1)
-    for i in 1:quodeg
-        quocoef[i] = divide(lead(f), gn)
-        f = init!(quocoef[i] * g + f)
-        tail!(g)
-    end
-    quocoef[end] = divide(lead(f), gn)
-    return Poly(reverse!(quocoef))
-end
+÷(f::Poly, g::Poly) = first(euclidean_divide(f, g))
+
 
 """
     %(f::Poly, g::Poly)
 
 Remainder of Euclidean division.
 """
-function %(f::Poly, g::Poly)
-    quodeg = length(f) - length(g) ## degree of the quotient polynomial
-    quodeg < 0 && return f
-    g <<= quodeg
-    gn = lead(g) ## leading term of g(x)
-    for _ in 1:quodeg
-        f = init!(divide(lead(f), gn) * g + f)
-        tail!(g)
-    end
-    return init!(divide(lead(f), gn) * g + f)
-end
+%(f::Poly, g::Poly) = last(euclidean_divide(f, g))
 
 """
     generator(n::Int)
