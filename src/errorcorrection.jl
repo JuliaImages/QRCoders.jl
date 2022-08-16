@@ -2,7 +2,7 @@ module Polynomial
 
 export Poly, geterrorcorrection
 
-import Base: length, iterate, ==, <<, +, *, ÷, %, copy
+import Base: length, iterate, ==, <<, +, *, ÷, %, copy, zero
 
 """
 Data structure to encode polynomials to generate the error correction codewords.
@@ -79,6 +79,11 @@ function divide(a::Int, b::Int)
 end
 
 """
+    gfinv(a::Int)
+"""
+gfinv(a::Int) = gfpow2(-gflog2(a))
+
+"""
     iszeropoly(p::Poly)
 
 Returns true if p is a zero polynomial.
@@ -91,7 +96,7 @@ iszeropoly(p::Poly) = all(iszero, p)
 Remove trailing zeros from polynomial p.
 """
 function rstripzeros(p::Poly)
-    iszeropoly(p) && return Poly([0])
+    iszeropoly(p) && return zero(Poly)
     return Poly(p.coeff[1:findlast(!iszero, p.coeff)])
 end
 
@@ -104,6 +109,20 @@ function rpadzeros(p::Poly, n::Int)
     length(p) > n && throw("rpadzeros: length(p) > n")
     return Poly(vcat(p.coeff, zeros(Int, n - length(p))))
 end
+
+"""
+    zero(::Type)
+
+Returns the zero polynomial.
+"""
+zero(::Type{Poly})= Poly(zeros(Int, 1))
+
+"""
+    unit(::Type)
+
+Returns the unit polynomial.
+"""
+unit(::Type{Poly}) = Poly(ones(Int, 1))
 
 """
     copy(p::Poly)
@@ -152,14 +171,14 @@ Returns the quotient and the remainder of Euclidean division.
 function euclidean_divide(f::Poly, g::Poly)
     ## remove trailing zeros
     g, f = rstripzeros(g), rstripzeros(f)
-    g == Poly([0]) && throw(DivideError())
+    g == zero(Poly) && throw(DivideError())
     ## leading term of g(x)
     gn = lead(g)
     ## g(x) is a constant
-    length(g) == 1 && return Poly(divide.(f.coeff, gn)), Poly([0])
+    length(g) == 1 && return Poly(divide.(f.coeff, gn)), zero(Poly)
     diffdeg = length(f) - length(g)
     ## deg(f) < deg(g)
-    diffdeg < 0 && return Poly([0]), f
+    diffdeg < 0 && return zero(Poly), f
     g <<= diffdeg # g(x)⋅x^{diffdeg}
     ## quotient polynomial
     quocoef = Vector{Int}(undef, diffdeg + 1)

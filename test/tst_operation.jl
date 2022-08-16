@@ -4,7 +4,7 @@
 @testset "Euclidean division" begin
     ## use Euclidean operator to obtain `geterrorcorrection`
     geterrcode(f::Poly, n::Int) = rpadzeros(f << n % generator(n), n)
-    ### message polynomial f(x) with degree ≤ 31
+    ### message polynomial f(x)
     fdeg, n = rand(1:155), rand(1:100)
     f = randpoly(fdeg)
     err = geterrorcorrection(f, n) ## error correction code
@@ -19,7 +19,7 @@
 
     ## operator ÷, %, *
     ### leading term != 0
-    f, g = randpoly(rand(1:255)), randpoly(rand(1:255))
+    f, g = randpoly(1:255), randpoly(1:255)
     q, r = f ÷ g, f % g # remainder
     @test iszeropoly(f + g * q + r)
     ### leading term allowed to be 0
@@ -27,17 +27,17 @@
     q, r = f ÷ g, f % g
     @test iszeropoly(f + g * q + r)
     ### g is a constant
-    f, g = randpoly(rand(1:255)), Poly([rand(1:255)])
+    f, g = randpoly(1:255), Poly([rand(1:255)])
     q, r = f ÷ g, f % g
     @test iszeropoly(f + g * q + r)
     ### g(x) = x
-    f, g = randpoly(rand(1:255)), Poly([0, 1, 0, 0])
+    f, g = randpoly(1:255), Poly([0, 1, 0, 0])
     q, r = f ÷ g, f % g
     @test q == Poly(f.coeff[2:end]) && r == Poly([first(f.coeff)])
     ### divide zero
-    @test_throws DivideError randpoly(rand(1:255)) ÷ Poly([0, 0, 0])
-    @test_throws DivideError randpoly(rand(1:255)) % Poly([0, 0])
-    @test_throws DivideError euclidean_divide(randpoly(rand(1:255)), Poly([0]))
+    @test_throws DivideError randpoly(1:255) ÷ Poly([0, 0, 0])
+    @test_throws DivideError randpoly(1:255) % Poly([0, 0])
+    @test_throws DivideError euclidean_divide(randpoly(1:255), Poly([0]))
 end
 
 @testset "Basic operations" begin
@@ -46,7 +46,7 @@ end
     c = divide(a, b)
     @test mult(b, c) == mult(c, b) == a
 
-    ## divide and gfpow2
+    ## divide, gfpow2, gflog2, gfinv
     ap, bp, cp = [rand(1:255) for _ in 1:3]
     a, b, c = gfpow2.([ap, bp, cp])
     @test mult(divide(a, b), c) == gfpow2(ap - bp + cp)
@@ -54,6 +54,8 @@ end
     @test_throws DivideError divide(rand(1:255), 0)
     @test_throws DomainError gflog2(-1)
     @test_throws DomainError gflog2(0)
+    @test all(1 == mult(i, gfinv(i)) for i in 1:255)
+    @test_throws DomainError gfinv(0)
     
     ## copy
     p1 = Poly([1, 2, 3])
@@ -61,7 +63,11 @@ end
     p2.coeff[1] = 3
     @test p2 != p1
     
-    ## zeros
+    ## zeros, unit
+    @test zero(Poly) == Poly([0])
     @test rstripzeros(Poly([1, 0, 2, 0, 0])) == Poly([1, 0, 2])
     @test rstripzeros(Poly([0, 0, 0, 0, 0])) == Poly([0])
+    f = randpoly(1:255)
+    @test f * unit(Poly) == f == unit(Poly) * f
+    @test unit(Poly) == Poly([1])
 end
