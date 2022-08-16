@@ -8,11 +8,14 @@ import QRCoders: makeblocks, geterrcorrblock, interleave, emptymatrix,
                characterscapacity, modeindicators, getcharactercountindicator,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!
-import QRCoders.Polynomial: Poly, antilogtable, logtable, generator,
-                          mult, divide, geterrorcorrection
+import QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly,
+                            rpadzeros, rstripzeros, gfpow2, gflog2, mult, divide,
+                            euclidean_divide, geterrorcorrection
+
+randpoly(n::Int) = Poly([rand(0:255, n-1)..., rand(1:255)])
 
 include("tst_operation.jl")
-
+    
 @testset "Test set for encoding modes" begin
     @test getmode("2983712983") == Numeric()
     @test getmode("ABCDEFG1234 \$%*+-./:") == Alphanumeric()
