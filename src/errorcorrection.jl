@@ -47,31 +47,31 @@ Returns 2^n in GF(256).
 gfpow2(n::Int) = logtable[mod(n, 255)]
 
 """
-    gflog2(n::Int)
+    gflog2(n::Integer)
 
 Returns the logarithm of n to base 2 in GF(256).
 """
-function gflog2(n::Int)
+function gflog2(n::Integer)
     1 ≤ n ≤ 255 || throw(DomainError("gflog2: $n must be between 1 and 255"))
     return antilogtable[n]
 end
 
 """
-    function mult(a::Int, b::Int)
+    function mult(a::Integer, b::Integer)
 
 Multiplies two integers in GF(256).
 """
-function mult(a::Int, b::Int)::Int
+function mult(a::Integer, b::Integer)
     (a == 0 || b == 0) && return 0
     return gfpow2(gflog2(a) + gflog2(b))
 end
 
 """
-    divide(a::Int, b::Int)
+    divide(a::Integer, b::Integer)
 
 Division of intergers in GF(256).
 """
-function divide(a::Int, b::Int)
+function divide(a::Integer, b::Integer)
     b == 0 && throw(DivideError())
     a == 0 && return 0
     b == 1 && return a ## cases when dealing with generator polynomial
@@ -79,9 +79,9 @@ function divide(a::Int, b::Int)
 end
 
 """
-    gfinv(a::Int)
+    gfinv(a::Integer)
 """
-gfinv(a::Int) = gfpow2(-gflog2(a))
+gfinv(a::Integer) = gfpow2(-gflog2(a))
 
 """
     iszeropoly(p::Poly)
@@ -157,7 +157,7 @@ function +(a::Poly, b::Poly)::Poly
     return Poly([xor(get(a.coeff, i, 0), get(b.coeff, i, 0)) for i in 1:l])
 end
 
-*(a::Int, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
+*(a::Integer, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
 
 function *(a::Poly, b::Poly)::Poly
     return sum([ c * (a << (p - 1)) for (p, c) in enumerate(b.coeff)])
