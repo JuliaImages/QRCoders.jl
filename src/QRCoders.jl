@@ -6,6 +6,7 @@ module QRCoders
 export Mode, Numeric, Alphanumeric, Byte
 export ErrCorrLevel, Low, Medium, Quartile, High
 export getmode, getversion, qrcode, exportqrcode
+export Poly
 
 using ImageCore
 using FileIO
@@ -28,7 +29,12 @@ struct Alphanumeric <: Mode end
 Encoding mode for messages composed of ISO 8859-1 or UTF-8 characters.
 """
 struct Byte <: Mode end
-# struct Kanji <: Mode end
+
+
+"""
+Encoding mode for messages composed of Shift JIS(Shift Japanese Industrial Standards) characters.
+"""
+struct Kanji <: Mode end
 
 """
 Abstract type that groups the four error correction levels `Low`, `Medium`,

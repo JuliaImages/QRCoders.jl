@@ -111,6 +111,16 @@ function rpadzeros(p::Poly, n::Int)
 end
 
 """
+    degree(p::Poly)
+
+Returns the degree of polynomial p.
+"""
+function degree(p::Poly)
+    iszeropoly(p) && return -1
+    return findlast(!iszero, p.coeff) - 1
+end
+
+"""
     zero(::Type)
 
 Returns the zero polynomial.
