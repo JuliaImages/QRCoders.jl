@@ -290,10 +290,14 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 """
 function qrcode( message::AbstractString
                , eclevel::ErrCorrLevel = Medium()
-               ; compact::Bool = false )
+               ; compact::Bool = false
+               , version::Int = 0 )
     # Determining QR code mode and version
     mode = getmode(message)
-    version = getversion(message, mode, eclevel)
+    minversion = getversion(message, mode, eclevel)
+    if version < minversion # the specified version is too low
+        version = minversion
+    end
 
     # Mode indicator: part of the encoded message
     modeindicator = modeindicators[mode]
