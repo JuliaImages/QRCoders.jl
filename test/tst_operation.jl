@@ -70,4 +70,9 @@ end
     f = randpoly(1:255)
     @test f * unit(Poly) == f == unit(Poly) * f
     @test unit(Poly) == Poly([1])
+
+    ## degree
+    @test degree(Poly([1, 0, 2, 0, 0])) == 2
+    @test degree(Poly([0, 0, 0, 0, 0])) == degree(Poly([0])) == -1
+    @test degree(Poly([3])) == 0
 end

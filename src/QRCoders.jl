@@ -278,6 +278,41 @@ function interleave( blocks::Array{BitArray{2},1}
 end
 
 """
+    encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, version::Int)
+
+Encode message to bit array.
+"""
+function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, version::Int)
+    # Mode indicator: part of the encoded message
+    modeindicator = modeindicators[mode]
+
+    # Character count: part of the encoded message
+    ccindicator = getcharactercountindicator(lastindex(msg), version, mode)
+
+    # Encoded data: main part of the encoded message
+    encodeddata = encodedata(msg, mode)
+
+    # Getting parameters for the error correction
+    # Number of error correction codewords per block, number of blocks in
+    # group 1/2, number of data codewords per block in group 1/2
+    ncodewords, nb1, dc1, nb2, dc2 = ecblockinfo[eclevel][version, :]
+    requiredbits = 8 * (nb1 * dc1 + nb2 * dc2)
+
+    # Pad encoded message before error correction
+    encoded = vcat(modeindicator, ccindicator, encodeddata)
+    encoded = padencodedmessage(encoded, requiredbits)
+
+    # Getting error correction codes
+    blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
+    ecblocks = map(b->geterrcorrblock(b, ncodewords), blocks)
+
+    # Interleave code blocks
+    data = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)
+
+    return data
+end
+
+"""
     qrcode(message::AbstractString, eclevel = Medium(); compact = false)
 
 Create a `BitArray{2}` with the encoded `message`, with `true` (`1`) for the black
@@ -299,31 +334,8 @@ function qrcode( message::AbstractString
         version = minversion
     end
 
-    # Mode indicator: part of the encoded message
-    modeindicator = modeindicators[mode]
-
-    # Character count: part of the encoded message
-    ccindicator = getcharactercountindicator(lastindex(message), version, mode)
-
-    # Encoded data: main part of the encoded message
-    encodeddata = encodedata(message, mode)
-
-    # Getting parameters for the error correction
-    # Number of error correction codewords per block, number of blocks in
-    # group 1/2, number of data codewords per block in group 1/2
-    ncodewords, nb1, dc1, nb2, dc2 = ecblockinfo[eclevel][version, :]
-    requiredbits = 8 * (nb1 * dc1 + nb2 * dc2)
-
-    # Pad encoded message before error correction
-    encoded = vcat(modeindicator, ccindicator, encodeddata)
-    encoded = padencodedmessage(encoded, requiredbits)
-
-    # Getting error correction codes
-    blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
-    ecblocks = map(b->geterrcorrblock(b, ncodewords), blocks)
-
-    # Interleave code blocks
-    data = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)
+    # encode message
+    data = encodemessage(message, mode, eclevel, version)
 
     # Generate qr code matrix, masks and fill it
     matrix = emptymatrix(version)
