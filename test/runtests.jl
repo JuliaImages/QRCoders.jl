@@ -7,7 +7,7 @@ using Random
 import QRCoders: makeblocks, geterrcorrblock, interleave, emptymatrix,
                characterscapacity, modeindicators, getcharactercountindicator,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
-               placedata!
+               placedata!, bitarray2int, int2bitarray
 import QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly, degree,
                             rpadzeros, rstripzeros, gfpow2, gflog2, gfinv, mult, divide,
                             zero, unit, euclidean_divide, geterrorcorrection

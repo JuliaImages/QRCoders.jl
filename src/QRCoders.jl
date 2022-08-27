@@ -170,9 +170,14 @@ end
 
 Encode an integer into a `BitArray`.
 """
-function int2bitarray(n::Int)::BitArray{1}
-    return  BitArray(reverse(digits(n, base = 2, pad = 8)))
-end
+int2bitarray(n::Int) = BitArray(reverse!(digits(n, base = 2, pad = 8)))
+
+"""
+    bitarray2int(bits::AbstractVector)
+
+Convert a bitarray to an integer.
+"""
+bitarray2int(bits::AbstractVector) = foldl((i, j) -> (i << 1 ⊻ j), bits)
 
 """
     padencodedmessage(data::BitArray{1}, requiredlentgh::Int)

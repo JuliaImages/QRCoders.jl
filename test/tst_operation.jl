@@ -75,4 +75,7 @@ end
     @test degree(Poly([1, 0, 2, 0, 0])) == 2
     @test degree(Poly([0, 0, 0, 0, 0])) == degree(Poly([0])) == -1
     @test degree(Poly([3])) == 0
+
+    ## type convert: bitarray <-> int
+    @test all(i == (bitarray2int ∘ int2bitarray)(i) for i in 0:2^8-1)
 end
