@@ -11,8 +11,8 @@ using .Polynomial: Poly, geterrorcorrection
 """
     getmode(message::AbstractString)
 
-Return the encoding mode of `message`, either `Numeric()`, `Alphanumeric()`
-or `Byte()`.
+Return the encoding mode of `message`, either `Numeric()`, `Alphanumeric()`, 
+`Byte()` or Kanji().
 
 # Examples
 ```jldoctest
@@ -20,14 +20,16 @@ julia> getmode("HELLO WORLD")
 Alphanumeric()
 ```
 """
-function getmode(message::AbstractString)::Mode
-    if all([isdigit(c) for c in message])
-        return Numeric()
-    elseif all([haskey(alphanumeric, c) for c in message])
-        return Alphanumeric()
-    else
-        return Byte()
-    end
+function getmode(message::AbstractString)
+    ## message that contains only numbers
+    all(isdigit, message) && return Numeric()
+    ## message that contains only `alphanumeric` characters
+    all(c -> haskey(alphanumeric, c), message) && return Alphanumeric()
+    ## ISO-8859-1 characters
+    all(c -> 0 ≤ UInt32(c) ≤ 255, message) && return Byte()
+    ## kanji characters
+    all(c -> haskey(kanji, c), message) && return Kanji()
+    throw(DomainError("getmode: the input message is not supported yet"))
 end
 
 """
@@ -42,7 +44,9 @@ julia> getversion("Hello World!", Alphanumeric(), High())
 """
 function getversion(message::AbstractString, mode::Mode, level::ErrCorrLevel)
     cc = characterscapacity[(level, mode)]
-    return findfirst(>=(lastindex(message)), cc)
+    version = findfirst(>=(length(message)), cc)
+    isnothing(version) && throw(EncodeError("getversion: the input message is too long"))
+    return version
 end
 
 
@@ -62,8 +66,7 @@ function getcharactercountindicator(msglength::Int,
         i = 3
     end
     cclength = charactercountlength[mode][i]
-    indicator = BitArray(reverse(digits(msglength, base = 2, pad = cclength)))
-
+    indicator = int2bitarray(msglength; pad=cclength)
     return indicator
 end
 
@@ -77,13 +80,12 @@ function encodedata(message::AbstractString, ::Numeric)::BitArray{1}
     chunks = [SubString(message, i, min(i + 2, l)) for i in 1:3:l]
 
     function toBin(chunk::SubString)::BitArray
-        pad = 1 + 3 * length(chunk)
-        n = parse(Int, chunk)
-        return  BitArray(reverse(digits(n, base = 2, pad = pad)))
+        num = parse(Int, chunk)
+        num ≤ 9 && return int2bitarray(num; pad=4)
+        num ≤ 99 && return int2bitarray(num; pad=7)
+        return int2bitarray(num; pad=10)
     end
-
-    binchunks = map(toBin, chunks)
-    return vcat(binchunks...)
+    return vcat(toBin.(chunks)...)
 end
 
 function encodedata(message::AbstractString, ::Alphanumeric)::BitArray{1}
@@ -91,23 +93,19 @@ function encodedata(message::AbstractString, ::Alphanumeric)::BitArray{1}
     chunks = [SubString(message, i, min(i + 1, l)) for i in 1:2:l]
 
     function toBin(s::SubString)::BitArray{1}
-        if length(s) == 1
-            n = alphanumeric[s[1]]
-            return  BitArray{1}(reverse(digits(n, base = 2, pad = 6)))
-        else
-            n = 45 * alphanumeric[s[1]] + alphanumeric[s[2]]
-            return  BitArray{1}(reverse(digits(n, base = 2, pad = 11)))
-        end
+        length(s) == 1 && return int2bitarray(alphanumeric[s[1]];pad=6);
+        n = 45 * alphanumeric[s[1]] + alphanumeric[s[2]]
+        return  int2bitarray(n; pad=11)
     end
-
-    binchunks = map(toBin, chunks)
-    return vcat(binchunks...)
+    return vcat(toBin.(chunks)...)
 end
 
 function encodedata(message::AbstractString, ::Byte)::BitArray{1}
-    bytes = Array{UInt8}(message)
-    bin = map(int2bitarray, Array{Int,1}(bytes))
-    return vcat(bin...)
+    vcat(int2bitarray.(Int.(collect(message)))...)
+end
+
+function encodedata(message::AbstractString, ::Kanji)::BitArray{1}
+    vcat([int2bitarray(kanji[i]; pad=13) for i in message]...)
 end
 
 """
@@ -117,6 +115,7 @@ Pad the encoded message.
 """
 function padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
     # Add up to 4 zeros to terminate the message
+    length(data) > requiredlentgh && throw(EncodeError("padencodedmessage: the input data is too long"))
     data = vcat(data, falses(min(4, requiredlentgh - length(data))))
 
     # Add zeros to make the length a multiple of 8
@@ -137,8 +136,9 @@ end
 """
     makeblocks(bits::BitArray{1}, nb1::Int, dc1::Int, nb2::Int, dc2::Int)
 
-Divide the encoded message into 1 or 2 blocks with `nbX` blocks in group `X` and
-`dcX` codewords per block.
+Divide the encoded message into 1 or 2 groups with `nbX` blocks in group `X` and
+`dcX` codewords per block. Each block is a collection of integers(UInt8) which represents a message
+polynomial in GF(256).
 """
 function makeblocks(bits::BitArray{1},
                     nb1::Int,
@@ -227,7 +227,7 @@ function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, v
     modeindicator = modeindicators[mode]
 
     # Character count: part of the encoded message
-    ccindicator = getcharactercountindicator(lastindex(msg), version, mode)
+    ccindicator = getcharactercountindicator(length(msg), version, mode)
 
     # Encoded data: main part of the encoded message
     encodeddata = encodedata(msg, mode)

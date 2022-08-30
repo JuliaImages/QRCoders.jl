@@ -2,8 +2,19 @@
 
 ## Euclidean division of polynomials
 @testset "Euclidean division" begin
-    ## use Euclidean operator to obtain `geterrorcorrection`
-    geterrcode(f::Poly, n::Int) = rpadzeros(f << n % generator(n), n)
+    ## original method of `geterrorcorrection`
+    tail!(p::Poly)::Poly = Poly(deleteat!(p.coeff, 1))
+    function geterrcode(a::Poly, n::Int)::Poly
+        la = length(a)
+        a = a << n
+        g = generator(n) << la
+    
+        for _ in 1:la
+            tail!(g)
+            a = init!(lead(a) * g + a)
+        end
+        return a
+    end
     ### message polynomial f(x)
     fdeg, n = rand(1:155), rand(1:100)
     f = randpoly(fdeg)

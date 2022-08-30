@@ -20,7 +20,7 @@ function makelogtable()
     t = ones(Int, 256)
     v = 1
     for i in 2:256
-        v = 2 * v
+        v <<= 1
         if v > 255
             v = xor(v, 285) # According to the specs
         end
@@ -240,27 +240,10 @@ Delete the leading coefficient of `p`.
 init!(p::Poly)::Poly = Poly(deleteat!(p.coeff, length(p)))
 
 """
-    tail!(p::Poly)
+    geterrorcorrection(f::Poly, n::Int)
 
-Decrease the degree of `p` by one.
+Return a polynomial containing the `n` error correction codewords of `f`.
 """
-tail!(p::Poly)::Poly = Poly(deleteat!(p.coeff, 1))
-
-"""
-    geterrorcorrection(a::Poly, n::Int)
-
-Return a polynomial containing the `n` error correction codewords of `a`.
-"""
-function geterrorcorrection(a::Poly, n::Int)::Poly
-    la = length(a)
-    a = a << n
-    g = generator(n) << la
-
-    for _ in 1:la
-        tail!(g)
-        a = init!(lead(a) * g + a)
-    end
-    return a
-end
+geterrorcorrection(f::Poly, n::Int) = rpadzeros(f << n % generator(n), n)
 
 end # module

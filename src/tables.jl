@@ -7,6 +7,17 @@ const alphanumeric = Dict{AbstractChar, Int}(
   zip(vcat('0':'9', 'A':'Z', collect(" \$%*+-./:")), 0:44))
 
 """
+Shift-JIS characters download from: https://www.romhacking.net/documents/179/.
+"""
+_kanji = split.(split(strip(read("src/Kanji.tbl", String)), '\n'), '=')
+"""
+Allowed characters for `Kanji()` mode.
+"""
+const kanji = Dict{AbstractChar, Int}(
+  first(j) => parse(Int, i; base=16) for (i, j) in _kanji)
+
+
+"""
 Number of characters allowed for a given mode, error correction level and
 version.
 """
@@ -25,6 +36,10 @@ const characterscapacity = Dict{Tuple{ErrCorrLevel, Mode}, Array{Int, 1}}(
         [17, 32, 53, 78, 106, 134, 154, 192, 230, 271, 321, 367, 425, 458, 520,
          586, 644, 718, 792, 858, 929, 1003, 1091, 1171, 1273, 1367, 1465, 1528,
          1628, 1732, 1840, 1952, 2068, 2188, 2303, 2431, 2563, 2699, 2809, 2953]
+  , (Low(), Kanji()) => [10, 20, 32, 48, 65, 82, 95, 118, 141, 167, 198, 226, 
+         262, 282, 320, 361, 397, 442, 488, 528, 572, 618, 672, 721, 784, 842, 
+         902, 940, 1002, 1066, 1132, 1201, 1273, 1347, 1417, 1496, 1577, 1661,
+         1729, 1817]
   , (Medium(), Numeric()) =>
         [34, 63, 101, 149, 202, 255, 293, 365, 432, 513, 604, 691, 796, 871,
          991, 1082, 1212, 1346, 1500, 1600, 1708, 1872, 2059, 2188, 2395, 2544,
@@ -39,6 +54,10 @@ const characterscapacity = Dict{Tuple{ErrCorrLevel, Mode}, Array{Int, 1}}(
         [14, 26, 42, 62, 84, 106, 122, 152, 180, 213, 251, 287, 331, 362, 412,
          450, 504, 560, 624, 666, 711, 779, 857, 911, 997, 1059, 1125, 1190,
          1264, 1370, 1452, 1538, 1628, 1722, 1809, 1911, 1989, 2099, 2213, 2331]
+  , (Medium(), Kanji()) =>
+        [8, 16, 26, 38, 52, 65, 75, 93, 111, 131, 155, 177, 204, 223, 254, 277,
+         310, 345, 384, 410, 438, 480, 528, 561, 614, 652, 692, 732, 778, 843, 
+         894, 947, 1002, 1060, 1113, 1176, 1224, 1292, 1362, 1435]
   , (Quartile(), Numeric()) =>
         [27, 48, 77, 111, 144, 178, 207, 259, 312, 364, 427, 489, 580, 621, 703,
          775, 876, 948, 1063, 1159, 1224, 1358, 1468, 1588, 1718, 1804, 1933,
@@ -52,6 +71,10 @@ const characterscapacity = Dict{Tuple{ErrCorrLevel, Mode}, Array{Int, 1}}(
         [11, 20, 32, 46, 60, 74, 86, 108, 130, 151, 177, 203, 241, 258, 292,
          322, 364, 394, 442, 482, 509, 565, 611, 661, 715, 751, 805, 868, 908,
          982, 1030, 1112, 1168, 1228, 1283, 1351, 1423, 1499, 1579, 1663]
+  , (Quartile(), Kanji()) =>
+        [7, 12, 20, 28, 37, 45, 53, 66, 80, 93, 109, 125, 149, 159, 180, 198, 
+         224, 243, 272, 297, 314, 348, 376, 407, 440, 462, 496, 534, 559, 604,
+          634, 684, 719, 756, 790, 832, 876, 923, 972, 1024]
   , (High(), Numeric()) =>
         [17, 34, 58, 82, 106, 139, 154, 202, 235, 288, 331, 374, 427, 468, 530,
          602, 674, 746, 813, 919, 969, 1056, 1108, 1228, 1286, 1425, 1501, 1581,
@@ -64,6 +87,10 @@ const characterscapacity = Dict{Tuple{ErrCorrLevel, Mode}, Array{Int, 1}}(
         [7, 14, 24, 34, 44, 58, 64, 84, 98, 119, 137, 155, 177, 194, 220, 250,
          280, 310, 338, 382, 403, 439, 461, 511, 535, 593, 625, 658, 698, 742,
          790, 842, 898, 958, 983, 1051, 1093, 1139, 1219, 1273]
+  , (High(), Kanji()) => 
+  [4, 8, 15, 21, 27, 36, 39, 52, 60, 74, 85, 96, 109, 120, 136, 154, 173, 191,
+   208, 235, 248, 270, 284, 315, 330, 365, 385, 405, 430, 457, 486, 518, 553, 
+   590, 605, 647, 673, 701, 750, 784]
   )
 
 """
@@ -73,6 +100,7 @@ const modeindicators = Dict{Mode, BitArray{1}}(
     Numeric()      => BitArray([0, 0, 0, 1])
   , Alphanumeric() => BitArray([0, 0, 1, 0])
   , Byte()         => BitArray([0, 1, 0, 0])
+  , Kanji()        => BitArray([1, 0, 0, 0])
   )
 
 """
@@ -82,10 +110,12 @@ const charactercountlength = Dict{Mode, Array{Int, 1}}(
     Numeric()      => [10, 12, 14]
   , Alphanumeric() => [9, 11, 13]
   , Byte()         => [8, 16, 16]
+  , Kanji()        => [8, 10, 12]
   )
 
 """
-Information about the error correction codeblocks per level and version.
+Information about the error correction codeblocks per level and version
+(ec, block1length, numofblock1s, block2length, numofblock2s).
 """
 const ecblockinfo = Dict{ErrCorrLevel,Array{Int,2}}(
     Low() =>

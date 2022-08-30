@@ -10,7 +10,7 @@ import QRCoders: makeblocks, geterrcorrblock, interleave, emptymatrix,
                placedata!, bitarray2int, int2bitarray
 import QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly, degree,
                             rpadzeros, rstripzeros, gfpow2, gflog2, gfinv, mult, divide,
-                            zero, unit, euclidean_divide, geterrorcorrection
+                            zero, unit, euclidean_divide, geterrorcorrection, init!, lead
 
 randpoly(n::Int) = Poly([rand(0:255, n-1)..., rand(1:255)])
 randpoly(range::AbstractVector{Int}) = randpoly(rand(range))
