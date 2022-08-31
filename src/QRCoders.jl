@@ -96,11 +96,13 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 `High()` (30%). Higher levels make denser QR codes.
 """
 function qrcode( message::AbstractString
-               , eclevel::ErrCorrLevel = Medium()
-               ; compact::Bool = false
-               , version::Int = 0 )
+               ; eclevel::ErrCorrLevel = Medium()
+               , version::Int = 0
+               , utf8::Bool = false
+               , compact::Bool = false)
     # Determining QR code mode and version
-    mode = getmode(message)
+    mode = utf8 ? UTF8() : getmode(message)
+    
     minversion = getversion(message, mode, eclevel)
     if version < minversion # the specified version is too small
         version = minversion
@@ -148,11 +150,11 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 """
 function exportqrcode( message::AbstractString
                      , path::AbstractString = "qrcode.png"
-                     , eclevel::ErrCorrLevel = Medium()
-                     ; targetsize::Int = 5
+                     ; eclevel::ErrCorrLevel = Medium()
+                     , targetsize::Int = 5
                      , compact::Bool = false )
 
-    matrix = qrcode(message, eclevel, compact = compact)
+    matrix = qrcode(message, eclevel=eclevel, compact = compact)
 
     if !endswith(path, ".png")
         path = "$path.png"

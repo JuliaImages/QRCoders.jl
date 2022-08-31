@@ -154,25 +154,25 @@ end
 ## make blocks with error-correction bits
 
 """
-    makeblocks(bits::BitArray{1}, nb1::Int, dc1::Int, nb2::Int, dc2::Int)
+    makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
 
 Divide the encoded message into 1 or 2 groups with `nbX` blocks in group `X` and
 `dcX` codewords per block. Each block is a collection of integers(UInt8) which represents a message
 polynomial in GF(256).
 """
-function makeblocks(bits::BitArray{1}, nb1::Int, dc1::Int, nb2::Int, dc2::Int)
+function makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
     nbytes = length(bits) ÷ 8
     bytes = bitarray2int.([@view(bits[(i - 1) * 8 + 1:i * 8]) for i in 1:nbytes])
     
     ind = 1
     blocks = Vector{Vector{Int}}(undef, nb1 + nb2)
     for i in 1:nb1
-        blocks[i] = @view(bytes[ind:ind + dc1 - 1])
-        ind += dc1
+        blocks[i] = @view(bytes[ind:ind + nc1 - 1])
+        ind += nc1
     end
     for i in (nb1 + 1):(nb1 + nb2)
-        blocks[i] = @view(bytes[ind:ind + dc2 - 1])
-        ind += dc2
+        blocks[i] = @view(bytes[ind:ind + nc2 - 1])
+        ind += nc2
     end
     return blocks
 end
@@ -191,7 +191,7 @@ end
 
 """
     interleave(blocks::Array{BitArray{2},1}, ecblocks::Array{BitArray{2},1},
-               ncodewords::Int, nb1::Int, dc1::Int, nb2::Int, dc2::Int,
+               ncodewords::Int, nb1::Int, nc1::Int, nb2::Int, nc2::Int,
                version::Int)
 
 Mix the encoded data blocks and error correction blocks.
@@ -199,19 +199,19 @@ Mix the encoded data blocks and error correction blocks.
 function interleave( blocks::AbstractVector
                    , ecblocks::AbstractVector
                    , ncodewords::Int, nb1::Int
-                   , dc1::Int
+                   , nc1::Int
                    , nb2::Int
-                   , dc2::Int
+                   , nc2::Int
                    , version::Int
                    )::BitArray{1}
-    bytes = Vector{Int}(undef, nb1 * (dc1 + ncodewords) + nb2 * (dc2 + ncodewords))
+    bytes = Vector{Int}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
     ind = 1
     ## Encoded data
-    for i in 1:dc1, j in 1:(nb1 + nb2)
+    for i in 1:nc1, j in 1:(nb1 + nb2)
         bytes[ind] = blocks[j][i]
         ind += 1
     end
-    for i in dc1 + 1:dc2, j in (nb1 + 1):(nb1 + nb2)
+    for i in nc1 + 1:nc2, j in (nb1 + 1):(nb1 + nb2)
         bytes[ind] = blocks[j][i]
         ind += 1
     end
@@ -249,19 +249,19 @@ function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, v
     # Getting parameters for the error correction
     # Number of error correction codewords per block, number of blocks in
     # group 1/2, number of data codewords per block in group 1/2
-    ncodewords, nb1, dc1, nb2, dc2 = ecblockinfo[eclevel][version, :]
-    requiredbits = 8 * (nb1 * dc1 + nb2 * dc2)
+    ncodewords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
+    requiredbits = 8 * (nb1 * nc1 + nb2 * nc2)
 
     # Pad encoded message before error correction
     encoded = vcat(modeindicator, ccindicator, encodeddata)
     encoded = padencodedmessage(encoded, requiredbits)
 
     # Getting error correction codes
-    blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
+    blocks = makeblocks(encoded, nb1, nc1, nb2, nc2)
     ecblocks = getecblock.(blocks, ncodewords)
 
     # Interleave code blocks
-    data = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)
+    data = interleave(blocks, ecblocks, ncodewords, nb1, nc1, nb2, nc2, version)
 
     return data
 end

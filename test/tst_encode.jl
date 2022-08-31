@@ -6,8 +6,6 @@
     @test getmode("αβ") == Kanji() ## letters "αβ" are not support in Byte() mode
     @test getmode("123αβ") == UTF8()
     @test getmode("你好") == UTF8()
-    # @test_throws DomainError getmode("123αβ") # mix type of digits and Kanji characters
-    # @test_throws DomainError getmode("你好") # unsupported character '你'
 end
 
 @testset "Capacity of the QRCode -- getversion " begin
@@ -97,12 +95,12 @@ end
 @testset "Generate QRCode -- large cases" begin
     ## Byte mode
     exportqrcode("0123456789:;<=>?@ABCDEFGHIJKLMNOPQRS"*
-    "TUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz" ^ 3, "byte.png", Quartile())
+    "TUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz" ^ 3, "byte.png"; eclevel= Quartile())
     @test true
 
     ## UTF8 mode -- 两 ∉ kanji
     txt = "一个和尚打水喝，两个和尚没水喝" ^ 10
-    exportqrcode(txt, "utf-8.png", Quartile())
+    exportqrcode(txt, "utf-8.png"; eclevel = Quartile())
     @test true
     
     ## Kanji mode
@@ -122,4 +120,55 @@ end
     ## Numeric mode
     exportqrcode("123456789000"^8, "num.png")
     @test true
+end
+
+@testset "Generate QRCode -- Numeric" begin
+    alphabet = join('0':'9')
+    msg = join(rand(alphabet, rand(1:5596)))
+
+    # options
+    eclevel = Medium()
+    mode = getmode(msg)
+    @test mode == Numeric()
+    version = getversion(msg, mode, eclevel)
+
+    # Mode indicator
+    modeindicator = modeindicators[mode]
+
+    # Character count: part of the encoded message
+    msglen = length(msg)
+    ccindicator = getcharactercountindicator(msglen, version, mode)
+
+    # Encoded data: main part of the encoded message
+    encodeddata = encodedata(msg, mode)
+
+    # Getting parameters for the error correction
+    ncodewords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
+    requiredbits = 8 * (nb1 * nc1 + nb2 * nc2)
+
+    # Pad encoded message before error correction
+    encoded = vcat(modeindicator, ccindicator, encodeddata)
+    encoded = padencodedmessage(encoded, requiredbits)
+    @test length(encoded) == requiredbits
+
+    # Getting error correction codes
+    blocks = makeblocks(encoded, nb1, nc1, nb2, nc2)
+    ecblocks = getecblock.(blocks, ncodewords)
+
+    # Interleave code blocks
+    msgbits = interleave(blocks, ecblocks, ncodewords, nb1, nc1, nb2, nc2, version)
+    @test length(msgbits) == requiredbits + ncodewords * (nb1 + nb2) * 8 + remainderbits[version]
+
+    # Pick the best mask
+    matrix = emptymatrix(version)
+    masks = makemasks(matrix)
+    matrix = placedata!(matrix, msgbits)
+    candidates = map(enumerate(masks)) do (i, m)
+        i - 1, xor.(matrix, m)
+    end
+    mask, matrix = first(sort(candidates, by = penalty ∘ last))
+    matrix = addformat(matrix, mask, version, eclevel)
+
+    mat = qrcode(msg; compact=true)
+    @test mat == matrix
 end
