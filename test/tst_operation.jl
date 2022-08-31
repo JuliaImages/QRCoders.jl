@@ -89,6 +89,13 @@ end
 
     ## type convert: bitarray <-> int
     @test all(i == (bitarray2int ∘ int2bitarray)(i) for i in 0:2^8-1)
+
+    ## alphanumeric, antialphanumeric
+    @test all(alphanumeric[antialphanumeric[i]] == i for i in 0:44)
+    @test all(antialphanumeric[alphanumeric[i]] == i for i in keys(alphanumeric))
+    ## kanji, antikanji
+    @test all(kanji[antikanji[i]] == i for i in keys(antikanji))
+    @test all(antikanji[kanji[i]] == i for i in keys(kanji))
 end
 
 ## original tests

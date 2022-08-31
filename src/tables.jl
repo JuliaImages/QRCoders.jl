@@ -6,6 +6,8 @@ Allowed characters for `Alphanumeric()` mode and their number.
 const alphanumeric = Dict{AbstractChar, Int}(
   zip(vcat('0':'9', 'A':'Z', collect(" \$%*+-./:")), 0:44))
 
+const antialphanumeric = Dict{Int, AbstractChar}(val => key for (key, val) in alphanumeric)
+
 # """
 # Shift-JIS characters download from: https://www.romhacking.net/documents/179/.
 # """
@@ -16,6 +18,8 @@ const alphanumeric = Dict{AbstractChar, Int}(
 # const kanji = Dict{AbstractChar, Int}(
 #   first(j) => parse(Int, i; base=16) for (i, j) in _kanji)
 include("kanji.jl")
+const antikanji = Dict{Int, AbstractChar}(val => key for (key, val) in kanji)
+
 
 """
 Number of characters allowed for a given mode, error correction level and

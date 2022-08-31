@@ -4,11 +4,12 @@ using FileIO
 using ImageCore
 using Random
 
-using QRCoders: makeblocks, getecblock, interleave, emptymatrix,
+using QRCoders: makeblocks, getecblock, interleave, emptymatrix, 
                characterscapacity, modeindicators, getcharactercountindicator,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!, bitarray2int, int2bitarray, kanji, charactercountlength,
-               penalty, addformat, getmode, remainderbits
+               penalty, addformat, getmode, remainderbits, alphanumeric, antialphanumeric,
+               kanji, antikanji
 using QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly, degree,
                             rpadzeros, rstripzeros, gfpow2, gflog2, gfinv, mult, divide,
                             zero, unit, euclidean_divide, geterrorcorrection, init!, lead
