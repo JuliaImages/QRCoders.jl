@@ -9,6 +9,14 @@ using .Polynomial: Poly, geterrorcorrection
 ## mode, indicator and message bits
 
 """
+    utf8len(message::AbstractString)
+
+Return the length of a UTF-8 message.
+Note that: utf-8 character has flexialbe length
+"""
+utf8len(message::AbstractString) = length(Vector{UInt8}(message))
+
+"""
     getmode(message::AbstractString)
 
 Return the encoding mode of `message`, either `Numeric()`, `Alphanumeric()`, 
@@ -23,13 +31,18 @@ Alphanumeric()
 function getmode(message::AbstractString)
     ## message that contains only numbers
     all(isdigit, message) && return Numeric()
+
     ## message that contains only `alphanumeric` characters
     all(c -> haskey(alphanumeric, c), message) && return Alphanumeric()
-    ## ISO-8859-1 characters
+
+    ## ISO-8859-1 characters -- the same as one-bit UTF-8 characters
     all(c -> 0 ≤ UInt32(c) ≤ 255, message) && return Byte()
+
     ## kanji characters
     all(c -> haskey(kanji, c), message) && return Kanji()
-    throw(DomainError("getmode: the input message is not supported yet"))
+
+    ## utf-8 characters
+    return UTF8()
 end
 
 """
@@ -44,31 +57,33 @@ julia> getversion("Hello World!", Alphanumeric(), High())
 """
 function getversion(message::AbstractString, mode::Mode, level::ErrCorrLevel)
     cc = characterscapacity[(level, mode)]
-    version = findfirst(>=(length(message)), cc)
+    version = findfirst(≥(length(message)), cc)
+    isnothing(version) && throw(EncodeError("getversion: the input message is too long"))
+    return version
+end
+function getversion(message::AbstractString, ::UTF8, level::ErrCorrLevel)
+    cc = characterscapacity[(level, Byte())]
+    version = findfirst(≥(utf8len(message)), cc)
     isnothing(version) && throw(EncodeError("getversion: the input message is too long"))
     return version
 end
 
 
 """
-    getcharactercountindicator(msglength::Int, version::Int, mode::Mode)
+    getcharactercountindicator(msglength::Int,, version::Int, mode::Mode)
 
 Return the bits for character count indicator.
 """
 function getcharactercountindicator(msglength::Int,
                                     version::Int,
                                     mode::Mode)::BitArray{1}
-    if 1 <= version <= 9
-        i = 1
-    elseif version <= 26
-        i = 2
-    else
-        i = 3
-    end
+    i = (version ≥ 1) + (version ≥ 10) + (version ≥ 27)
     cclength = charactercountlength[mode][i]
     indicator = int2bitarray(msglength; pad=cclength)
+    length(indicator) > cclength && throw(EncodeError("getcharactercountindicator: the input message is too long"))
     return indicator
 end
+getcharactercountindicator(msglength::Int, version::Int, ::UTF8) = getcharactercountindicator(msglength, version, Byte())
 
 """
     encodedata(message::AbstractString, ::Mode)
@@ -101,7 +116,10 @@ function encodedata(message::AbstractString, ::Alphanumeric)::BitArray{1}
 end
 
 function encodedata(message::AbstractString, ::Byte)::BitArray{1}
-    vcat(int2bitarray.(Int.(collect(message)))...)
+    vcat(int2bitarray.(UInt8.(collect(message)))...)
+end
+function encodedata(message::AbstractString, ::UTF8)::BitArray{1}
+    vcat(int2bitarray.(Vector{UInt8}(message))...)
 end
 
 function encodedata(message::AbstractString, ::Kanji)::BitArray{1}
@@ -114,8 +132,9 @@ end
 Pad the encoded message.
 """
 function padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
-    # Add up to 4 zeros to terminate the message
     length(data) > requiredlentgh && throw(EncodeError("padencodedmessage: the input data is too long"))
+    
+    # Add up to 4 zeros to terminate the message
     data = vcat(data, falses(min(4, requiredlentgh - length(data))))
 
     # Add zeros to make the length a multiple of 8
@@ -224,10 +243,11 @@ Encode message to bit array.
 """
 function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, version::Int)
     # Mode indicator: part of the encoded message
-    modeindicator = modeindicators[mode]
+    modeindicator = modeindicators[mode != UTF8() ? mode : Byte()]
 
     # Character count: part of the encoded message
-    ccindicator = getcharactercountindicator(length(msg), version, mode)
+    msglen = mode != UTF8() ? length(msg) : utf8len(msg) ## utf-8 has flexialbe length
+    ccindicator = getcharactercountindicator(msglen, version, mode)
 
     # Encoded data: main part of the encoded message
     encodeddata = encodedata(msg, mode)

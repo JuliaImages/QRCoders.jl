@@ -3,10 +3,11 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 """
 module QRCoders
 
-export Mode, Numeric, Alphanumeric, Byte, Kanji
+export Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8
 export ErrCorrLevel, Low, Medium, Quartile, High
 export getmode, getversion, qrcode, exportqrcode
 export Poly
+export EncodeError
 
 using ImageCore
 using FileIO
@@ -37,6 +38,10 @@ struct Byte <: Mode end
 Encoding mode for messages composed of Shift JIS(Shift Japanese Industrial Standards) characters.
 """
 struct Kanji <: Mode end
+"""
+Encoding mode for messages composed of utf-8 characters.
+"""
+struct UTF8 <: Mode end
 
 """
 Abstract type that groups the four error correction levels `Low`, `Medium`,
@@ -70,7 +75,7 @@ include("encode.jl")
 
 Encode an integer into a `BitArray`.
 """
-int2bitarray(n::Int;pad = 8) = BitArray(reverse!(digits(n, base = 2, pad = pad)))
+int2bitarray(n::Integer ;pad = 8) = BitArray(reverse!(digits(n, base = 2, pad = pad)))
 
 """
     bitarray2int(bits::AbstractVector)
