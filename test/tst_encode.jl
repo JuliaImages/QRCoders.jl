@@ -71,11 +71,7 @@ end
     @test_throws EncodeError padencodedmessage(BitArray{1}(rand(Bool, 10)), 9)
 end
 
-@testset "Encode message -- message bits into data bits" begin
-    
-end
-
-@testset "Generate QRCode" begin
+@testset "Generate QRCode -- small cases" begin
     ## Byte mode
     exportqrcode("Hello, world!", "helloworld.png")
     exportqrcode("¬>=<×÷±+®©αβ", "sym.png")
@@ -95,5 +91,35 @@ end
     ## Numeric mode
     exportqrcode("8675309", "8675309.png")
     exportqrcode("0123456789", "0123456789.png")
+    @test true
+end
+
+@testset "Generate QRCode -- large cases" begin
+    ## Byte mode
+    exportqrcode("0123456789:;<=>?@ABCDEFGHIJKLMNOPQRS"*
+    "TUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz" ^ 3, "byte.png", Quartile())
+    @test true
+
+    ## UTF8 mode -- 两 ∉ kanji
+    txt = "一个和尚打水喝，两个和尚没水喝" ^ 10
+    exportqrcode(txt, "utf-8.png", Quartile())
+    @test true
+    
+    ## Kanji mode
+    txt = "一个和尚打水喝，二个和尚没水喝" ^ 10
+    exportqrcode(txt, "kanji.png")
+    @test true
+
+    ## Alphanumeric mode
+    exportqrcode("Lorem ipsum dolor sit amet, consectetur adipisicing elit,sed do eiusmod"*
+    " tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nos" *
+    "trud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irur"*
+    "e dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."*
+    " Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt "*
+    "mollit anim id est laborum.", "alphanum.png")
+    @test true
+
+    ## Numeric mode
+    exportqrcode("123456789000"^8, "num.png")
     @test true
 end

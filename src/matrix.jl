@@ -85,7 +85,7 @@ function placedata!( matrix::Array{Union{Bool,Nothing},2}
                    , data::BitArray{1}
                    )::BitArray{2}
     n = size(matrix, 1)
-    col, row = n, n + 1
+    col, row, ind = n, n + 1, 1
     while col > 0
         # Skip the column with the timing pattern
         if col == 7
@@ -103,18 +103,41 @@ function placedata!( matrix::Array{Union{Bool,Nothing},2}
         # place data if matrix element is nothing
         for _ in 1:n
             if isnothing(matrix[row, col])
-                matrix[row, col] = popfirst!(data)
+                matrix[row, col] = data[ind]
+                ind += 1
             end
             if isnothing(matrix[row, col - 1])
-                matrix[row, col - 1] = popfirst!(data)
+                matrix[row, col - 1] = data[ind]
+                ind += 1
             end
             row += δrow
         end
         # go left
         col -= 2
     end
-
+    ind > length(data) || throw(EncodeError("not all data was placed"))
     return BitArray{2}(matrix)
+end
+
+maskrules = Function[
+    (x, y) -> (x ⊻ y) & 1,
+    (x, _) -> x & 1,
+    (_, y) -> y % 3,
+    (x, y) -> (x + y) % 3,
+    (x, y) -> (x >> 1 + y ÷ 3) & 1,
+    (x, y) -> (x * y & 1) + (x * y % 3),
+    (x, y) -> (x * y & 1 + x * y % 3) & 1,
+    (x, y) -> ((x ⊻ y & 1) + (x * y % 3)) & 1
+]
+makemask(matrix::AbstractArray, k::Int)::BitArray{2} = makemask(matrix, maskrules[k])
+function makemask(matrix::AbstractArray, rule::Function)::BitArray{2}
+    n = size(matrix, 1)
+    mask = falses(size(matrix))
+    for row in 1:n, col in 1:n
+        isnothing(matrix[row, col]) || continue
+        mask[row, col] = iszero(rule(row - 1, col - 1))
+    end
+    return mask
 end
 
 """
@@ -122,43 +145,7 @@ end
 
 Create 8 bitmasks for a given matrix.
 """
-function makemasks(matrix::Array{Union{Bool,Nothing},2})::Array{BitArray{2},1}
-    n = size(matrix, 1)
-    masks = [falses(size(matrix)) for _ in 1:8]
-
-    # Weird indexing due to 0-based indexing in documentation
-    for row in 0:n-1, col in 0:n-1
-        if !isnothing(matrix[row+1, col+1])
-            continue
-        end
-        if (row + col) % 2 == 0
-            masks[1][row+1, col+1] = true
-        end
-        if row % 2 == 0
-            masks[2][row+1, col+1] = true
-        end
-        if col % 3 == 0
-            masks[3][row+1, col+1] = true
-        end
-        if (row + col) % 3 == 0
-            masks[4][row+1, col+1] = true
-        end
-        if ((row ÷ 2) + (col ÷ 3)) % 2 == 0
-            masks[5][row+1, col+1] = true
-        end
-        if ((row * col) % 2) + ((row * col) % 3) == 0
-            masks[6][row+1, col+1] = true
-        end
-        if (((row * col) % 2) + ((row * col) % 3)) % 2 == 0
-            masks[7][row+1, col+1] = true
-        end
-        if (((row + col) % 2) + ((row * col) % 3)) % 2 == 0
-            masks[8][row+1, col+1] = true
-        end
-    end
-
-    return masks
-end
+makemasks(matrix::AbstractMatrix) = makemask.(Ref(matrix), 1:8)
 
 """
     penalty(matrix::BitArray{2})
@@ -171,23 +158,12 @@ function penalty(matrix::BitArray{2})
     # Condition 1: 5+ in a row of the same color
     score(c) = foldl(check, c, init = (0, !c[1], 0))[1]
     function check((tot, pb, cnt), b)
-        if pb != b
-            return (tot, b, 1)
-        elseif cnt < 4
-            return (tot, b, cnt + 1)
-        elseif cnt == 4
-            return (tot + 3, b, cnt + 1)
-        else
-            return (tot + 1, b, cnt)
-        end
+        pb != b && return (tot, b, 1)
+        cnt < 4 && return (tot, b, cnt + 1)
+        cnt == 4 && return (tot + 3, b, cnt + 1)
+        return (tot + 1, b, cnt)
     end
-    if VERSION < v"1.1"
-        p1 = sum(score(matrix[i, :]) for i in axes(matrix, 1))
-           + sum(score(matrix[:, i]) for i in axes(matrix, 2))
-    else
-        p1 = sum(map(score, eachrow(matrix)))
-           + sum(map(score, eachcol(matrix)))
-    end
+    p1 = sum(map(score, eachrow(matrix))) + sum(map(score, eachcol(matrix)))
 
     # Condition 2: number of 2x2 blocks of the same color
     p2 = 0

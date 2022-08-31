@@ -25,7 +25,7 @@ end
     encoded = vcat(modeindicator, ccindicator, encodeddata)
     encoded = padencodedmessage(encoded, requiredbits)
     blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
-    ecblocks = map(b->geterrcorrblock(b, ncodewords), blocks)
+    ecblocks = map(b->getecblock(b, ncodewords), blocks)
     data0 = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)
     matrix0 = emptymatrix(version)
     masks = makemasks(matrix0)

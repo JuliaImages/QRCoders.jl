@@ -95,12 +95,13 @@ function encodedata(message::AbstractString, ::Numeric)::BitArray{1}
     chunks = [SubString(message, i, min(i + 2, l)) for i in 1:3:l]
 
     function toBin(chunk::SubString)::BitArray
-        num = parse(Int, chunk)
-        num ≤ 9 && return int2bitarray(num; pad=4)
-        num ≤ 99 && return int2bitarray(num; pad=7)
-        return int2bitarray(num; pad=10)
+        pad = 1 + 3 * length(chunk)
+        n = parse(Int, chunk)
+        return  int2bitarray(n; pad=pad)
     end
-    return vcat(toBin.(chunks)...)
+
+    binchunks = map(toBin, chunks)
+    return vcat(binchunks...)
 end
 
 function encodedata(message::AbstractString, ::Alphanumeric)::BitArray{1}
@@ -159,40 +160,31 @@ Divide the encoded message into 1 or 2 groups with `nbX` blocks in group `X` and
 `dcX` codewords per block. Each block is a collection of integers(UInt8) which represents a message
 polynomial in GF(256).
 """
-function makeblocks(bits::BitArray{1},
-                    nb1::Int,
-                    dc1::Int,
-                    nb2::Int,
-                    dc2::Int)::Array{BitArray{2},1}
-    array = reshape(bits, (8, length(bits) ÷ 8))
-    i = 1
-    blocks = BitArray{2}[]
-    for n in 1:nb1
-        push!(blocks, array[:, i:i + dc1 - 1])
-        i += dc1
+function makeblocks(bits::BitArray{1}, nb1::Int, dc1::Int, nb2::Int, dc2::Int)
+    nbytes = length(bits) ÷ 8
+    bytes = bitarray2int.([@view(bits[(i - 1) * 8 + 1:i * 8]) for i in 1:nbytes])
+    
+    ind = 1
+    blocks = Vector{Vector{Int}}(undef, nb1 + nb2)
+    for i in 1:nb1
+        blocks[i] = @view(bytes[ind:ind + dc1 - 1])
+        ind += dc1
     end
-    for n in 1:nb2
-        push!(blocks, array[:, i:i + dc2 - 1])
-        i += dc2
+    for i in (nb1 + 1):(nb1 + nb2)
+        blocks[i] = @view(bytes[ind:ind + dc2 - 1])
+        ind += dc2
     end
     return blocks
 end
 
 """
-    geterrcorrblock(block::BitArray{2}, ncodewords::Int)
+    getecblock(block::BitArray{2}, ncodewords::Int)
 
 Return the error correction blocks, with `ncodewords` codewords per block.
 """
-function geterrcorrblock(block::BitArray{2}, ncodewords::Int)::BitArray{2}
-    # Helper functions
-    bitarray2ints(b) = reduce((acc, n)->2 * acc + n, b, init = 0, dims = 1)
-    array2poly(a) =  Poly(reverse(a[:]))
-
-    poly = array2poly(bitarray2ints(block))
-    ecpoly = geterrorcorrection(poly, ncodewords)
-    ecarray = map(int2bitarray, reverse(ecpoly.coeff))
-    ecbits = foldl(vcat, ecarray, init = BitArray{1}())
-    return reshape(ecbits, (8, length(ecbits) ÷ 8))
+function getecblock(block::AbstractVector, ncodewords::Int)
+    ecpoly = geterrorcorrection(Poly(reverse(block)), ncodewords)
+    return reverse!(ecpoly.coeff)
 end
 
 ## interleave the blocks
@@ -204,34 +196,36 @@ end
 
 Mix the encoded data blocks and error correction blocks.
 """
-function interleave( blocks::Array{BitArray{2},1}
-                   , ecblocks::Array{BitArray{2},1}
+function interleave( blocks::AbstractVector
+                   , ecblocks::AbstractVector
                    , ncodewords::Int, nb1::Int
                    , dc1::Int
                    , nb2::Int
                    , dc2::Int
                    , version::Int
                    )::BitArray{1}
-
-    data = BitArray{1}()
-
-    slice(i) = (acc, block) -> vcat(acc, block[:, i])
-
-    # Encoded data
-    for i in 1:dc1
-        data = foldl(slice(i), blocks, init = data)
+    bytes = Vector{Int}(undef, nb1 * (dc1 + ncodewords) + nb2 * (dc2 + ncodewords))
+    ind = 1
+    ## Encoded data
+    for i in 1:dc1, j in 1:(nb1 + nb2)
+        bytes[ind] = blocks[j][i]
+        ind += 1
     end
-    if dc2 > dc1
-        data = foldl(slice(dc2), blocks[nb1 + 1 : nb1 + nb2], init = data)
+    for i in dc1 + 1:dc2, j in (nb1 + 1):(nb1 + nb2)
+        bytes[ind] = blocks[j][i]
+        ind += 1
     end
-
-    # Error correction data
-    for i in 1:ncodewords
-        data = foldl(slice(i), ecblocks, init = data)
+    
+    ## Error correction data
+    for i in 1:ncodewords, j in 1:(nb1 + nb2)
+        bytes[ind] = ecblocks[j][i]
+        ind += 1
     end
-
-    # Extra padding
-    data = vcat(data, falses(remainderbits[version]))
+    
+    ind > length(bytes) || throw(EncodeError("interleave: not all data is recorded"))
+    ## Extra padding
+    bits = vcat(int2bitarray.(bytes; pad=8)...)
+    data = vcat(bits, falses(remainderbits[version]))
 
     return data
 end
@@ -264,7 +258,7 @@ function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, v
 
     # Getting error correction codes
     blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
-    ecblocks = map(b->geterrcorrblock(b, ncodewords), blocks)
+    ecblocks = getecblock.(blocks, ncodewords)
 
     # Interleave code blocks
     data = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)

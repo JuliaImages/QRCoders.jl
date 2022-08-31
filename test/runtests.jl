@@ -4,7 +4,7 @@ using FileIO
 using ImageCore
 using Random
 
-using QRCoders: makeblocks, geterrcorrblock, interleave, emptymatrix,
+using QRCoders: makeblocks, getecblock, interleave, emptymatrix,
                characterscapacity, modeindicators, getcharactercountindicator,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!, bitarray2int, int2bitarray, kanji, charactercountlength
@@ -16,10 +16,13 @@ randpoly(n::Int) = Poly([rand(0:255, n-1)..., rand(1:255)])
 randpoly(range::AbstractVector{Int}) = randpoly(rand(range))
 
 ## test for operations
-# include("tst_operation.jl")
+include("tst_operation.jl")
 
 ## encode message
 include("tst_encode.jl")
+
+## build matrix
+include("tst_build.jl")
 
 ## original tests
 include("tst_overall.jl")
