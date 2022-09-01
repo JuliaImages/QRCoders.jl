@@ -49,7 +49,7 @@ import Base: ⊆
 ⊆(::Mode, ::UTF8) = true
 ⊆(mode::Mode, ::Numeric) = mode == Numeric()
 ⊆(mode::Mode, ::Alphanumeric) = (mode == Alphanumeric() || mode == Numeric())
-⊆(mode::Mode, ::Byte) = (mode != UTF8() && mode != Kanji)
+⊆(mode::Mode, ::Byte) = (mode != UTF8() && mode != Kanji())
 ⊆(mode::Mode, ::Kanji) = mode == Kanji()
 
 # Error correction level of the QR code
@@ -79,20 +79,6 @@ include("tables.jl")
 include("errorcorrection.jl")
 include("matrix.jl")
 include("encode.jl")
-
-"""
-    int2bitarray(n::Int)
-
-Encode an integer into a `BitArray`.
-"""
-int2bitarray(n::Integer ;pad = 8) = BitArray(reverse!(digits(n, base = 2, pad = pad)))
-
-"""
-    bitarray2int(bits::AbstractVector)
-
-Convert a bitarray to an integer.
-"""
-bitarray2int(bits::AbstractVector) = foldl((i, j) -> (i << 1 ⊻ j), bits)
 
 """
     qrcode(message::AbstractString, eclevel = Medium(); compact = false)

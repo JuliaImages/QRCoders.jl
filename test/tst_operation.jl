@@ -100,6 +100,11 @@ end
     ## kanji, antikanji
     @test all(kanji[antikanji[i]] == i for i in keys(antikanji))
     @test all(antikanji[kanji[i]] == i for i in keys(kanji))
+
+    ## modes
+    @test Numeric() ⊆ Alphanumeric() ⊆ Byte() ⊆ UTF8()
+    @test Kanji() ⊆ UTF8() && !(Kanji() ⊆ Byte())
+
 end
 
 ## original tests

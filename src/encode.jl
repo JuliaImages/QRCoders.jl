@@ -6,8 +6,6 @@
 
 using .Polynomial: Poly, geterrorcorrection
 
-## mode, indicator and message bits
-
 """
     utf8len(message::AbstractString)
 
@@ -15,6 +13,22 @@ Return the length of a UTF-8 message.
 Note that: utf-8 character has flexialbe length
 """
 utf8len(message::AbstractString) = length(Vector{UInt8}(message))
+
+"""
+    int2bitarray(n::Int)
+
+Encode an integer into a `BitArray`.
+"""
+int2bitarray(n::Integer ;pad = 8) = BitArray(reverse!(digits(n, base = 2, pad = pad)))
+
+"""
+    bitarray2int(bits::AbstractVector)
+
+Convert a bitarray to an integer.
+"""
+bitarray2int(bits::AbstractVector) = foldl((i, j) -> (i << 1 ⊻ j), bits)
+
+## mode, indicator and message bits
 
 """
     getmode(message::AbstractString)
@@ -55,14 +69,14 @@ julia> getversion("Hello World!", Alphanumeric(), High())
 2
 ```
 """
-function getversion(message::AbstractString, mode::Mode, level::ErrCorrLevel)
-    cc = characterscapacity[(level, mode)]
+function getversion(message::AbstractString, mode::Mode, eclevel::ErrCorrLevel)
+    cc = characterscapacity[(eclevel, mode)]
     version = findfirst(≥(length(message)), cc)
     isnothing(version) && throw(EncodeError("getversion: the input message is too long"))
     return version
 end
-function getversion(message::AbstractString, ::UTF8, level::ErrCorrLevel)
-    cc = characterscapacity[(level, Byte())]
+function getversion(message::AbstractString, ::UTF8, eclevel::ErrCorrLevel)
+    cc = characterscapacity[(eclevel, UTF8())]
     version = findfirst(≥(utf8len(message)), cc)
     isnothing(version) && throw(EncodeError("getversion: the input message is too long"))
     return version
@@ -83,7 +97,6 @@ function getcharactercountindicator(msglength::Int,
     length(indicator) > cclength && throw(EncodeError("getcharactercountindicator: the input message is too long"))
     return indicator
 end
-getcharactercountindicator(msglength::Int, version::Int, ::UTF8) = getcharactercountindicator(msglength, version, Byte())
 
 """
     encodedata(message::AbstractString, ::Mode)
@@ -237,7 +250,7 @@ Encode message to bit array.
 """
 function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, version::Int)
     # Mode indicator: part of the encoded message
-    modeindicator = modeindicators[mode != UTF8() ? mode : Byte()]
+    modeindicator = modeindicators[mode]
 
     # Character count: part of the encoded message
     msglen = mode != UTF8() ? length(msg) : utf8len(msg) ## utf-8 has flexialbe length
