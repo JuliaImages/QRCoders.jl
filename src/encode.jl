@@ -225,9 +225,9 @@ function interleave( blocks::AbstractVector
     ind > length(bytes) || throw(EncodeError("interleave: not all data is recorded"))
     ## Extra padding
     bits = vcat(int2bitarray.(bytes; pad=8)...)
-    data = vcat(bits, falses(remainderbits[version]))
+    msgbits = vcat(bits, falses(remainderbits[version]))
 
-    return data
+    return msgbits
 end
 
 """
@@ -261,7 +261,7 @@ function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, v
     ecblocks = getecblock.(blocks, ncodewords)
 
     # Interleave code blocks
-    data = interleave(blocks, ecblocks, ncodewords, nb1, nc1, nb2, nc2, version)
+    msgbits = interleave(blocks, ecblocks, ncodewords, nb1, nc1, nb2, nc2, version)
 
-    return data
+    return msgbits
 end

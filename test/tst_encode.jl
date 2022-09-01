@@ -10,7 +10,7 @@ end
 
 @testset "Capacity of the QRCode -- getversion " begin
     modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
-    alphabets = [join('0':'9'), vcat('0':'Z', collect(" \$%*+-./:")), join(Char.(0:255)), keys(kanji)]
+    alphabets = [join('0':'9'), keys(alphanumeric), join(Char.(0:255)), keys(kanji)]
     for (mode, alphabet) in zip(modes, alphabets)
         tag = true
         for ((ec, m), arr) in characterscapacity

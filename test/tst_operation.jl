@@ -67,6 +67,10 @@ end
     @test_throws DomainError gflog2(0)
     @test all(1 == mult(i, gfinv(i)) for i in 1:255)
     @test_throws DomainError gfinv(0)
+
+    ## log table
+    gftable = makelogtable()
+    @test sort(gftable) == vcat(1, 1:255)
     
     ## copy
     p1 = Poly([1, 2, 3])

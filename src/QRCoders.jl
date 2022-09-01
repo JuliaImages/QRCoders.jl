@@ -16,6 +16,7 @@ struct EncodeError <: Exception
     st::AbstractString
 end
 
+# Encoding mode of the QR code
 """
 Abstract type that groups the three supported encoding modes `Numeric`,
 `Alphanumeric` and `Byte`.
@@ -43,6 +44,15 @@ Encoding mode for messages composed of utf-8 characters.
 """
 struct UTF8 <: Mode end
 
+# relationships between the encoding modes
+import Base: ⊆
+⊆(::Mode, ::UTF8) = true
+⊆(mode::Mode, ::Numeric) = mode == Numeric()
+⊆(mode::Mode, ::Alphanumeric) = (mode == Alphanumeric() || mode == Numeric())
+⊆(mode::Mode, ::Byte) = (mode != UTF8() && mode != Kanji)
+⊆(mode::Mode, ::Kanji) = mode == Kanji()
+
+# Error correction level of the QR code
 """
 Abstract type that groups the four error correction levels `Low`, `Medium`,
 `Quartile` and `High`.
@@ -98,14 +108,15 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 function qrcode( message::AbstractString
                ; eclevel::ErrCorrLevel = Medium()
                , version::Int = 0
-               , utf8::Bool = false
+               , mode::Union{Nothing, Mode} = nothing
                , compact::Bool = false)
     # Determining QR code mode and version
-    mode = utf8 ? UTF8() : getmode(message)
+    bestmode = getmode(message)
+    mode = !isnothing(mode) && bestmode ⊆ mode ? mode : bestmode
     
-    minversion = getversion(message, mode, eclevel)
-    if version < minversion # the specified version is too small
-        version = minversion
+    bestversion = getversion(message, mode, eclevel)
+    if version < bestversion # the specified version is too small
+        version = bestversion
     end
 
     # encode message
@@ -151,10 +162,13 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 function exportqrcode( message::AbstractString
                      , path::AbstractString = "qrcode.png"
                      ; eclevel::ErrCorrLevel = Medium()
+                     , version::Int = 0
+                     , mode::Union{Nothing, Mode} = nothing
                      , targetsize::Int = 5
                      , compact::Bool = false )
 
-    matrix = qrcode(message, eclevel=eclevel, compact = compact)
+    matrix = qrcode(message; eclevel=eclevel, version=version, mode = mode,
+                             compact = compact)
 
     if !endswith(path, ".png")
         path = "$path.png"
