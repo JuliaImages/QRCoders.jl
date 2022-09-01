@@ -104,7 +104,8 @@ end
     ## modes
     @test Numeric() ⊆ Alphanumeric() ⊆ Byte() ⊆ UTF8()
     @test Kanji() ⊆ UTF8() && !(Kanji() ⊆ Byte())
-
+    @test !(Numeric() ⊆ Kanji())
+    @test !(Alphanumeric() ⊆ Numeric())
 end
 
 ## original tests

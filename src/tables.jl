@@ -20,7 +20,6 @@ const antialphanumeric = Dict{Int, AbstractChar}(val => key for (key, val) in al
 include("kanji.jl")
 const antikanji = Dict{Int, AbstractChar}(val => key for (key, val) in kanji)
 
-
 """
 Number of characters allowed for a given mode, error correction level and
 version.

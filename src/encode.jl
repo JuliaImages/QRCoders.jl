@@ -19,7 +19,14 @@ utf8len(message::AbstractString) = length(Vector{UInt8}(message))
 
 Encode an integer into a `BitArray`.
 """
-int2bitarray(n::Integer ;pad = 8) = BitArray(reverse!(digits(n, base = 2, pad = pad)))
+function int2bitarray(k::Integer; pad::Int = 8)
+    res = BitArray{1}(undef, pad)
+    for i in pad:-1:1
+        res[i] = k & 1
+        k >>= 1
+    end
+    return res
+end
 
 """
     bitarray2int(bits::AbstractVector)
@@ -152,8 +159,8 @@ function padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
     data = vcat(data, falses(min(4, requiredlentgh - length(data))))
 
     # Add zeros to make the length a multiple of 8
-    if length(data) % 8 != 0
-        data = vcat(data, falses(8 - length(data) % 8))
+    if length(data) & 7 != 0
+        data = vcat(data, falses(8 - length(data) & 7))
     end
 
     # Add the repeated pattern until reaching required length
@@ -174,11 +181,11 @@ Divide the encoded message into 1 or 2 groups with `nbX` blocks in group `X` and
 polynomial in GF(256).
 """
 function makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
-    nbytes = length(bits) ÷ 8
-    bytes = bitarray2int.([@view(bits[(i - 1) * 8 + 1:i * 8]) for i in 1:nbytes])
+    nbytes = length(bits) >> 3
+    bytes = bitarray2int.([@view(bits[(i - 1) << 3 + 1:i << 3]) for i in 1:nbytes])
     
     ind = 1
-    blocks = Vector{Vector{Int}}(undef, nb1 + nb2)
+    blocks = Vector{Vector{UInt8}}(undef, nb1 + nb2)
     for i in 1:nb1
         blocks[i] = @view(bytes[ind:ind + nc1 - 1])
         ind += nc1
@@ -217,7 +224,7 @@ function interleave( blocks::AbstractVector
                    , nc2::Int
                    , version::Int
                    )::BitArray{1}
-    bytes = Vector{Int}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
+    bytes = Vector{UInt8}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
     ind = 1
     ## Encoded data
     for i in 1:nc1, j in 1:(nb1 + nb2)
