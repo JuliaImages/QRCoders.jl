@@ -10,7 +10,7 @@ using .Polynomial: Poly, geterrorcorrection
     utf8len(message::AbstractString)
 
 Return the length of a UTF-8 message.
-Note that: utf-8 character has flexialbe length
+Note: utf-8 character has flexialbe length range from 1 to 4.
 """
 utf8len(message::AbstractString) = length(Vector{UInt8}(message))
 
@@ -35,6 +35,16 @@ Convert a bitarray to an integer.
 """
 bitarray2int(bits::AbstractVector) = foldl((i, j) -> (i << 1 ⊻ j), bits)
 
+"""
+    bits2bytes(bits::AbstractVector)
+
+Convert bits to bytes. The remainder bits will be truncated.
+"""
+function bits2bytes(bits::AbstractVector)
+    nbits = length(bits)
+    return @views UInt8[bitarray2int(bits[i:i + 7]) for i in 1:8:(nbits & 7 ⊻ nbits)]
+end
+
 ## mode, indicator and message bits
 
 """
@@ -47,6 +57,22 @@ Return the encoding mode of `message`, either `Numeric()`, `Alphanumeric()`,
 ```jldoctest
 julia> getmode("HELLO WORLD")
 Alphanumeric()
+```
+
+```jldoctest
+julia> getmode("0123456")
+Numeric()
+```
+
+
+```jldoctest
+julia> getmode("12αβ")
+UTF8
+```
+
+```jldoctest
+julia> getmode("茗荷")
+Kanji()
 ```
 """
 function getmode(message::AbstractString)
@@ -177,12 +203,11 @@ end
     makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
 
 Divide the encoded message into 1 or 2 groups with `nbX` blocks in group `X` and
-`dcX` codewords per block. Each block is a collection of integers(UInt8) which represents a message
-polynomial in GF(256).
+`ncX` codewords per block. Each block is a collection of integers(UInt8) which 
+represents a message polynomial in GF(256).
 """
 function makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
-    nbytes = length(bits) >> 3
-    bytes = bitarray2int.([@view(bits[(i - 1) << 3 + 1:i << 3]) for i in 1:nbytes])
+    bytes = bits2bytes(bits)
     
     ind = 1
     blocks = Vector{Vector{UInt8}}(undef, nb1 + nb2)
@@ -198,7 +223,7 @@ function makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
 end
 
 """
-    getecblock(block::BitArray{2}, ncodewords::Int)
+    getecblock(block::AbstractVector, ncodewords::Int)
 
 Return the error correction blocks, with `ncodewords` codewords per block.
 """
@@ -210,7 +235,7 @@ end
 ## interleave the blocks
 
 """
-    interleave(blocks::Array{BitArray{2},1}, ecblocks::Array{BitArray{2},1},
+    interleave(blocks::AbstractVector, ecblocks::AbstractVector,
                ncodewords::Int, nb1::Int, nc1::Int, nb2::Int, nc2::Int,
                version::Int)
 
@@ -219,10 +244,8 @@ Mix the encoded data blocks and error correction blocks.
 function interleave( blocks::AbstractVector
                    , ecblocks::AbstractVector
                    , ncodewords::Int, nb1::Int
-                   , nc1::Int
-                   , nb2::Int
-                   , nc2::Int
-                   , version::Int
+                   , nc1::Int, nb2::Int
+                   , nc2::Int, version::Int
                    )::BitArray{1}
     bytes = Vector{UInt8}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
     ind = 1

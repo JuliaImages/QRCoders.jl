@@ -1,5 +1,3 @@
-# original tests at QRCode.jl
-
 @testset "Exporting a QR code" begin
     message = "To be or not to be a QR code?"
     exportqrcode(message, "qrcode-test")
@@ -41,6 +39,18 @@ end
     img = colorview(Gray, .! image)
     save("qrcode-masks.png", img)
     @test true
+end
+
+@testset "Generating masks" begin
+    tag = true
+    for v in 1:40
+        matrix = emptymatrix(v)
+        if makemasks(matrix) != makemask.(Ref(matrix), 1:8)
+            tag = false
+            break
+        end
+    end
+    @test tag
 end
 
 @testset "Generating QR codes to test with QR codes reader" begin

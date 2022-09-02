@@ -9,7 +9,7 @@ using QRCoders: makeblocks, getecblock, interleave, emptymatrix,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!, bitarray2int, int2bitarray, kanji, charactercountlength,
                penalty, addformat, getmode, remainderbits, alphanumeric, antialphanumeric,
-               kanji, antikanji
+               kanji, antikanji, makemask
 using QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly, degree,
                             rpadzeros, rstripzeros, gfpow2, gflog2, gfinv, mult, divide,
                             zero, unit, euclidean_divide, geterrorcorrection, init!, lead,
@@ -23,9 +23,6 @@ include("tst_operation.jl")
 
 ## encode message
 include("tst_encode.jl")
-
-## build matrix
-include("tst_build.jl")
 
 ## original tests
 include("tst_overall.jl")

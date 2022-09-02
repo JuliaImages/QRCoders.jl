@@ -12,14 +12,17 @@ export EncodeError
 using ImageCore
 using FileIO
 
+"""
+Invalid step in encoding process.
+"""
 struct EncodeError <: Exception
     st::AbstractString
 end
 
 # Encoding mode of the QR code
 """
-Abstract type that groups the three supported encoding modes `Numeric`,
-`Alphanumeric` and `Byte`.
+Abstract type that groups the five supported encoding modes `Numeric`,
+`Alphanumeric`, `Byte`, `Kanji` and `UTF8`.
 """
 abstract type Mode end
 """
@@ -32,7 +35,7 @@ Encoding mode for messages composed of digits, characters `A`-`Z` (capital only)
 """
 struct Alphanumeric <: Mode end
 """
-Encoding mode for messages composed of ISO 8859-1 or UTF-8 characters.
+Encoding mode for messages composed of ISO 8859-1 characters.
 """
 struct Byte <: Mode end
 """
@@ -46,6 +49,11 @@ struct UTF8 <: Mode end
 
 # relationships between the encoding modes
 import Base: ⊆
+"""
+    ⊆(mode1::Mode, mode2::Mode)
+
+Returns `true` if the character set of `mode1` is a subset of the character set of `mode2`.
+"""
 ⊆(::Mode, ::UTF8) = true
 ⊆(mode::Mode, ::Numeric) = mode == Numeric()
 ⊆(mode::Mode, ::Alphanumeric) = (mode == Alphanumeric() || mode == Numeric())
@@ -81,7 +89,8 @@ include("matrix.jl")
 include("encode.jl")
 
 """
-    qrcode(message::AbstractString, eclevel = Medium(); compact = false)
+    qrcode(message::AbstractString; eclevel = Medium(), version = 0,
+           mode::Union{Nothing, Mode} = nothing, compact = false)
 
 Create a `BitArray{2}` with the encoded `message`, with `true` (`1`) for the black
 areas and `false` (`0`) as the white ones. If `compact` is `false`, white space
@@ -90,6 +99,13 @@ is added around the QR code.
 The error correction level `eclevel` can be picked from four values: `Low()`
 (7% of missing data can be restored), `Medium()` (15%), `Quartile()` (25%) or
 `High()` (30%). Higher levels make denser QR codes.
+
+The version of the QR code can be picked from 1 to 40. If the assigned version is 
+too small to contain the message, the first available version is used.
+
+The encoding mode `mode` can be picked from four values: `Numeric()`, `Alphanumeric()`,
+`Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or failed to contain the message,
+the mode is automatically picked.
 """
 function qrcode( message::AbstractString
                ; eclevel::ErrCorrLevel = Medium()
@@ -117,7 +133,7 @@ function qrcode( message::AbstractString
     candidates = map(enumerate(masks)) do (i, m)
         i - 1, xor.(matrix, m)
     end
-    mask, matrix = first(sort(candidates, by = penalty ∘ last))
+    mask, matrix = first(sort!(candidates, by = penalty ∘ last))
 
     # Format and version information
     matrix = addformat(matrix, mask, version, eclevel)
@@ -133,10 +149,12 @@ end
 
 """
     exportqrcode( message::AbstractString
-                , path = "qrcode.png"
-                , eclevel = Medium()
-                ; targetsize = 5
-                , compact = false )
+                , path::AbstractString = "qrcode.png"
+                ; eclevel::ErrCorrLevel = Medium()
+                , version::Int = 0
+                , mode::Union{Nothing, Mode} = nothing
+                , targetsize::Int = 5
+                , compact::Bool = false )
 
 Create a `PNG` file with the encoded `message` of approximate size `targetsize`
 cm. If `compact` is `false`, white space is added around the QR code.
@@ -144,6 +162,13 @@ cm. If `compact` is `false`, white space is added around the QR code.
 The error correction level `eclevel` can be picked from four values: `Low()`
 (7% of missing data can be restored), `Medium()` (15%), `Quartile()` (25%) or
 `High()` (30%). Higher levels make denser QR codes.
+
+The version of the QR code can be picked from 1 to 40. If the assigned version is 
+too small to contain the message, the first available version is used.
+
+The encoding mode `mode` can be picked from four values: `Numeric()`, `Alphanumeric()`,
+`Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or failed to contain the message,
+the mode is automatically picked.
 """
 function exportqrcode( message::AbstractString
                      , path::AbstractString = "qrcode.png"

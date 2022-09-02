@@ -71,41 +71,41 @@ end
 
 @testset "Generate QRCode -- small cases" begin
     ## Byte mode
-    exportqrcode("Hello, world!", "helloworld.png")
-    exportqrcode("¬>=<×÷±+®©αβ", "sym.png")
+    exportqrcode("Hello, world!", "qrcode-helloworld.png")
+    exportqrcode("¬>=<×÷±+®©αβ", "qrcode-sym.png")
     @test true
     ## UTF8 mode
-    exportqrcode("你好", "你好.png")
-    exportqrcode("123αβ", "123ab.png")
+    exportqrcode("你好", "qrcode-你好.png")
+    exportqrcode("123αβ", "qrcode-123ab.png")
     @test true
     ## Kanji mode
-    exportqrcode("茗荷", "茗荷.png")
-    exportqrcode("瀚文", "瀚文.png")
+    exportqrcode("茗荷", "qrcode-茗荷.png")
+    exportqrcode("瀚文", "qrcode-瀚文.png")
     @test true
     ## Alphanumeric mode
-    exportqrcode("HELLO WORLD", "hello.png")
-    exportqrcode("123ABC", "123abc.png")
+    exportqrcode("HELLO WORLD", "qrcode-hello.png")
+    exportqrcode("123ABC", "qrcode-123abc.png")
     @test true
     ## Numeric mode
-    exportqrcode("8675309", "8675309.png")
-    exportqrcode("0123456789", "0123456789.png")
+    exportqrcode("8675309", "qrcode-8675309.png")
+    exportqrcode("0123456789", "qrcode-0123456789.png")
     @test true
 end
 
 @testset "Generate QRCode -- large cases" begin
     ## Byte mode
     exportqrcode("0123456789:;<=>?@ABCDEFGHIJKLMNOPQRS"*
-    "TUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz" ^ 3, "byte.png"; eclevel= Quartile())
+    "TUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz" ^ 3, "qrcode-byte.png"; eclevel= Quartile())
     @test true
 
     ## UTF8 mode -- 两 ∉ kanji
     txt = "一个和尚打水喝，两个和尚没水喝" ^ 10
-    exportqrcode(txt, "utf-8.png"; eclevel = Quartile())
+    exportqrcode(txt, "qrcode-utf-8.png"; eclevel = Quartile())
     @test true
     
     ## Kanji mode
     txt = "一个和尚打水喝，二个和尚没水喝" ^ 10
-    exportqrcode(txt, "kanji.png")
+    exportqrcode(txt, "qrcode-kanji.png")
     @test true
 
     ## Alphanumeric mode
@@ -114,15 +114,15 @@ end
     "trud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irur"*
     "e dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."*
     " Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt "*
-    "mollit anim id est laborum.", "alphanum.png")
+    "mollit anim id est laborum.", "qrcode-alphanum.png")
     @test true
 
     ## Numeric mode
-    exportqrcode("123456789000"^8, "num.png")
+    exportqrcode("123456789000"^8, "qrcode-num.png")
     @test true
 end
 
-@testset "Generate QRCode -- Numeric" begin
+@testset "Generate QRCode -- demo (Numeric)" begin
     alphabet = join('0':'9')
     msg = join(rand(alphabet, rand(1:5596)))
 
@@ -169,6 +169,6 @@ end
     mask, matrix = first(sort(candidates, by = penalty ∘ last))
     matrix = addformat(matrix, mask, version, eclevel)
 
-    mat = qrcode(msg; compact=true)
+    mat = qrcode(msg;eclevel= Medium(), compact=true)
     @test mat == matrix
 end
