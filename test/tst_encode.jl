@@ -172,3 +172,14 @@ end
     mat = qrcode(msg;eclevel= Medium(), compact=true)
     @test mat == matrix
 end
+
+@testset "Byte VS UTF8 mode " begin
+    ## for ascii characters -- return the same QRCode
+    alphabet = join(Char.(0:127))
+    eclevels = [Low(), Medium(), Quartile(), High()]
+    for eclevel in eclevels
+        cap = last(characterscapacity[(eclevel, Byte())])
+        msg = join(rand(alphabet, rand(cap:cap)))
+        @test qrcode(msg;eclevel=eclevel, mode=UTF8()) == qrcode(msg;eclevel=eclevel, mode=Byte())
+    end
+end

@@ -25,6 +25,7 @@ function int2bitarray(k::Integer; pad::Int = 8)
         res[i] = k & 1
         k >>= 1
     end
+    k != 0 && throw("int2bitarray: bit-length of $k is longer than $pad")
     return res
 end
 
@@ -63,7 +64,6 @@ Alphanumeric()
 julia> getmode("0123456")
 Numeric()
 ```
-
 
 ```jldoctest
 julia> getmode("12αβ")
@@ -104,17 +104,11 @@ julia> getversion("Hello World!", Alphanumeric(), High())
 """
 function getversion(message::AbstractString, mode::Mode, eclevel::ErrCorrLevel)
     cc = characterscapacity[(eclevel, mode)]
-    version = findfirst(≥(length(message)), cc)
+    msglen = mode != UTF8() ? length(message) : utf8len(message)
+    version = findfirst(≥(msglen), cc)
     isnothing(version) && throw(EncodeError("getversion: the input message is too long"))
     return version
 end
-function getversion(message::AbstractString, ::UTF8, eclevel::ErrCorrLevel)
-    cc = characterscapacity[(eclevel, UTF8())]
-    version = findfirst(≥(utf8len(message)), cc)
-    isnothing(version) && throw(EncodeError("getversion: the input message is too long"))
-    return version
-end
-
 
 """
     getcharactercountindicator(msglength::Int,, version::Int, mode::Mode)
@@ -152,14 +146,19 @@ end
 
 function encodedata(message::AbstractString, ::Alphanumeric)::BitArray{1}
     l = length(message)
-    chunks = [SubString(message, i, min(i + 1, l)) for i in 1:2:l]
+    chunks2 = [SubString(message, i, i + 1) for i in 1:2:l ⊻ (l & 1)]
 
     function toBin(s::SubString)::BitArray{1}
-        length(s) == 1 && return int2bitarray(alphanumeric[s[1]];pad=6);
         n = 45 * alphanumeric[s[1]] + alphanumeric[s[2]]
         return  int2bitarray(n; pad=11)
     end
-    return vcat(toBin.(chunks)...)
+
+    binchunks2 = map(toBin, chunks2)
+    if iseven(l)
+        vcat(binchunks2...)
+    else
+        vcat(binchunks2..., int2bitarray(alphanumeric[last(message)]; pad=6))
+    end
 end
 
 function encodedata(message::AbstractString, ::Byte)::BitArray{1}

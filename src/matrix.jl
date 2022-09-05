@@ -125,8 +125,8 @@ _maskrules = Function[
     (_, y) -> y % 3,
     (x, y) -> (x + y) % 3,
     (x, y) -> (x >> 1 + y ÷ 3) & 1,
-    (x, y) -> (x * y & 1) + (x * y % 3),
-    (x, y) -> (x * y & 1 + x * y % 3) & 1,
+    (x, y) -> (x & y & 1) + (x * y % 3),
+    (x, y) -> (x & y & 1 + x * y % 3) & 1,
     (x, y) -> ((x ⊻ y & 1) + (x * y % 3)) & 1
 ]
 makemask(matrix::AbstractArray, k::Int)::BitArray{2} = makemask(matrix, _maskrules[k])
@@ -134,8 +134,9 @@ function makemask(matrix::AbstractArray, rule::Function)::BitArray{2}
     n = size(matrix, 1)
     mask = falses(size(matrix))
     for row in 1:n, col in 1:n
-        isnothing(matrix[row, col]) || continue
-        mask[row, col] = iszero(rule(row - 1, col - 1))
+        if isnothing(matrix[row, col]) && iszero(rule(row - 1, col - 1))
+            mask[row, col] = true
+        end
     end
     return mask
 end

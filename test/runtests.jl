@@ -9,7 +9,7 @@ using QRCoders: makeblocks, getecblock, interleave, emptymatrix,
                encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
                placedata!, bitarray2int, int2bitarray, kanji, charactercountlength,
                penalty, addformat, getmode, remainderbits, alphanumeric, antialphanumeric,
-               kanji, antikanji, makemask
+               kanji, antikanji, makemask, encodemessage
 using QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly, degree,
                             rpadzeros, rstripzeros, gfpow2, gflog2, gfinv, mult, divide,
                             zero, unit, euclidean_divide, geterrorcorrection, init!, lead,

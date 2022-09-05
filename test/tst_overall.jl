@@ -68,7 +68,7 @@ end
                 else
                     str = randstring(l)
                 end
-                matrix = qrcode(str, eclevel=eclevel)
+                matrix = qrcode(str, eclevel=eclevel, compact=false)
                 nm = size(matrix, 2)
                 image[i*s+1:i*s+nm, j*s+1:j*s+nm] = matrix
             end

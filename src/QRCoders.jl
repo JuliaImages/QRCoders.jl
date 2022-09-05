@@ -90,7 +90,7 @@ include("encode.jl")
 
 """
     qrcode(message::AbstractString; eclevel = Medium(), version = 0,
-           mode::Union{Nothing, Mode} = nothing, compact = false)
+           mode::Union{Nothing, Mode} = nothing, compact = true)
 
 Create a `BitArray{2}` with the encoded `message`, with `true` (`1`) for the black
 areas and `false` (`0`) as the white ones. If `compact` is `false`, white space
@@ -111,7 +111,7 @@ function qrcode( message::AbstractString
                ; eclevel::ErrCorrLevel = Medium()
                , version::Int = 0
                , mode::Union{Nothing, Mode} = nothing
-               , compact::Bool = false)
+               , compact::Bool = true)
     # Determining QR code mode and version
     bestmode = getmode(message)
     mode = !isnothing(mode) && bestmode ⊆ mode ? mode : bestmode
@@ -178,8 +178,8 @@ function exportqrcode( message::AbstractString
                      , targetsize::Int = 5
                      , compact::Bool = false )
 
-    matrix = qrcode(message; eclevel=eclevel, version=version, mode = mode,
-                             compact = compact)
+    matrix = qrcode(message; eclevel=eclevel, version=version, mode=mode,
+                             compact=compact)
 
     if !endswith(path, ".png")
         path = "$path.png"
