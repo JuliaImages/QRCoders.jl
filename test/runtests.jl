@@ -6,9 +6,9 @@ using Random
 
 using QRCoders: makeblocks, getecblock, interleave, emptymatrix, 
                characterscapacity, modeindicators, getcharactercountindicator,
-               encodedata, ecblockinfo, padencodedmessage, makemasks, addformat,
+               encodedata, ecblockinfo, padencodedmessage, makemasks, addformat!,
                placedata!, bitarray2int, int2bitarray, kanji, charactercountlength,
-               penalty, addformat, getmode, remainderbits, alphanumeric, antialphanumeric,
+               penalty, addformat!, getmode, remainderbits, alphanumeric, antialphanumeric,
                kanji, antikanji, makemask, encodemessage
 using QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly, degree,
                             rpadzeros, rstripzeros, gfpow2, gflog2, gfinv, mult, divide,

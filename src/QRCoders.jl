@@ -116,9 +116,9 @@ function qrcode( message::AbstractString
     bestmode = getmode(message)
     mode = !isnothing(mode) && bestmode ⊆ mode ? mode : bestmode
     
-    bestversion = getversion(message, mode, eclevel)
-    if version < bestversion # the specified version is too small
-        version = bestversion
+    minversion = getversion(message, mode, eclevel)
+    if version < minversion # the specified version is too small
+        version = minversion
     end
 
     # encode message
@@ -136,7 +136,7 @@ function qrcode( message::AbstractString
     mask, matrix = first(sort!(candidates, by = penalty ∘ last))
 
     # Format and version information
-    matrix = addformat(matrix, mask, version, eclevel)
+    addformat!(matrix, mask, version, eclevel)
 
     if compact
         return matrix

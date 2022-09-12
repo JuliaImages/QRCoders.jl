@@ -67,7 +67,7 @@ Numeric()
 
 ```jldoctest
 julia> getmode("12αβ")
-UTF8
+UTF8()
 ```
 
 ```jldoctest
@@ -121,7 +121,6 @@ function getcharactercountindicator(msglength::Int,
     i = (version ≥ 1) + (version ≥ 10) + (version ≥ 27)
     cclength = charactercountlength[mode][i]
     indicator = int2bitarray(msglength; pad=cclength)
-    length(indicator) > cclength && throw(EncodeError("getcharactercountindicator: the input message is too long"))
     return indicator
 end
 
@@ -173,25 +172,25 @@ function encodedata(message::AbstractString, ::Kanji)::BitArray{1}
 end
 
 """
-    padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
+    padencodedmessage(data::BitArray{1}, requiredlength::Int)
 
 Pad the encoded message.
 """
-function padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
-    length(data) > requiredlentgh && throw(EncodeError("padencodedmessage: the input data is too long"))
+function padencodedmessage(data::BitArray{1}, requiredlength::Int)
+    length(data) > requiredlength && throw(EncodeError("padencodedmessage: the input data is too long"))
     
     # Add up to 4 zeros to terminate the message
-    data = vcat(data, falses(min(4, requiredlentgh - length(data))))
+    data = vcat(data, falses(min(4, requiredlength - length(data))))
 
     # Add zeros to make the length a multiple of 8
     if length(data) & 7 != 0
-        data = vcat(data, falses(8 - length(data) & 7))
+        data = vcat(data, falses(8 ⊻ length(data) & 7))
     end
 
     # Add the repeated pattern until reaching required length
     pattern = BitArray{1}([1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1])
-    pad = repeat(pattern, ceil(Int, requiredlentgh - length(data) / 8))
-    data = vcat(data, pad[1:requiredlentgh - length(data)])
+    pad = repeat(pattern, ceil(Int, requiredlength - length(data) / 8))
+    data = vcat(data, pad[1:requiredlength - length(data)])
 
     return data
 end
@@ -264,7 +263,6 @@ function interleave( blocks::AbstractVector
         ind += 1
     end
     
-    ind > length(bytes) || throw(EncodeError("interleave: not all data is recorded"))
     ## Extra padding
     bits = vcat(int2bitarray.(bytes; pad=8)...)
     msgbits = vcat(bits, falses(remainderbits[version]))

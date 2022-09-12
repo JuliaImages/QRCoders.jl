@@ -33,7 +33,7 @@ end
         data = deepcopy(data0)
         matrix = placedata!(matrix, data)
         matrix = xor.(mask, matrix)
-        matrix = addformat(matrix, i-1, version, eclevel)
+        matrix = addformat!(matrix, i-1, version, eclevel)
         image[5:33, (i-1)*39+1:(i-1)*39+29] = matrix
     end
     img = colorview(Gray, .! image)
@@ -42,10 +42,45 @@ end
 end
 
 @testset "Generating masks" begin
+    function origin_makemasks(matrix::Array{Union{Bool,Nothing},2})::Array{BitArray{2},1}
+        n = size(matrix, 1)
+        masks = [falses(size(matrix)) for _ in 1:8]
+    
+        # Weird indexing due to 0-based indexing in documentation
+        for row in 0:n-1, col in 0:n-1
+            isnothing(matrix[row+1, col+1]) || continue
+            if (row ⊻ col) & 1 == 0
+                masks[1][row+1, col+1] = true
+            end
+            if row & 1 == 0
+                masks[2][row+1, col+1] = true
+            end
+            if col % 3 == 0
+                masks[3][row+1, col+1] = true
+            end
+            if (row + col) % 3 == 0
+                masks[4][row+1, col+1] = true
+            end
+            if (row >> 1 + col ÷ 3) & 1 == 0
+                masks[5][row+1, col+1] = true
+            end
+            if (row & col & 1) + ((row * col) % 3) == 0
+                masks[6][row+1, col+1] = true
+            end
+            if ((row & col & 1) + ((row * col) % 3)) & 1 == 0
+                masks[7][row+1, col+1] = true
+            end
+            if (((row ⊻ col) & 1) + ((row * col) % 3)) & 1 == 0
+                masks[8][row+1, col+1] = true
+            end
+        end
+        return masks
+    end
+
     tag = true
     for v in 1:40
         matrix = emptymatrix(v)
-        if makemasks(matrix) != makemask.(Ref(matrix), 1:8)
+        if makemasks(matrix) != origin_makemasks(matrix)
             tag = false
             break
         end

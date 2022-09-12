@@ -119,7 +119,7 @@ function placedata!( matrix::Array{Union{Bool,Nothing},2}
     return BitArray{2}(matrix)
 end
 
-_maskrules = Function[
+_maskrules = [
     (x, y) -> (x ⊻ y) & 1,
     (x, _) -> x & 1,
     (_, y) -> y % 3,
@@ -142,44 +142,11 @@ function makemask(matrix::AbstractArray, rule::Function)::BitArray{2}
 end
 
 """
-    makemasks(matrix::Array{Union{Bool,Nothing},2})
+    makemasks(matrix::AbstractArray)
 
 Create 8 bitmasks for a given matrix.
 """
-function makemasks(matrix::Array{Union{Bool,Nothing},2})::Array{BitArray{2},1}
-    n = size(matrix, 1)
-    masks = [falses(size(matrix)) for _ in 1:8]
-
-    # Weird indexing due to 0-based indexing in documentation
-    for row in 0:n-1, col in 0:n-1
-        isnothing(matrix[row+1, col+1]) || continue
-        if (row ⊻ col) & 1 == 0
-            masks[1][row+1, col+1] = true
-        end
-        if row & 1 == 0
-            masks[2][row+1, col+1] = true
-        end
-        if col % 3 == 0
-            masks[3][row+1, col+1] = true
-        end
-        if (row + col) % 3 == 0
-            masks[4][row+1, col+1] = true
-        end
-        if (row >> 1 + col ÷ 3) & 1 == 0
-            masks[5][row+1, col+1] = true
-        end
-        if (row & col & 1) + ((row * col) % 3) == 0
-            masks[6][row+1, col+1] = true
-        end
-        if ((row & col & 1) + ((row * col) % 3)) & 1 == 0
-            masks[7][row+1, col+1] = true
-        end
-        if (((row ⊻ col) & 1) + ((row * col) % 3)) & 1 == 0
-            masks[8][row+1, col+1] = true
-        end
-    end
-    return masks
-end
+makemasks(matrix::AbstractArray) = makemask.(Ref(matrix), 1:8)
 
 """
     penalty(matrix::BitArray{2})
@@ -232,11 +199,11 @@ function penalty(matrix::BitArray{2})
 end
 
 """
-    addformat(matrix::BitArray{2}, mask::Int, version::Int, eclevel::ErrCorrLevel)
+    addformat!(matrix::BitArray{2}, mask::Int, version::Int, eclevel::ErrCorrLevel)
 
 Add information about the `version` and mask number in `matrix`.
 """
-function addformat( matrix::BitArray{2}
+function addformat!( matrix::BitArray{2}
                   , mask::Int
                   , version::Int
                   , eclevel::ErrCorrLevel)::BitArray{2}
