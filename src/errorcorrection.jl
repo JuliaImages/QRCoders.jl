@@ -2,7 +2,7 @@ module Polynomial
 
 export Poly, geterrorcorrection
 
-import Base: length, iterate, ==, <<, +, *, ÷, %, copy
+import Base: length, iterate, ==, <<, +, *, ÷, %, copy, zero
 
 """
 Data structure to encode polynomials to generate the error correction codewords.
@@ -20,7 +20,7 @@ function makelogtable()
     t = ones(Int, 256)
     v = 1
     for i in 2:256
-        v = 2 * v
+        v <<= 1
         if v > 255
             v = xor(v, 285) # According to the specs
         end
@@ -47,36 +47,41 @@ Returns 2^n in GF(256).
 gfpow2(n::Int) = logtable[mod(n, 255)]
 
 """
-    gflog2(n::Int)
+    gflog2(n::Integer)
 
 Returns the logarithm of n to base 2 in GF(256).
 """
-function gflog2(n::Int)
+function gflog2(n::Integer)
     1 ≤ n ≤ 255 || throw(DomainError("gflog2: $n must be between 1 and 255"))
     return antilogtable[n]
 end
 
 """
-    function mult(a::Int, b::Int)
+    function mult(a::Integer, b::Integer)
 
 Multiplies two integers in GF(256).
 """
-function mult(a::Int, b::Int)::Int
+function mult(a::Integer, b::Integer)
     (a == 0 || b == 0) && return 0
     return gfpow2(gflog2(a) + gflog2(b))
 end
 
 """
-    divide(a::Int, b::Int)
+    divide(a::Integer, b::Integer)
 
 Division of intergers in GF(256).
 """
-function divide(a::Int, b::Int)
+function divide(a::Integer, b::Integer)
     b == 0 && throw(DivideError())
     a == 0 && return 0
     b == 1 && return a ## cases when dealing with generator polynomial
     return gfpow2(gflog2(a) - gflog2(b))
 end
+
+"""
+    gfinv(a::Integer)
+"""
+gfinv(a::Integer) = gfpow2(-gflog2(a))
 
 """
     iszeropoly(p::Poly)
@@ -91,7 +96,7 @@ iszeropoly(p::Poly) = all(iszero, p)
 Remove trailing zeros from polynomial p.
 """
 function rstripzeros(p::Poly)
-    iszeropoly(p) && return Poly([0])
+    iszeropoly(p) && return zero(Poly)
     return Poly(p.coeff[1:findlast(!iszero, p.coeff)])
 end
 
@@ -104,6 +109,30 @@ function rpadzeros(p::Poly, n::Int)
     length(p) > n && throw("rpadzeros: length(p) > n")
     return Poly(vcat(p.coeff, zeros(Int, n - length(p))))
 end
+
+"""
+    degree(p::Poly)
+
+Returns the degree of polynomial p.
+"""
+function degree(p::Poly)
+    iszeropoly(p) && return -1
+    return findlast(!iszero, p.coeff) - 1
+end
+
+"""
+    zero(::Type)
+
+Returns the zero polynomial.
+"""
+zero(::Type{Poly})= Poly(zeros(Int, 1))
+
+"""
+    unit(::Type)
+
+Returns the unit polynomial.
+"""
+unit(::Type{Poly}) = Poly(ones(Int, 1))
 
 """
     copy(p::Poly)
@@ -138,7 +167,7 @@ function +(a::Poly, b::Poly)::Poly
     return Poly([xor(get(a.coeff, i, 0), get(b.coeff, i, 0)) for i in 1:l])
 end
 
-*(a::Int, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
+*(a::Integer, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
 
 function *(a::Poly, b::Poly)::Poly
     return sum([ c * (a << (p - 1)) for (p, c) in enumerate(b.coeff)])
@@ -152,14 +181,14 @@ Returns the quotient and the remainder of Euclidean division.
 function euclidean_divide(f::Poly, g::Poly)
     ## remove trailing zeros
     g, f = rstripzeros(g), rstripzeros(f)
-    g == Poly([0]) && throw(DivideError())
+    g == zero(Poly) && throw(DivideError())
     ## leading term of g(x)
     gn = lead(g)
     ## g(x) is a constant
-    length(g) == 1 && return Poly(divide.(f.coeff, gn)), Poly([0])
+    length(g) == 1 && return Poly(divide.(f.coeff, gn)), zero(Poly)
     diffdeg = length(f) - length(g)
     ## deg(f) < deg(g)
-    diffdeg < 0 && return Poly([0]), f
+    diffdeg < 0 && return zero(Poly), f
     g <<= diffdeg # g(x)⋅x^{diffdeg}
     ## quotient polynomial
     quocoef = Vector{Int}(undef, diffdeg + 1)
@@ -211,27 +240,10 @@ Delete the leading coefficient of `p`.
 init!(p::Poly)::Poly = Poly(deleteat!(p.coeff, length(p)))
 
 """
-    tail!(p::Poly)
+    geterrorcorrection(f::Poly, n::Int)
 
-Decrease the degree of `p` by one.
+Return a polynomial containing the `n` error correction codewords of `f`.
 """
-tail!(p::Poly)::Poly = Poly(deleteat!(p.coeff, 1))
-
-"""
-    geterrorcorrection(a::Poly, n::Int)
-
-Return a polynomial containing the `n` error correction codewords of `a`.
-"""
-function geterrorcorrection(a::Poly, n::Int)::Poly
-    la = length(a)
-    a = a << n
-    g = generator(n) << la
-
-    for _ in 1:la
-        tail!(g)
-        a = init!(lead(a) * g + a)
-    end
-    return a
-end
+geterrorcorrection(f::Poly, n::Int) = rpadzeros(f << n % generator(n), n)
 
 end # module

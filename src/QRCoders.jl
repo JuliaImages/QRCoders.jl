@@ -3,16 +3,26 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 """
 module QRCoders
 
-export Mode, Numeric, Alphanumeric, Byte
+export Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8
 export ErrCorrLevel, Low, Medium, Quartile, High
 export getmode, getversion, qrcode, exportqrcode
+export Poly
+export EncodeError
 
 using ImageCore
 using FileIO
 
 """
-Abstract type that groups the three supported encoding modes `Numeric`,
-`Alphanumeric` and `Byte`.
+Invalid step in encoding process.
+"""
+struct EncodeError <: Exception
+    st::AbstractString
+end
+
+# Encoding mode of the QR code
+"""
+Abstract type that groups the five supported encoding modes `Numeric`,
+`Alphanumeric`, `Byte`, `Kanji` and `UTF8`.
 """
 abstract type Mode end
 """
@@ -25,11 +35,32 @@ Encoding mode for messages composed of digits, characters `A`-`Z` (capital only)
 """
 struct Alphanumeric <: Mode end
 """
-Encoding mode for messages composed of ISO 8859-1 or UTF-8 characters.
+Encoding mode for messages composed of one-byte characters.
 """
 struct Byte <: Mode end
-# struct Kanji <: Mode end
+"""
+Encoding mode for messages composed of Shift JIS(Shift Japanese Industrial Standards) characters.
+"""
+struct Kanji <: Mode end
+"""
+Encoding mode for messages composed of utf-8 characters.
+"""
+struct UTF8 <: Mode end
 
+# relationships between the encoding modes
+import Base: ⊆
+"""
+    ⊆(mode1::Mode, mode2::Mode)
+
+Returns `true` if the character set of `mode1` is a subset of the character set of `mode2`.
+"""
+⊆(::Mode, ::UTF8) = true
+⊆(mode::Mode, ::Numeric) = mode == Numeric()
+⊆(mode::Mode, ::Alphanumeric) = (mode == Alphanumeric() || mode == Numeric())
+⊆(mode::Mode, ::Byte) = (mode != UTF8() && mode != Kanji())
+⊆(mode::Mode, ::Kanji) = mode == Kanji()
+
+# Error correction level of the QR code
 """
 Abstract type that groups the four error correction levels `Low`, `Medium`,
 `Quartile` and `High`.
@@ -55,224 +86,11 @@ struct High <: ErrCorrLevel end
 include("tables.jl")
 include("errorcorrection.jl")
 include("matrix.jl")
-
-using .Polynomial
-
-"""
-    getmode(message::AbstractString)
-
-Return the encoding mode of `message`, either `Numeric()`, `Alphanumeric()`
-or `Byte()`.
-
-# Examples
-```jldoctest
-julia> getmode("HELLO WORLD")
-Alphanumeric()
-```
-"""
-function getmode(message::AbstractString)::Mode
-    if all([isdigit(c) for c in message])
-        return Numeric()
-    elseif all([haskey(alphanumeric, c) for c in message])
-        return Alphanumeric()
-    else
-        return Byte()
-    end
-end
+include("encode.jl")
 
 """
-    getversion(message::AbstractString, mode::Mode, level::ErrCorrLevel)
-
-Return the version of the QR code, between 1 and 40.
-
-```jldoctest
-julia> getversion("Hello World!", Alphanumeric(), High())
-2
-```
-"""
-function getversion(message::AbstractString, mode::Mode, level::ErrCorrLevel)
-    cc = characterscapacity[(level, mode)]
-    return findfirst(v->v >= lastindex(message), cc)
-end
-
-"""
-    getcharactercountindicator(msglength::Int, version::Int, mode::Mode)
-
-Return the bits for character count indicator.
-"""
-function getcharactercountindicator(msglength::Int,
-                                    version::Int,
-                                    mode::Mode)::BitArray{1}
-    if 1 <= version <= 9
-        i = 1
-    elseif version <= 26
-        i = 2
-    else
-        i = 3
-    end
-    cclength = charactercountlength[mode][i]
-    indicator = BitArray(reverse(digits(msglength, base = 2, pad = cclength)))
-
-    return indicator
-end
-
-"""
-    encodedata(message::AbstractString, ::Mode)
-
-Encode the message with the given mode.
-"""
-function encodedata(message::AbstractString, ::Numeric)::BitArray{1}
-    l = length(message)
-    chunks = [SubString(message, i, min(i + 2, l)) for i in 1:3:l]
-
-    function toBin(chunk::SubString)::BitArray
-        pad = 1 + 3 * length(chunk)
-        n = parse(Int, chunk)
-        return  BitArray(reverse(digits(n, base = 2, pad = pad)))
-    end
-
-    binchunks = map(toBin, chunks)
-    return vcat(binchunks...)
-end
-
-function encodedata(message::AbstractString, ::Alphanumeric)::BitArray{1}
-    l = length(message)
-    chunks = [SubString(message, i, min(i + 1, l)) for i in 1:2:l]
-
-    function toBin(s::SubString)::BitArray{1}
-        if length(s) == 1
-            n = alphanumeric[s[1]]
-            return  BitArray{1}(reverse(digits(n, base = 2, pad = 6)))
-        else
-            n = 45 * alphanumeric[s[1]] + alphanumeric[s[2]]
-            return  BitArray{1}(reverse(digits(n, base = 2, pad = 11)))
-        end
-    end
-
-    binchunks = map(toBin, chunks)
-    return vcat(binchunks...)
-end
-
-function encodedata(message::AbstractString, ::Byte)::BitArray{1}
-    bytes = Array{UInt8}(message)
-    bin = map(int2bitarray, Array{Int,1}(bytes))
-    return vcat(bin...)
-end
-
-"""
-    int2bitarray(n::Int)
-
-Encode an integer into a `BitArray`.
-"""
-function int2bitarray(n::Int)::BitArray{1}
-    return  BitArray(reverse(digits(n, base = 2, pad = 8)))
-end
-
-"""
-    padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
-
-Pad the encoded message.
-"""
-function padencodedmessage(data::BitArray{1}, requiredlentgh::Int)
-    # Add up to 4 zeros to terminate the message
-    data = vcat(data, falses(min(4, requiredlentgh - length(data))))
-
-    # Add zeros to make the length a multiple of 8
-    if length(data) % 8 != 0
-        data = vcat(data, falses(8 - length(data) % 8))
-    end
-
-    # Add the repeated pattern until reaching required length
-    pattern = BitArray{1}([1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1])
-    pad = repeat(pattern, ceil(Int, requiredlentgh - length(data) / 8))
-    data = vcat(data, pad[1:requiredlentgh - length(data)])
-
-    return data
-end
-
-"""
-    makeblocks(bits::BitArray{1}, nb1::Int, dc1::Int, nb2::Int, dc2::Int)
-
-Divide the encoded message into 1 or 2 blocks with `nbX` blocks in group `X` and
-`dcX` codewords per block.
-"""
-function makeblocks(bits::BitArray{1},
-                    nb1::Int,
-                    dc1::Int,
-                    nb2::Int,
-                    dc2::Int)::Array{BitArray{2},1}
-    array = reshape(bits, (8, length(bits) ÷ 8))
-    i = 1
-    blocks = BitArray{2}[]
-    for n in 1:nb1
-        push!(blocks, array[:, i:i + dc1 - 1])
-        i += dc1
-    end
-    for n in 1:nb2
-        push!(blocks, array[:, i:i + dc2 - 1])
-        i += dc2
-    end
-    return blocks
-end
-
-"""
-    geterrcorrblock(block::BitArray{2}, ncodewords::Int)
-
-Return the error correction blocks, with `ncodewords` codewords per block.
-"""
-function geterrcorrblock(block::BitArray{2}, ncodewords::Int)::BitArray{2}
-    # Helper functions
-    bitarray2ints(b) = reduce((acc, n)->2 * acc + n, b, init = 0, dims = 1)
-    array2poly(a) =  Poly(reverse(a[:]))
-
-    poly = array2poly(bitarray2ints(block))
-    ecpoly = geterrorcorrection(poly, ncodewords)
-    ecarray = map(int2bitarray, reverse(ecpoly.coeff))
-    ecbits = foldl(vcat, ecarray, init = BitArray{1}())
-    return reshape(ecbits, (8, length(ecbits) ÷ 8))
-end
-
-"""
-    interleave(blocks::Array{BitArray{2},1}, ecblocks::Array{BitArray{2},1},
-               ncodewords::Int, nb1::Int, dc1::Int, nb2::Int, dc2::Int,
-               version::Int)
-
-Mix the encoded data blocks and error correction blocks.
-"""
-function interleave( blocks::Array{BitArray{2},1}
-                   , ecblocks::Array{BitArray{2},1}
-                   , ncodewords::Int, nb1::Int
-                   , dc1::Int
-                   , nb2::Int
-                   , dc2::Int
-                   , version::Int
-                   )::BitArray{1}
-
-    data = BitArray{1}()
-
-    slice(i) = (acc, block) -> vcat(acc, block[:, i])
-
-    # Encoded data
-    for i in 1:dc1
-        data = foldl(slice(i), blocks, init = data)
-    end
-    if dc2 > dc1
-        data = foldl(slice(dc2), blocks[nb1 + 1 : nb1 + nb2], init = data)
-    end
-
-    # Error correction data
-    for i in 1:ncodewords
-        data = foldl(slice(i), ecblocks, init = data)
-    end
-
-    # Extra padding
-    data = vcat(data, falses(remainderbits[version]))
-
-    return data
-end
-
-"""
-    qrcode(message::AbstractString, eclevel = Medium(); compact = false)
+    qrcode(message::AbstractString; eclevel = Medium(), version = 0,
+           mode::Union{Nothing, Mode} = nothing, compact = true)
 
 Create a `BitArray{2}` with the encoded `message`, with `true` (`1`) for the black
 areas and `false` (`0`) as the white ones. If `compact` is `false`, white space
@@ -281,39 +99,30 @@ is added around the QR code.
 The error correction level `eclevel` can be picked from four values: `Low()`
 (7% of missing data can be restored), `Medium()` (15%), `Quartile()` (25%) or
 `High()` (30%). Higher levels make denser QR codes.
+
+The version of the QR code can be picked from 1 to 40. If the assigned version is 
+too small to contain the message, the first available version is used.
+
+The encoding mode `mode` can be picked from four values: `Numeric()`, `Alphanumeric()`,
+`Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or failed to contain the message,
+the mode is automatically picked.
 """
 function qrcode( message::AbstractString
-               , eclevel::ErrCorrLevel = Medium()
-               ; compact::Bool = false )
+               ; eclevel::ErrCorrLevel = Medium()
+               , version::Int = 0
+               , mode::Union{Nothing, Mode} = nothing
+               , compact::Bool = true)
     # Determining QR code mode and version
-    mode = getmode(message)
-    version = getversion(message, mode, eclevel)
+    bestmode = getmode(message)
+    mode = !isnothing(mode) && bestmode ⊆ mode ? mode : bestmode
+    
+    minversion = getversion(message, mode, eclevel)
+    if version < minversion # the specified version is too small
+        version = minversion
+    end
 
-    # Mode indicator: part of the encoded message
-    modeindicator = modeindicators[mode]
-
-    # Character count: part of the encoded message
-    ccindicator = getcharactercountindicator(lastindex(message), version, mode)
-
-    # Encoded data: main part of the encoded message
-    encodeddata = encodedata(message, mode)
-
-    # Getting parameters for the error correction
-    # Number of error correction codewords per block, number of blocks in
-    # group 1/2, number of data codewords per block in group 1/2
-    ncodewords, nb1, dc1, nb2, dc2 = ecblockinfo[eclevel][version, :]
-    requiredbits = 8 * (nb1 * dc1 + nb2 * dc2)
-
-    # Pad encoded message before error correction
-    encoded = vcat(modeindicator, ccindicator, encodeddata)
-    encoded = padencodedmessage(encoded, requiredbits)
-
-    # Getting error correction codes
-    blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
-    ecblocks = map(b->geterrcorrblock(b, ncodewords), blocks)
-
-    # Interleave code blocks
-    data = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)
+    # encode message
+    data = encodemessage(message, mode, eclevel, version)
 
     # Generate qr code matrix, masks and fill it
     matrix = emptymatrix(version)
@@ -324,10 +133,10 @@ function qrcode( message::AbstractString
     candidates = map(enumerate(masks)) do (i, m)
         i - 1, xor.(matrix, m)
     end
-    mask, matrix = first(sort(candidates, by = penalty ∘ last))
+    mask, matrix = first(sort!(candidates, by = penalty ∘ last))
 
     # Format and version information
-    matrix = addformat(matrix, mask, version, eclevel)
+    addformat!(matrix, mask, version, eclevel)
 
     if compact
         return matrix
@@ -340,10 +149,12 @@ end
 
 """
     exportqrcode( message::AbstractString
-                , path = "qrcode.png"
-                , eclevel = Medium()
-                ; targetsize = 5
-                , compact = false )
+                , path::AbstractString = "qrcode.png"
+                ; eclevel::ErrCorrLevel = Medium()
+                , version::Int = 0
+                , mode::Union{Nothing, Mode} = nothing
+                , targetsize::Int = 5
+                , compact::Bool = false )
 
 Create a `PNG` file with the encoded `message` of approximate size `targetsize`
 cm. If `compact` is `false`, white space is added around the QR code.
@@ -351,14 +162,24 @@ cm. If `compact` is `false`, white space is added around the QR code.
 The error correction level `eclevel` can be picked from four values: `Low()`
 (7% of missing data can be restored), `Medium()` (15%), `Quartile()` (25%) or
 `High()` (30%). Higher levels make denser QR codes.
+
+The version of the QR code can be picked from 1 to 40. If the assigned version is 
+too small to contain the message, the first available version is used.
+
+The encoding mode `mode` can be picked from four values: `Numeric()`, `Alphanumeric()`,
+`Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or failed to contain the message,
+the mode is automatically picked.
 """
 function exportqrcode( message::AbstractString
                      , path::AbstractString = "qrcode.png"
-                     , eclevel::ErrCorrLevel = Medium()
-                     ; targetsize::Int = 5
+                     ; eclevel::ErrCorrLevel = Medium()
+                     , version::Int = 0
+                     , mode::Union{Nothing, Mode} = nothing
+                     , targetsize::Int = 5
                      , compact::Bool = false )
 
-    matrix = qrcode(message, eclevel, compact = compact)
+    matrix = qrcode(message; eclevel=eclevel, version=version, mode=mode,
+                             compact=compact)
 
     if !endswith(path, ".png")
         path = "$path.png"
