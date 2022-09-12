@@ -184,7 +184,7 @@ function padencodedmessage(data::BitArray{1}, requiredlength::Int)
 
     # Add zeros to make the length a multiple of 8
     if length(data) & 7 != 0
-        data = vcat(data, falses(8 ⊻ length(data) & 7))
+        data = vcat(data, falses(8 - length(data) & 7))
     end
 
     # Add the repeated pattern until reaching required length

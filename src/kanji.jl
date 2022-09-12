@@ -1,3 +1,6 @@
+"""
+Shift-JIS characters download from: https://www.romhacking.net/documents/179/
+"""
 const kanji = Dict{AbstractChar, Int}(
     '　' => 0x0,
     '、' => 0x1,

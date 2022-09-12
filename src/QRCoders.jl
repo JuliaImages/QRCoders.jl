@@ -35,7 +35,7 @@ Encoding mode for messages composed of digits, characters `A`-`Z` (capital only)
 """
 struct Alphanumeric <: Mode end
 """
-Encoding mode for messages composed of ISO 8859-1 characters.
+Encoding mode for messages composed of one-byte characters.
 """
 struct Byte <: Mode end
 """

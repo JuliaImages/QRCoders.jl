@@ -8,15 +8,6 @@ const alphanumeric = Dict{AbstractChar, Int}(
 
 const antialphanumeric = Dict{Int, AbstractChar}(val => key for (key, val) in alphanumeric)
 
-# """
-# Shift-JIS characters download from: https://www.romhacking.net/documents/179/.
-# """
-# _kanji = split.(split(strip(read("src/Kanji.tbl", String)), '\n'), '=')
-# """
-# Allowed characters for `Kanji()` mode.
-# """
-# const kanji = Dict{AbstractChar, Int}(
-#   first(j) => parse(Int, i; base=16) for (i, j) in _kanji)
 include("kanji.jl")
 const antikanji = Dict{Int, AbstractChar}(val => key for (key, val) in kanji)
 
