@@ -155,7 +155,6 @@ Calculate a penalty score in order to pick the best mask.
 """
 function penalty(matrix::BitArray{2})
     n = size(matrix, 1)
-
     # Condition 1: 5+ in a row of the same color
     function penalty1(line)
         consecutive, score, cur = 0, 0, -1
@@ -171,32 +170,22 @@ function penalty(matrix::BitArray{2})
         end
         return score
     end
-    p1 = sum(penalty1.(eachrow(matrix))) + sum(penalty1.(eachcol(matrix)))
+    p1 = sum(penalty1, eachrow(matrix)) + sum(penalty1, eachcol(matrix))
 
     # Condition 2: number of 2x2 blocks of the same color
-    p2 = 0
-    for i in 1:n-1, j in 1:n-1
-        block = matrix[i:i+1, j:j+1]
-        if block[1] == block[2] == block[3] == block[4]
-            p2 += 3
-        end
-    end
+    p2 = 3 * count(matrix[i, j] == matrix[i+1, j] == matrix[i, j+1] ==
+                   matrix[i+1, j+1] for i in 1:n-1 for j in 1:n-1)
 
     # Condition 3: specific patterns in rows or columns
-    p3 = 0
     patt1 = BitArray([1, 0, 1, 1, 1, 0, 1, 0, 0, 0 ,0])
     patt2 = BitArray([0, 0, 0 ,0, 1, 0, 1, 1, 1, 0, 1])
-    for i in 1:n, j in 1:n - 10
-        hline = matrix[i, j:j + 10]
-        if hline == patt1 || hline == patt2
-            p3 += 40
-        end
-        vline = matrix[j:j + 10, i]
-        if vline == patt1 || vline == patt2
-            p3 += 40
-        end
+    function check(i, j)
+        hline = @view(matrix[i, j:j + 10])
+        vline = @view(matrix[j:j + 10, i])
+        return (hline == patt1 || hline == patt2) + (vline == patt1 || vline == patt2)
     end
-
+    p3 = 40 * sum(check(i, j) for i in 1:n for j in 1:(n-10))
+    
     # Condition 4: percentage of black and white
     t = sum(matrix) * 100 ÷ length(matrix) ÷ 5
     p4 = 10 * min(abs(t - 10), abs(t - 11))
@@ -205,34 +194,41 @@ function penalty(matrix::BitArray{2})
 end
 
 """
-    addformat!(matrix::BitArray{2}, mask::Int, version::Int, eclevel::ErrCorrLevel)
+    addversion!(matrix::BitArray{2}, version::Int)
 
-Add information about the `version` and mask numb-er in `matrix`.
+Add version information bits.
 """
-function addformat!( matrix::BitArray{2}
-                  , mask::Int
-                  , version::Int
-                  , eclevel::ErrCorrLevel)::BitArray{2}
-    format = formatinfo[(eclevel, mask)]
-    n = size(matrix, 1)
+function addversion!(matrix::BitArray{2}, version::Int)
+    # version information for version 7+
+    if version ≥ 7
+        vbits = int2bitarray(qrversion(version); pad=18)
+        vinfo = reshape(vbits, (3, 6))
+        matrix[end - 10 : end - 8, 1:6] = vinfo
+        matrix[1:6, end - 10 : end - 8] = transpose(vinfo)
+    end
+
+    return matrix
+end
+
+"""
+    addformat!(matrix::BitArray{2}, mask::Int, eclevel::ErrCorrLevel)
+
+Add format information bits.
+"""
+function addformat!(matrix::BitArray{2}, mask::Int, eclevel::ErrCorrLevel)
+    # format information bits
+    fmt = mode2bin[eclevel] << 3 ⊻ mask
+    formatbits = int2bitarray(qrformat(fmt); pad=15)
 
     # Info around the top left finder pattern
-    matrix[9, 1:6]    = format[1:6]
-    matrix[9, 8:9]    = format[7:8]
-    matrix[8, 9]      = format[9]
-    matrix[6:-1:1, 9] = format[10:15]
+    matrix[9, 1:6]    = @view formatbits[1:6]
+    matrix[9, 8:9]    = @view formatbits[7:8]
+    matrix[8, 9]      = formatbits[9]
+    matrix[6:-1:1, 9] = @view formatbits[10:15]
 
     # Info around the bottom and right finder pattern
-    matrix[n:-1:n - 6, 9] = format[1:7]
-    matrix[9, n - 7:n]    = format[8:15]
-
-    # Extra version information for version 7+
-    if version >= 7
-        vinfo = reshape(versioninfo[version], (3, 6))
-
-        matrix[n - 10 : n - 8, 1:6] = vinfo
-        matrix[1:6, n - 10 : n - 8] = transpose(vinfo)
-    end
+    matrix[end:-1:end - 6, 9] = @view formatbits[1:7]
+    matrix[9, end - 7:end]    = @view formatbits[8:15]
 
     return matrix
 end

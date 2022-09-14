@@ -163,25 +163,17 @@ end
     matrix = emptymatrix(version)
     masks = makemasks(matrix)
     matrix = placedata!(matrix, msgbits)
-    
-    ## original code
-    candidates = map(enumerate(masks)) do (i, m)
-        i - 1, xor.(matrix, m)
-    end
-    mask, matrix = first(sort(candidates, by = penalty ∘ last))
+    addversion!(matrix, version)
 
-    ## new code
-    matrix2 = emptymatrix(version)
-    matrix2 = placedata!(matrix2, msgbits)
-    maskedmats = [xor.(matrix2, mat) for mat in masks]
+    # Apply mask and add format information
+    maskedmats = [addformat!(xor.(matrix, mat), i-1, eclevel) 
+                  for (i, mat) in enumerate(masks)]
     scores = penalty.(maskedmats)
-    mask2 = first(sort(1:8, by = i -> scores[i])) - 1
-    matrix2 = maskedmats[mask2 + 1]
-    @test mask2 == mask
-    @test matrix2 == matrix
+    mask = argmin(scores) - 1
+    matrix = maskedmats[mask + 1]
 
-    matrix = addformat!(matrix, mask, version, eclevel)
-    mat = qrcode(msg;eclevel= Medium(), compact=true)
+    mat = qrcode(msg; compact=true)
+    @test penalty(matrix) == minimum(scores)
     @test mat == matrix
 end
 
@@ -191,7 +183,81 @@ end
     eclevels = [Low(), Medium(), Quartile(), High()]
     for eclevel in eclevels
         cap = last(characterscapacity[(eclevel, Byte())])
-        msg = join(rand(alphabet, rand(cap:cap)))
+        msg = join(rand(alphabet, rand(1:cap)))
         @test qrcode(msg;eclevel=eclevel, mode=UTF8()) == qrcode(msg;eclevel=eclevel, mode=Byte())
+    end
+end
+
+# original penalty
+function orgpenalty(matrix::BitArray{2})
+    n = size(matrix, 1)
+
+    # Condition 1: 5+ in a row of the same color
+    function penalty1(line)
+        consecutive, score, cur = 0, 0, -1
+        for i in line
+            if i == cur
+                consecutive += 1
+            else
+                if consecutive ≥ 5
+                    score += consecutive - 2
+                end
+                consecutive, cur = 1, i
+            end
+        end
+        return score
+    end
+    p1 = sum(penalty1.(eachrow(matrix))) + sum(penalty1.(eachcol(matrix)))
+
+    # Condition 2: number of 2x2 blocks of the same color
+    p2 = 0
+    for i in 1:n-1, j in 1:n-1
+        block = matrix[i:i+1, j:j+1]
+        if block[1] == block[2] == block[3] == block[4]
+            p2 += 3
+        end
+    end
+
+    # Condition 3: specific patterns in rows or columns
+    p3 = 0
+    patt1 = BitArray([1, 0, 1, 1, 1, 0, 1, 0, 0, 0 ,0])
+    patt2 = BitArray([0, 0, 0 ,0, 1, 0, 1, 1, 1, 0, 1])
+    for i in 1:n, j in 1:n - 10
+        hline = matrix[i, j:j + 10]
+        if hline == patt1 || hline == patt2
+            p3 += 40
+        end
+        vline = matrix[j:j + 10, i]
+        if vline == patt1 || vline == patt2
+            p3 += 40
+        end
+    end
+
+    # Condition 4: percentage of black and white
+    t = sum(matrix) * 100 ÷ length(matrix) ÷ 5
+    p4 = 10 * min(abs(t - 10), abs(t - 11))
+
+    return p1 + p2 + p3 + p4
+end
+
+@testset "penalty of different masks" begin
+    # test case -- debug
+    msg = "αβ"
+    mats = [qrcode(msg;mask=i) for i in 0:7]
+    scores = penalty.(mats)
+    mat = qrcode(msg);
+    @test penalty(mat) == minimum(scores) == orgpenalty(mat)
+
+    # test case -- Random
+    alphabets = [join('0':'9'), keys(alphanumeric), join(Char.(0:255)), keys(kanji)]
+    eclevels = [Low(), Medium(), Quartile(), High()]
+    modes = [Byte(), Alphanumeric(), UTF8(), Kanji()]
+    for (alphabet, mode) in zip(alphabets, modes), eclevel in eclevels
+        cap = last(characterscapacity[(eclevel, mode)])
+        msg = join(rand(alphabet, rand(1:cap)))
+        mats = [qrcode(msg;eclevel=eclevel, mask=i) for i in 0:7]
+        scores = penalty.(mats)
+        mat = qrcode(msg;eclevel=eclevel);
+        @test penalty(mat) == minimum(scores) == orgpenalty(mat)
     end
 end

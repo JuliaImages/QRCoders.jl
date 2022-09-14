@@ -15,21 +15,6 @@ Note: utf-8 character has flexialbe length range from 1 to 4.
 utf8len(message::AbstractString) = length(Vector{UInt8}(message))
 
 """
-    int2bitarray(n::Int)
-
-Encode an integer into a `BitArray`.
-"""
-function int2bitarray(k::Integer; pad::Int = 8)
-    res = BitArray{1}(undef, pad)
-    for i in pad:-1:1
-        res[i] = k & 1
-        k >>= 1
-    end
-    k != 0 && throw("int2bitarray: bit-length of $k is longer than $pad")
-    return res
-end
-
-"""
     bitarray2int(bits::AbstractVector)
 
 Convert a bitarray to an integer.
@@ -190,7 +175,7 @@ function padencodedmessage(data::BitArray{1}, requiredlength::Int)
     # Add the repeated pattern until reaching required length
     pattern = BitArray{1}([1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1])
     pad = repeat(pattern, ceil(Int, requiredlength - length(data) / 8))
-    data = vcat(data, pad[1:requiredlength - length(data)])
+    data = vcat(data, @view(pad[1:requiredlength - length(data)]))
 
     return data
 end
@@ -226,8 +211,8 @@ end
 Return the error correction blocks, with `ncodewords` codewords per block.
 """
 function getecblock(block::AbstractVector, ncodewords::Int)
-    ecpoly = geterrorcorrection(Poly(reverse(block)), ncodewords)
-    return reverse!(ecpoly.coeff)
+    ecpoly = geterrorcorrection(Poly(@view(block[end:-1:1])), ncodewords)
+    return @view(ecpoly.coeff[end:-1:1])
 end
 
 ## interleave the blocks

@@ -208,7 +208,6 @@ Quotient of Euclidean division.
 """
 ÷(f::Poly, g::Poly) = first(euclidean_divide(f, g))
 
-
 """
     %(f::Poly, g::Poly)
 

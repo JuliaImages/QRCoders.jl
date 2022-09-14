@@ -42,7 +42,7 @@
     q, r = f ÷ g, f % g
     @test iszeropoly(f + g * q + r)
     ### g(x) = x
-    f, g = randpoly(1:255), Poly([0, 1, 0, 0])
+    f, g = randpoly(2:255), Poly([0, 1, 0, 0])
     q, r = f ÷ g, f % g
     @test q == Poly(f.coeff[2:end]) && r == Poly([first(f.coeff)])
     ### divide zero

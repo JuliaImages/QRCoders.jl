@@ -33,7 +33,8 @@ end
         data = deepcopy(data0)
         matrix = placedata!(matrix, data)
         matrix = xor.(mask, matrix)
-        matrix = addformat!(matrix, i-1, version, eclevel)
+        addversion!(matrix, version)
+        addformat!(matrix, i-1, eclevel)
         image[5:33, (i-1)*39+1:(i-1)*39+29] = matrix
     end
     img = colorview(Gray, .! image)

@@ -107,7 +107,7 @@ The error correction level `eclevel` can be picked from four values: `Low()`
 The version of the QR code can be picked from 1 to 40. If the assigned version is 
 too small to contain the message, the first available version is used.
 
-The encoding mode `mode` can be picked from four values: `Numeric()`, `Alphanumeric()`,
+The encoding mode `mode` can be picked from five values: `Numeric()`, `Alphanumeric()`,
 `Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or failed to contain the message,
 the mode is automatically picked.
 
@@ -132,22 +132,23 @@ function qrcode( message::AbstractString
     # encode message
     data = encodemessage(message, mode, eclevel, version)
 
-    # Generate qr code matrix and fill it
+    # Generate qr code matrix
     matrix = emptymatrix(version)
-    masks = makemasks(matrix)
-    matrix = placedata!(matrix, data)
+    masks = makemasks(matrix) # 8 masks
+    matrix = placedata!(matrix, data) # fill in data bits
+    addversion!(matrix, version) # fill in version bits
 
+    # Apply mask and add format information
+    maskedmats = [addformat!(xor.(matrix, mat), i-1, eclevel) 
+                  for (i, mat) in enumerate(masks)]
+    
     # Pick the best mask
     if isnothing(mask)
-        maskedmats = [xor.(matrix, mask) for mask in masks]
-        scores = penalty.(maskedmats)
-        mask = first(sort(1:8, by = i -> scores[i])) - 1
+        mask = argmin(penalty.(maskedmats)) - 1
     end
     matrix = maskedmats[mask + 1]
 
     # Format and version information
-    addformat!(matrix, mask, version, eclevel)
-
     compact && return matrix
     background = falses(size(matrix) .+ (8, 8))
     background[5:end-4, 5:end-4] = matrix
