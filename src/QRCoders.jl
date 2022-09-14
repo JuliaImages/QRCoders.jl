@@ -89,8 +89,12 @@ include("matrix.jl")
 include("encode.jl")
 
 """
-    qrcode(message::AbstractString; eclevel = Medium(), version = 0,
-           mode::Union{Nothing, Mode} = nothing, compact = true)
+    qrcode(message::AbstractString;
+           eclevel = Medium(),
+           version = 0,
+           mode::Union{Nothing, Mode} = nothing, 
+           mask::Union{Nothing, Int} = nothing, 
+           compact = true)
 
 Create a `BitArray{2}` with the encoded `message`, with `true` (`1`) for the black
 areas and `false` (`0`) as the white ones. If `compact` is `false`, white space
@@ -106,13 +110,17 @@ too small to contain the message, the first available version is used.
 The encoding mode `mode` can be picked from four values: `Numeric()`, `Alphanumeric()`,
 `Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or failed to contain the message,
 the mode is automatically picked.
+
+The mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is `nothing`,
+the mask pattern will picked by the penalty rules.
 """
 function qrcode( message::AbstractString
                ; eclevel::ErrCorrLevel = Medium()
                , version::Int = 0
                , mode::Union{Nothing, Mode} = nothing
+               , mask::Union{Nothing, Int} = nothing
                , compact::Bool = true)
-    # Determining QR code mode and version
+    # Determining mode and version of the QR code
     bestmode = getmode(message)
     mode = !isnothing(mode) && bestmode ⊆ mode ? mode : bestmode
     
@@ -124,27 +132,26 @@ function qrcode( message::AbstractString
     # encode message
     data = encodemessage(message, mode, eclevel, version)
 
-    # Generate qr code matrix, masks and fill it
+    # Generate qr code matrix and fill it
     matrix = emptymatrix(version)
     masks = makemasks(matrix)
     matrix = placedata!(matrix, data)
 
     # Pick the best mask
-    candidates = map(enumerate(masks)) do (i, m)
-        i - 1, xor.(matrix, m)
+    if isnothing(mask)
+        maskedmats = [xor.(matrix, mask) for mask in masks]
+        scores = penalty.(maskedmats)
+        mask = first(sort(1:8, by = i -> scores[i])) - 1
     end
-    mask, matrix = first(sort!(candidates, by = penalty ∘ last))
+    matrix = maskedmats[mask + 1]
 
     # Format and version information
     addformat!(matrix, mask, version, eclevel)
 
-    if compact
-        return matrix
-    else
-        background = falses(size(matrix) .+ (8, 8))
-        background[5:end-4, 5:end-4] = matrix
-        return background
-    end
+    compact && return matrix
+    background = falses(size(matrix) .+ (8, 8))
+    background[5:end-4, 5:end-4] = matrix
+    return background
 end
 
 """
@@ -169,16 +176,23 @@ too small to contain the message, the first available version is used.
 The encoding mode `mode` can be picked from four values: `Numeric()`, `Alphanumeric()`,
 `Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or failed to contain the message,
 the mode is automatically picked.
+
+The mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is `nothing`,
+the mask pattern will picked by the penalty rules.
 """
 function exportqrcode( message::AbstractString
                      , path::AbstractString = "qrcode.png"
                      ; eclevel::ErrCorrLevel = Medium()
                      , version::Int = 0
                      , mode::Union{Nothing, Mode} = nothing
+                     , mask::Union{Nothing, Int} = nothing
                      , targetsize::Int = 5
                      , compact::Bool = false )
 
-    matrix = qrcode(message; eclevel=eclevel, version=version, mode=mode,
+    matrix = qrcode(message; eclevel=eclevel,
+                             version=version,
+                             mode=mode,
+                             mask=mask,
                              compact=compact)
 
     if !endswith(path, ".png")
@@ -188,7 +202,7 @@ function exportqrcode( message::AbstractString
     # Seems the default setting is 72 DPI
     pixels = size(matrix, 1)
     scale = ceil(Int, 72 * targetsize / 2.45 / pixels)
-    matrix = kron(matrix, trues((scale, scale)))
+    matrix = kron(matrix, trues(scale, scale))
 
     save(path, BitArray(.! matrix))
 end

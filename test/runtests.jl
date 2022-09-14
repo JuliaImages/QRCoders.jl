@@ -17,6 +17,7 @@ using QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly, 
 
 randpoly(n::Int) = Poly([rand(0:255, n-1)..., rand(1:255)])
 randpoly(range::AbstractVector{Int}) = randpoly(rand(range))
+imgpath = "testimages/"
 
 ## test for operations
 include("tst_operation.jl")

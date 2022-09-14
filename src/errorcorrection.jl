@@ -158,7 +158,7 @@ iterate(p::Poly, i) = iterate(p.coeff, i)
 
 Increase the degree of `p` by `n`.
 """
-<<(p::Poly, n::Int)::Poly = Poly(vcat(zeros(n), p.coeff))
+<<(p::Poly, n::Int)::Poly = Poly(vcat(zeros(Int, n), p.coeff))
 
 +(p::Poly) = p
 

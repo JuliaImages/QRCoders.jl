@@ -1,4 +1,4 @@
-test/*.png
+test/testimages/*.png
 
 *.jl.cov
 *.jl.*.cov

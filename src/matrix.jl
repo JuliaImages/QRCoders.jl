@@ -154,24 +154,31 @@ makemasks(matrix::AbstractArray) = makemask.(Ref(matrix), 1:8)
 Calculate a penalty score in order to pick the best mask.
 """
 function penalty(matrix::BitArray{2})
-    rows, cols = size(matrix)
+    n = size(matrix, 1)
 
     # Condition 1: 5+ in a row of the same color
-    score(c) = foldl(check, c, init = (0, !c[1], 0))[1]
-    function check((tot, pb, cnt), b)
-        pb != b && return (tot, b, 1)
-        cnt < 4 && return (tot, b, cnt + 1)
-        cnt == 4 && return (tot + 3, b, cnt + 1)
-        return (tot + 1, b, cnt)
+    function penalty1(line)
+        consecutive, score, cur = 0, 0, -1
+        for i in line
+            if i == cur
+                consecutive += 1
+            else
+                if consecutive ≥ 5
+                    score += consecutive - 2
+                end
+                consecutive, cur = 1, i
+            end
+        end
+        return score
     end
-    p1 = sum(map(score, eachrow(matrix))) + sum(map(score, eachcol(matrix)))
+    p1 = sum(penalty1.(eachrow(matrix))) + sum(penalty1.(eachcol(matrix)))
 
     # Condition 2: number of 2x2 blocks of the same color
     p2 = 0
-    for row in 1:rows - 1, col in 1:cols - 1
-        block = matrix[row:row + 1, col:col + 1]
-        if all(block) || all(.! block)
-            p2 += 2
+    for i in 1:n-1, j in 1:n-1
+        block = matrix[i:i+1, j:j+1]
+        if block[1] == block[2] == block[3] == block[4]
+            p2 += 3
         end
     end
 
@@ -179,21 +186,20 @@ function penalty(matrix::BitArray{2})
     p3 = 0
     patt1 = BitArray([1, 0, 1, 1, 1, 0, 1, 0, 0, 0 ,0])
     patt2 = BitArray([0, 0, 0 ,0, 1, 0, 1, 1, 1, 0, 1])
-    for row in 1:rows, col in 1:cols - 10
-        hline = matrix[row, col:col + 10]
-        if all(.! xor.(hline, patt1)) || all(.! xor.(hline, patt2))
+    for i in 1:n, j in 1:n - 10
+        hline = matrix[i, j:j + 10]
+        if hline == patt1 || hline == patt2
             p3 += 40
         end
-
-        vline = matrix[col:col + 10, row]
-        if all(.! xor.(vline, patt1)) || all(.! xor.(vline, patt2))
+        vline = matrix[j:j + 10, i]
+        if vline == patt1 || vline == patt2
             p3 += 40
         end
     end
 
     # Condition 4: percentage of black and white
-    t = (sum(matrix) / length(matrix) * 100) ÷ 5
-    p4 = 10 * min(abs(t - 10), abs(t - 9))
+    t = sum(matrix) * 100 ÷ length(matrix) ÷ 5
+    p4 = 10 * min(abs(t - 10), abs(t - 11))
 
     return p1 + p2 + p3 + p4
 end
@@ -201,13 +207,12 @@ end
 """
     addformat!(matrix::BitArray{2}, mask::Int, version::Int, eclevel::ErrCorrLevel)
 
-Add information about the `version` and mask number in `matrix`.
+Add information about the `version` and mask numb-er in `matrix`.
 """
 function addformat!( matrix::BitArray{2}
                   , mask::Int
                   , version::Int
                   , eclevel::ErrCorrLevel)::BitArray{2}
-
     format = formatinfo[(eclevel, mask)]
     n = size(matrix, 1)
 
