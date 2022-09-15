@@ -1,5 +1,5 @@
 test/testimages/*.png
-
+.vscode/
 *.jl.cov
 *.jl.*.cov
 *.jl.mem

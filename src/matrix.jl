@@ -129,7 +129,7 @@ _maskrules = [
     (x, y) -> (x & y & 1 + x * y % 3) & 1,
     (x, y) -> ((x ⊻ y & 1) + (x * y % 3)) & 1
 ]
-makemask(matrix::AbstractArray, k::Int)::BitArray{2} = makemask(matrix, _maskrules[k])
+makemask(matrix::AbstractArray, k::Int)::BitArray{2} = makemask(matrix, _maskrules[k+1])
 function makemask(matrix::AbstractArray, rule::Function)::BitArray{2}
     n = size(matrix, 1)
     mask = falses(size(matrix))
@@ -146,7 +146,7 @@ end
 
 Create 8 bitmasks for a given matrix.
 """
-makemasks(matrix::AbstractArray) = makemask.(Ref(matrix), 1:8)
+makemasks(matrix::AbstractArray) = makemask.(Ref(matrix), 0:7)
 
 """
     penalty(matrix::BitArray{2})
@@ -201,8 +201,7 @@ Add version information bits.
 function addversion!(matrix::BitArray{2}, version::Int)
     # version information for version 7+
     if version ≥ 7
-        vbits = int2bitarray(qrversion(version); pad=18)
-        vinfo = reshape(vbits, (3, 6))
+        vinfo = reshape(qrversionbits(version), (3, 6))
         matrix[end - 10 : end - 8, 1:6] = vinfo
         matrix[1:6, end - 10 : end - 8] = transpose(vinfo)
     end
@@ -217,8 +216,7 @@ Add format information bits.
 """
 function addformat!(matrix::BitArray{2}, mask::Int, eclevel::ErrCorrLevel)
     # format information bits
-    fmt = mode2bin[eclevel] << 3 ⊻ mask
-    formatbits = int2bitarray(qrformat(fmt); pad=15)
+    formatbits = qrformat(eclevel, mask)
 
     # Info around the top left finder pattern
     matrix[9, 1:6]    = @view formatbits[1:6]

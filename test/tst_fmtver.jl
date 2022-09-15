@@ -88,14 +88,12 @@ versioninfo = Array{Array{Bool, 1}, 1}(
 @testset "test for versioninfo and formatinfo" begin
     for (v, bits) in enumerate(versioninfo)
         v < 7 && continue
-        ver_code = qrversion(v)
-        verbits = reverse!(int2bitarray(ver_code; pad = 18))
-        @test verbits == bits && ver_code == qrversion(UInt8(v))
+        @test qrversionbits(v) == bits
     end
+    @test qrversion.(0x7:0x28) == qrversion.(7:40)
+
     for ((ec, mask), bits) in formatinfo
-        fmt = mode2bin[ec] << 3 ⊻ mask
-        fmt_code = qrformat(fmt)
-        fmtbits = int2bitarray(fmt_code; pad = 15)
-        @test fmtbits == bits && fmt_code == qrformat(UInt8(fmt))
+        @test qrformat(ec, mask) == bits
     end
+    @test qrformat.(0x0:0x1f) == qrformat.(0:31)
 end

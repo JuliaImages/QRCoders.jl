@@ -160,8 +160,6 @@ Increase the degree of `p` by `n`.
 """
 <<(p::Poly, n::Int)::Poly = Poly(vcat(zeros(Int, n), p.coeff))
 
-+(p::Poly) = p
-
 function +(a::Poly, b::Poly)::Poly
     l = max(length(a), length(b))
     return Poly([xor(get(a.coeff, i, 0), get(b.coeff, i, 0)) for i in 1:l])

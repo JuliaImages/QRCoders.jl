@@ -11,7 +11,8 @@ using QRCoders:
     placedata!, addformat!, addversion!,
     # tables
     alphanumeric, antialphanumeric, kanji, antikanji, 
-    mode2bin, qrversion, qrformat, ecblockinfo, remainderbits,
+    mode2bin, qrversion, qrformat, qrversionbits,
+    ecblockinfo, remainderbits,
     # encode
     getmode, characterscapacity, modeindicators, 
     getcharactercountindicator, charactercountlength,
@@ -31,6 +32,7 @@ using QRCoders.Polynomial:
 randpoly(n::Int) = Poly([rand(0:255, n-1)..., rand(1:255)])
 randpoly(range::AbstractVector{Int}) = randpoly(rand(range))
 imgpath = "testimages/"
+eclevels = [Low(), Medium(), Quartile(), High()]
 
 ## operations
 include("tst_operation.jl")

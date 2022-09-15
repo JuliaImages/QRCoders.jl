@@ -236,7 +236,7 @@ Encode an integer into a `BitArray`.
 """
 function int2bitarray(k::Integer; pad::Int = 8)
     res = BitArray{1}(undef, pad)
-    for i in pad:-1:1
+    @inbounds for i in pad:-1:1
         res[i] = k & 1
         k >>= 1
     end
@@ -266,14 +266,27 @@ end
 qrversion(ver::Integer) = qrversion(Int(ver))
 
 """
+    qrversionbits(ver)
+
+Get version information bits.
+
+Replacement of the `versioninfo` table.
+"""
+function qrversionbits(ver)
+    vercode = qrversion(ver)
+    return @view int2bitarray(vercode, pad = 18)[end:-1:1]
+end
+
+"""
 Bit modes of the qualities.
 """
-mode2bin = Dict(
+const mode2bin = Dict(
     Low() => 0b01,
     Medium() => 0b00,
     Quartile() => 0b11,
     High() => 0b10)
-bin2mode = Dict(val=>key for (key, val) in mode2bin)
+
+const bin2mode = Dict(val=>key for (key, val) in mode2bin)
 
 """
     qrformat(fmt::Int)
@@ -293,3 +306,8 @@ function qrformat(fmt::Int)
     fmt << 10 ⊻ err ⊻ 0x5412 # mask(= 0b101010000010010 in binary)
 end
 qrformat(fmt::Integer) = qrformat(Int(fmt)) # to avoid integer overflow
+
+function qrformat(ec::ErrCorrLevel, mask::Int)
+    fmt = mode2bin[ec] << 3 ⊻ mask
+    return int2bitarray(qrformat(fmt); pad = 15)
+end

@@ -180,7 +180,7 @@ end
 @testset "Byte VS UTF8 mode " begin
     ## for ascii characters -- return the same QRCode
     alphabet = join(Char.(0:127))
-    eclevels = [Low(), Medium(), Quartile(), High()]
+    
     for eclevel in eclevels
         cap = last(characterscapacity[(eclevel, Byte())])
         msg = join(rand(alphabet, rand(1:cap)))
@@ -250,7 +250,6 @@ end
 
     # test case -- Random
     alphabets = [join('0':'9'), keys(alphanumeric), join(Char.(0:255)), keys(kanji)]
-    eclevels = [Low(), Medium(), Quartile(), High()]
     modes = [Byte(), Alphanumeric(), UTF8(), Kanji()]
     for (alphabet, mode) in zip(alphabets, modes), eclevel in eclevels
         cap = last(characterscapacity[(eclevel, mode)])
