@@ -200,6 +200,7 @@ function exportqrcode( message::AbstractString
 
     
     if !contains("hello", r"\.[a-z0-9]+"i)
+        @warn "No file extension detected. Attaching'.png' to the end of the file path."
         path = "$path.png"
     end
 
