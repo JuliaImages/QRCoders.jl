@@ -1,7 +1,10 @@
-@testset "Exporting a QR code" begin
+@testset "Exporting a QR code to multiple file formats." begin
     message = "To be or not to be a QR code?"
-    exportqrcode(message, imgpath * "qrcode-test")
-    @test true
+    exts = ["", ".png", ".jpg"]
+    for ext in exts
+        exportqrcode(message, imgpath * "qrcode-test" * ext)
+        @test true
+    end
 end
 
 @testset "Exporting all visible ISO-8859-1 characters" begin
