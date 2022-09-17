@@ -198,7 +198,8 @@ function exportqrcode( message::AbstractString
                              mask=mask,
                              compact=compact)
 
-    if !endswith(path, ".png")
+    
+    if !contains("hello", r"\.[a-z0-9]+"i)
         path = "$path.png"
     end
 
