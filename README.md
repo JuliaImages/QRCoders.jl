@@ -30,7 +30,8 @@ The value `1(true)` represents a dark space and `0(false)` a white square.
 
 There are some optional arguments.
 
-Keyword `compact` with default value `true`. If `compact` is `false`, the QR Code will be surrounded by a white border of width 3.
+Keyword `compact` with default value `true`. 
+If `compact` is `false`, the QR Code will be surrounded by a white border of width 3.
 
 ```julia
 julia> qrcode("Hello world!", compact = false)
@@ -90,18 +91,23 @@ The four levels are encoded as types in `QRCoders.jl`, grouped under the abstrac
 
 QR Codes can encode data using several encoding schemes. `QRCoders.jl` supports five of them: `Numeric`, `Alphanumeric`, `Kanji`, `Byte` and `UTF8`.
 
-`Numeric` is used for messages composed of digits only, `Alphanumeric` for messages composed of digits, characters `A`-`Z` (capital only) space and `%` `*` `+` `-` `.` `/` `:` `\$`, `Kanji` for kanji for Shift JIS(Shift Japanese Industrial Standards) characters, `Bytes` for messages composed of one-byte characters, and `UTF8` for messages composed of Unicode characters.
+`Numeric` is used for messages composed of digits only, `Alphanumeric` for messages composed of digits, characters `A`-`Z` (capital only) space and `%` `*` `+` `-` `.` `/` `:` `\$`, `Kanji` for kanji for Shift JIS(Shift Japanese Industrial Standards) characters, `Bytes` for messages composed of one-byte characters(including undefined characters), and `UTF8` for messages composed of Unicode characters.
 
 Please not that QR Code reader don't always support arbitrary UTF-8 characters.
 
-> Important: For non-ascii characters in `Byte` mode, we use the one-byte characters instead of ISO-8859-1.
+Another thing to point out is that, for `Byte` mode, we allow the use of undefined characters(Unicode range from 0x7f to 0x9f), following the original setting in QRCode.jl. For example:
+```jl
+julia> exportqrcode(join(Char.(0x80:0x9f)))
+```
+![qrcode](https://user-images.githubusercontent.com/62223937/190864667-0b24f7ad-e905-453d-a6fe-4d7d6d9feb15.png)
 
 ### Acknowledgments
 
 `QRCoders.jl` was built following this [excellent tutorial](https://www.thonky.com/qr-code-tutorial/).
 
-`QRCoders.jl` was created during the [Efficient Scientific Computing with Julia](https://groups.oist.jp/grad/skill-pill-67) workshop, taught by [Valentin Churavy](https://github.com/vchuravy) at the [Okinawa Institute of Science and Technology](https://www.oist.jp) in July 2019. [Slides available here](https://github.com/JuliaLabs/Workshop-OIST).
+The original repository [QRCode.jl](https://github.com/JuliaImages/QRCode.jl) was created during the [Efficient Scientific Computing with Julia](https://groups.oist.jp/grad/skill-pill-67) workshop, taught by [Valentin Churavy](https://github.com/vchuravy) at the [Okinawa Institute of Science and Technology](https://www.oist.jp) in July 2019. [Slides available here](https://github.com/JuliaLabs/Workshop-OIST).
 
+The current version QRCoders.jl(v1.0.0) is proposed as part of the [OSPP'2022 project](https://summer-ospp.ac.cn/).
 
 <!-- URLS -->
 

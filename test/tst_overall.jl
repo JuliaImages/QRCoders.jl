@@ -5,7 +5,7 @@
 end
 
 @testset "Exporting all visible ISO-8859-1 characters" begin
-    message = join(Char.(0:255))
+    message = join(Char.(vcat(0x20:0x7e, 0xa0:0xff)))
     exportqrcode(message, imgpath * "qrcode-ISO-8859-1-test.png")
     @test true
 end
