@@ -48,17 +48,19 @@ Encoding mode for messages composed of utf-8 characters.
 struct UTF8 <: Mode end
 
 # relationships between the encoding modes
-import Base: ⊆
+import Base: issubset
 """
+    issubset(mode1::Mode, mode2::Mode)
     ⊆(mode1::Mode, mode2::Mode)
+    ⊇(mode2::Mode, mode1::Mode)
 
 Returns `true` if the character set of `mode1` is a subset of the character set of `mode2`.
 """
-⊆(::Mode, ::UTF8) = true
-⊆(mode::Mode, ::Numeric) = mode == Numeric()
-⊆(mode::Mode, ::Alphanumeric) = (mode == Alphanumeric() || mode == Numeric())
-⊆(mode::Mode, ::Byte) = (mode != UTF8() && mode != Kanji())
-⊆(mode::Mode, ::Kanji) = mode == Kanji()
+issubset(::Mode, ::UTF8) = true
+issubset(mode::Mode, ::Numeric) = mode == Numeric()
+issubset(mode::Mode, ::Alphanumeric) = (mode == Alphanumeric() || mode == Numeric())
+issubset(mode::Mode, ::Byte) = (mode != UTF8() && mode != Kanji())
+issubset(mode::Mode, ::Kanji) = mode == Kanji()
 
 # Error correction level of the QR code
 """
