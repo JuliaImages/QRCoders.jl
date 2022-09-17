@@ -71,41 +71,41 @@ end
 
 @testset "Generate QRCode -- small cases" begin
     ## Byte mode
-    exportqrcode("Hello, world!", "qrcode-helloworld.png")
-    exportqrcode("¬>=<×÷±+®©αβ", "qrcode-sym.png")
+    exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.png")
+    exportqrcode("¬>=<×÷±+®©αβ", imgpath * "qrcode-sym.png")
     @test true
     ## UTF8 mode
-    exportqrcode("你好", "qrcode-你好.png")
-    exportqrcode("123αβ", "qrcode-123ab.png")
+    exportqrcode("你好", imgpath * "qrcode-你好.png")
+    exportqrcode("123αβ", imgpath * "qrcode-123ab.png")
     @test true
     ## Kanji mode
-    exportqrcode("茗荷", "qrcode-茗荷.png")
-    exportqrcode("瀚文", "qrcode-瀚文.png")
+    exportqrcode("茗荷", imgpath * "qrcode-茗荷.png")
+    exportqrcode("瀚文", imgpath * "qrcode-瀚文.png")
     @test true
     ## Alphanumeric mode
-    exportqrcode("HELLO WORLD", "qrcode-hello.png")
-    exportqrcode("123ABC", "qrcode-123abc.png")
+    exportqrcode("HELLO WORLD", imgpath * "qrcode-hello.png")
+    exportqrcode("123ABC", imgpath * "qrcode-123abc.png")
     @test true
     ## Numeric mode
-    exportqrcode("8675309", "qrcode-8675309.png")
-    exportqrcode("0123456789", "qrcode-0123456789.png")
+    exportqrcode("8675309", imgpath * "qrcode-8675309.png")
+    exportqrcode("0123456789", imgpath * "qrcode-0123456789.png")
     @test true
 end
 
 @testset "Generate QRCode -- large cases" begin
     ## Byte mode
     exportqrcode("0123456789:;<=>?@ABCDEFGHIJKLMNOPQRS"*
-    "TUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz" ^ 3, "qrcode-byte.png"; eclevel= Quartile())
+    "TUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz" ^ 3, imgpath * "qrcode-byte.png"; eclevel= Quartile())
     @test true
 
     ## UTF8 mode -- 两 ∉ kanji
     txt = "一个和尚打水喝，两个和尚没水喝" ^ 10
-    exportqrcode(txt, "qrcode-utf-8.png"; eclevel = Quartile())
+    exportqrcode(txt, imgpath * "qrcode-utf-8.png"; eclevel = Quartile())
     @test true
     
     ## Kanji mode
     txt = "一个和尚打水喝，二个和尚没水喝" ^ 10
-    exportqrcode(txt, "qrcode-kanji.png")
+    exportqrcode(txt, imgpath * "qrcode-kanji.png")
     @test true
 
     ## Alphanumeric mode
@@ -114,11 +114,11 @@ end
     "trud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irur"*
     "e dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."*
     " Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt "*
-    "mollit anim id est laborum.", "qrcode-alphanum.png")
+    "mollit anim id est laborum.", imgpath * "qrcode-alphanum.png")
     @test true
 
     ## Numeric mode
-    exportqrcode("123456789000"^8, "qrcode-num.png")
+    exportqrcode("123456789000"^8, imgpath * "qrcode-num.png")
     @test true
 end
 
@@ -163,23 +163,100 @@ end
     matrix = emptymatrix(version)
     masks = makemasks(matrix)
     matrix = placedata!(matrix, msgbits)
-    candidates = map(enumerate(masks)) do (i, m)
-        i - 1, xor.(matrix, m)
-    end
-    mask, matrix = first(sort(candidates, by = penalty ∘ last))
-    matrix = addformat!(matrix, mask, version, eclevel)
+    addversion!(matrix, version)
 
-    mat = qrcode(msg;eclevel= Medium(), compact=true)
+    # Apply mask and add format information
+    maskedmats = [addformat!(xor.(matrix, mat), i-1, eclevel) 
+                  for (i, mat) in enumerate(masks)]
+    scores = penalty.(maskedmats)
+    mask = argmin(scores) - 1
+    matrix = maskedmats[mask + 1]
+
+    mat = qrcode(msg; compact=true)
+    @test penalty(matrix) == minimum(scores)
     @test mat == matrix
 end
 
 @testset "Byte VS UTF8 mode " begin
     ## for ascii characters -- return the same QRCode
     alphabet = join(Char.(0:127))
-    eclevels = [Low(), Medium(), Quartile(), High()]
+    
     for eclevel in eclevels
         cap = last(characterscapacity[(eclevel, Byte())])
-        msg = join(rand(alphabet, rand(cap:cap)))
+        msg = join(rand(alphabet, rand(1:cap)))
         @test qrcode(msg;eclevel=eclevel, mode=UTF8()) == qrcode(msg;eclevel=eclevel, mode=Byte())
+    end
+end
+
+# original penalty
+function orgpenalty(matrix::BitArray{2})
+    n = size(matrix, 1)
+
+    # Condition 1: 5+ in a row of the same color
+    function penalty1(line)
+        consecutive, score, cur = 0, 0, -1
+        for i in line
+            if i == cur
+                consecutive += 1
+            else
+                if consecutive ≥ 5
+                    score += consecutive - 2
+                end
+                consecutive, cur = 1, i
+            end
+        end
+        return score
+    end
+    p1 = sum(penalty1.(eachrow(matrix))) + sum(penalty1.(eachcol(matrix)))
+
+    # Condition 2: number of 2x2 blocks of the same color
+    p2 = 0
+    for i in 1:n-1, j in 1:n-1
+        block = matrix[i:i+1, j:j+1]
+        if block[1] == block[2] == block[3] == block[4]
+            p2 += 3
+        end
+    end
+
+    # Condition 3: specific patterns in rows or columns
+    p3 = 0
+    patt1 = BitArray([1, 0, 1, 1, 1, 0, 1, 0, 0, 0 ,0])
+    patt2 = BitArray([0, 0, 0 ,0, 1, 0, 1, 1, 1, 0, 1])
+    for i in 1:n, j in 1:n - 10
+        hline = matrix[i, j:j + 10]
+        if hline == patt1 || hline == patt2
+            p3 += 40
+        end
+        vline = matrix[j:j + 10, i]
+        if vline == patt1 || vline == patt2
+            p3 += 40
+        end
+    end
+
+    # Condition 4: percentage of black and white
+    t = sum(matrix) * 100 ÷ length(matrix) ÷ 5
+    p4 = 10 * min(abs(t - 10), abs(t - 11))
+
+    return p1 + p2 + p3 + p4
+end
+
+@testset "penalty of different masks" begin
+    # test case -- debug
+    msg = "αβ"
+    mats = [qrcode(msg;mask=i) for i in 0:7]
+    scores = penalty.(mats)
+    mat = qrcode(msg);
+    @test penalty(mat) == minimum(scores) == orgpenalty(mat)
+
+    # test case -- Random
+    alphabets = [join('0':'9'), keys(alphanumeric), join(Char.(0:255)), keys(kanji)]
+    modes = [Byte(), Alphanumeric(), UTF8(), Kanji()]
+    for (alphabet, mode) in zip(alphabets, modes), eclevel in eclevels
+        cap = last(characterscapacity[(eclevel, mode)])
+        msg = join(rand(alphabet, rand(1:cap)))
+        mats = [qrcode(msg;eclevel=eclevel, mask=i) for i in 0:7]
+        scores = penalty.(mats)
+        mat = qrcode(msg;eclevel=eclevel);
+        @test penalty(mat) == minimum(scores) == orgpenalty(mat)
     end
 end

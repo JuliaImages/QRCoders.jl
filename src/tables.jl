@@ -227,90 +227,87 @@ const alignmentlocation = Array{Array{Int, 1}, 1}(
     , [6, 26, 54, 82, 110, 138, 166]
     , [6, 30, 58, 86, 114, 142, 170]
     ]
-  )
+)
 
 """
-Format information per mode and mask number.
+    int2bitarray(n::Int)
+
+Encode an integer into a `BitArray`.
 """
-const formatinfo = Dict{Tuple{ErrCorrLevel, Int}, BitArray{1}}(
-    [ (Low(), 0) => [1,1,1,0,1,1,1,1,1,0,0,0,1,0,0]
-    , (Low(), 1) => [1,1,1,0,0,1,0,1,1,1,1,0,0,1,1]
-    , (Low(), 2) => [1,1,1,1,1,0,1,1,0,1,0,1,0,1,0]
-    , (Low(), 3) => [1,1,1,1,0,0,0,1,0,0,1,1,1,0,1]
-    , (Low(), 4) => [1,1,0,0,1,1,0,0,0,1,0,1,1,1,1]
-    , (Low(), 5) => [1,1,0,0,0,1,1,0,0,0,1,1,0,0,0]
-    , (Low(), 6) => [1,1,0,1,1,0,0,0,1,0,0,0,0,0,1]
-    , (Low(), 7) => [1,1,0,1,0,0,1,0,1,1,1,0,1,1,0]
-    , (Medium(), 0) => [1,0,1,0,1,0,0,0,0,0,1,0,0,1,0]
-    , (Medium(), 1) => [1,0,1,0,0,0,1,0,0,1,0,0,1,0,1]
-    , (Medium(), 2) => [1,0,1,1,1,1,0,0,1,1,1,1,1,0,0]
-    , (Medium(), 3) => [1,0,1,1,0,1,1,0,1,0,0,1,0,1,1]
-    , (Medium(), 4) => [1,0,0,0,1,0,1,1,1,1,1,1,0,0,1]
-    , (Medium(), 5) => [1,0,0,0,0,0,0,1,1,0,0,1,1,1,0]
-    , (Medium(), 6) => [1,0,0,1,1,1,1,1,0,0,1,0,1,1,1]
-    , (Medium(), 7) => [1,0,0,1,0,1,0,1,0,1,0,0,0,0,0]
-    , (Quartile(), 0) => [0,1,1,0,1,0,1,0,1,0,1,1,1,1,1]
-    , (Quartile(), 1) => [0,1,1,0,0,0,0,0,1,1,0,1,0,0,0]
-    , (Quartile(), 2) => [0,1,1,1,1,1,1,0,0,1,1,0,0,0,1]
-    , (Quartile(), 3) => [0,1,1,1,0,1,0,0,0,0,0,0,1,1,0]
-    , (Quartile(), 4) => [0,1,0,0,1,0,0,1,0,1,1,0,1,0,0]
-    , (Quartile(), 5) => [0,1,0,0,0,0,1,1,0,0,0,0,0,1,1]
-    , (Quartile(), 6) => [0,1,0,1,1,1,0,1,1,0,1,1,0,1,0]
-    , (Quartile(), 7) => [0,1,0,1,0,1,1,1,1,1,0,1,1,0,1]
-    , (High(), 0) => [0,0,1,0,1,1,0,1,0,0,0,1,0,0,1]
-    , (High(), 1) => [0,0,1,0,0,1,1,1,0,1,1,1,1,1,0]
-    , (High(), 2) => [0,0,1,1,1,0,0,1,1,1,0,0,1,1,1]
-    , (High(), 3) => [0,0,1,1,0,0,1,1,1,0,1,0,0,0,0]
-    , (High(), 4) => [0,0,0,0,1,1,1,0,1,1,0,0,0,1,0]
-    , (High(), 5) => [0,0,0,0,0,1,0,0,1,0,1,0,1,0,1]
-    , (High(), 6) => [0,0,0,1,1,0,1,0,0,0,0,1,1,0,0]
-    , (High(), 7) => [0,0,0,1,0,0,0,0,0,1,1,1,0,1,1]
-    ]
-  )
+function int2bitarray(k::Integer; pad::Int = 8)
+    res = BitArray{1}(undef, pad)
+    @inbounds for i in pad:-1:1
+        res[i] = k & 1
+        k >>= 1
+    end
+    k != 0 && throw("int2bitarray: bit-length of $k is longer than $pad")
+    return res
+end
 
 """
-Version information.
+    qrversion(fmt::Int)
+
+Encode version information.
 """
-const versioninfo = Array{Array{Bool, 1}, 1}(
-    [ []
-    , []
-    , []
-    , []
-    , []
-    , []
-    , [0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0]
-    , [0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0]
-    , [1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0]
-    , [1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0]
-    , [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0]
-    , [0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0]
-    , [1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0]
-    , [1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0]
-    , [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0]
-    , [0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0]
-    , [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0]
-    , [1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0]
-    , [0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0]
-    , [0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0]
-    , [1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0]
-    , [1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0]
-    , [0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0]
-    , [0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0]
-    , [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0]
-    , [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0]
-    , [0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0]
-    , [0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0]
-    , [1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0]
-    , [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0]
-    , [0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0]
-    , [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1]
-    , [0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1]
-    , [0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1]
-    , [1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1]
-    , [1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1]
-    , [0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1]
-    , [0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1]
-    , [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1]
-    , [1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1]
-    ]
-  )
+function qrversion(ver::Int)
+    7 ≤ ver ≤ 40 || throw(InfoError(
+       "version code $ver should be no less than 7 and no greater than 40"))
+    # error correction code
+    err = ver << 12
+    # generator polynomial(= 0b1111100100101 in binary)
+    g = Int(0x1f25) # use Int(0x1f25) to avoid overflow
+    for i in 5:-1:0
+        if !iszero(err & (1 << (i + 12)))
+            err ⊻= g << i
+        end
+    end
+    return ver << 12 ⊻ err
+end
+qrversion(ver::Integer) = qrversion(Int(ver))
+
+"""
+    qrversionbits(ver)
+
+Get version information bits.
+
+Replacement of the `versioninfo` table.
+"""
+function qrversionbits(ver)
+    vercode = qrversion(ver)
+    return @view int2bitarray(vercode, pad = 18)[end:-1:1]
+end
+
+"""
+Bit modes of the qualities.
+"""
+const mode2bin = Dict(
+    Low() => 0b01,
+    Medium() => 0b00,
+    Quartile() => 0b11,
+    High() => 0b10)
+
+const bin2mode = Dict(val=>key for (key, val) in mode2bin)
+
+"""
+    qrformat(fmt::Int)
+
+Generate standard format information (format + error correction + mask).
+"""
+function qrformat(fmt::Int)
+    0 ≤ fmt ≤ 31 || throw(EncodeError(
+       "format code $fmt should be no less than 0 and no greater than 31"))
+    err = fmt << 10 # error correction code
+    g = 0x537 # generator polynomial(= 0b10100110111 in binary)
+    for i in 4:-1:0
+        if !iszero(err & (1 << (i + 10)))
+            err ⊻= g << i
+        end
+    end
+    fmt << 10 ⊻ err ⊻ 0x5412 # mask(= 0b101010000010010 in binary)
+end
+qrformat(fmt::Integer) = qrformat(Int(fmt)) # to avoid integer overflow
+
+function qrformat(ec::ErrCorrLevel, mask::Int)
+    fmt = mode2bin[ec] << 3 ⊻ mask
+    return int2bitarray(qrformat(fmt); pad = 15)
+end

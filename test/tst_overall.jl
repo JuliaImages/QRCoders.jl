@@ -1,12 +1,12 @@
 @testset "Exporting a QR code" begin
     message = "To be or not to be a QR code?"
-    exportqrcode(message, "qrcode-test")
+    exportqrcode(message, imgpath * "qrcode-test")
     @test true
 end
 
 @testset "Exporting all visible ISO-8859-1 characters" begin
     message = join(Char.(0:255))
-    exportqrcode(message, "qrcode-ISO-8859-1-test.png")
+    exportqrcode(message, imgpath * "qrcode-ISO-8859-1-test.png")
     @test true
 end
 
@@ -33,11 +33,12 @@ end
         data = deepcopy(data0)
         matrix = placedata!(matrix, data)
         matrix = xor.(mask, matrix)
-        matrix = addformat!(matrix, i-1, version, eclevel)
+        addversion!(matrix, version)
+        addformat!(matrix, i-1, eclevel)
         image[5:33, (i-1)*39+1:(i-1)*39+29] = matrix
     end
     img = colorview(Gray, .! image)
-    save("qrcode-masks.png", img)
+    save(imgpath * "qrcode-masks.png", img)
     @test true
 end
 
@@ -107,7 +108,7 @@ end
                 nm = size(matrix, 2)
                 image[i*s+1:i*s+nm, j*s+1:j*s+nm] = matrix
             end
-            path = "qrcode-$(typeof(mode))-$(typeof(eclevel))-versions.png"
+            path = imgpath * "qrcode-$(typeof(mode))-$(typeof(eclevel))-versions.png"
             save(path, colorview(Gray, .! image))
             println("$path created")
         end

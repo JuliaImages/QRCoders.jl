@@ -158,9 +158,7 @@ iterate(p::Poly, i) = iterate(p.coeff, i)
 
 Increase the degree of `p` by `n`.
 """
-<<(p::Poly, n::Int)::Poly = Poly(vcat(zeros(n), p.coeff))
-
-+(p::Poly) = p
+<<(p::Poly, n::Int)::Poly = Poly(vcat(zeros(Int, n), p.coeff))
 
 function +(a::Poly, b::Poly)::Poly
     l = max(length(a), length(b))
@@ -207,7 +205,6 @@ end
 Quotient of Euclidean division.
 """
 ÷(f::Poly, g::Poly) = first(euclidean_divide(f, g))
-
 
 """
     %(f::Poly, g::Poly)

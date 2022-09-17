@@ -15,21 +15,6 @@ Note: utf-8 character has flexialbe length range from 1 to 4.
 utf8len(message::AbstractString) = length(Vector{UInt8}(message))
 
 """
-    int2bitarray(n::Int)
-
-Encode an integer into a `BitArray`.
-"""
-function int2bitarray(k::Integer; pad::Int = 8)
-    res = BitArray{1}(undef, pad)
-    for i in pad:-1:1
-        res[i] = k & 1
-        k >>= 1
-    end
-    k != 0 && throw("int2bitarray: bit-length of $k is longer than $pad")
-    return res
-end
-
-"""
     bitarray2int(bits::AbstractVector)
 
 Convert a bitarray to an integer.
@@ -43,7 +28,7 @@ Convert bits to bytes. The remainder bits will be truncated.
 """
 function bits2bytes(bits::AbstractVector)
     nbits = length(bits)
-    return @views UInt8[bitarray2int(bits[i:i + 7]) for i in 1:8:(nbits & 7 ⊻ nbits)]
+    return @views [bitarray2int(bits[i:i + 7]) for i in 1:8:(nbits & 7 ⊻ nbits)]
 end
 
 ## mode, indicator and message bits
@@ -190,7 +175,7 @@ function padencodedmessage(data::BitArray{1}, requiredlength::Int)
     # Add the repeated pattern until reaching required length
     pattern = BitArray{1}([1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1])
     pad = repeat(pattern, ceil(Int, requiredlength - length(data) / 8))
-    data = vcat(data, pad[1:requiredlength - length(data)])
+    data = vcat(data, @view(pad[1:requiredlength - length(data)]))
 
     return data
 end
@@ -201,14 +186,14 @@ end
     makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
 
 Divide the encoded message into 1 or 2 groups with `nbX` blocks in group `X` and
-`ncX` codewords per block. Each block is a collection of integers(UInt8) which 
+`ncX` codewords per block. Each block is a collection of integers which 
 represents a message polynomial in GF(256).
 """
 function makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
     bytes = bits2bytes(bits)
     
     ind = 1
-    blocks = Vector{Vector{UInt8}}(undef, nb1 + nb2)
+    blocks = Vector{Vector{Int}}(undef, nb1 + nb2)
     for i in 1:nb1
         blocks[i] = @view(bytes[ind:ind + nc1 - 1])
         ind += nc1
@@ -226,8 +211,8 @@ end
 Return the error correction blocks, with `ncodewords` codewords per block.
 """
 function getecblock(block::AbstractVector, ncodewords::Int)
-    ecpoly = geterrorcorrection(Poly(reverse(block)), ncodewords)
-    return reverse!(ecpoly.coeff)
+    ecpoly = geterrorcorrection(Poly(@view(block[end:-1:1])), ncodewords)
+    return @view(ecpoly.coeff[end:-1:1])
 end
 
 ## interleave the blocks
@@ -245,7 +230,7 @@ function interleave( blocks::AbstractVector
                    , nc1::Int, nb2::Int
                    , nc2::Int, version::Int
                    )::BitArray{1}
-    bytes = Vector{UInt8}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
+    bytes = Vector{Int}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
     ind = 1
     ## Encoded data
     for i in 1:nc1, j in 1:(nb1 + nb2)

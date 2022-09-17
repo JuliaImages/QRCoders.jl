@@ -16,27 +16,42 @@ Creating a QR Code couldn't be simpler.
 julia> using QRCoders
 
 julia> qrcode("Hello world!")
-29×29 BitArray{2}:
- false  false  false  false  …  false  false  false
- false  false  false  false     false  false  false
-     ⋮                       ⋱
- false  false  false  false     false  false  false
- false  false  false  false     false  false  false
+21×21 BitMatrix:
+ 1  1  1  1  1  1  1  0  1  1  1  1  1  0  1  1  1  1  1  1  1
+ 1  0  0  0  0  0  1  0  1  0  1  0  1  0  1  0  0  0  0  0  1
+ 1  0  1  1  1  0  1  0  0  0  1  1  0  0  1  0  1  1  1  0  1
+ ⋮              ⋮              ⋮              ⋮              ⋮
+ 1  0  1  1  1  0  1  0  1  0  0  0  1  0  0  1  0  0  1  0  0
+ 1  0  0  0  0  0  1  0  0  1  0  1  0  1  1  1  1  0  0  0  1
+ 1  1  1  1  1  1  1  0  1  0  1  1  0  1  1  1  0  0  1  0  0
 ```
 
-The value `true` represents a dark space and `false` a white square.
+The value `1(true)` represents a dark space and `0(false)` a white square.
 
-There are two optional arguments: the error correction level (explained below) and `compact` which, when `true`, removes the white space around the code.
+There are some optional arguments.
+
+Keyword `compact` with default value `true`. If `compact` is `false`, the QR Code will be surrounded by a white border of width 3.
 
 ```julia
-julia> qrcode("Hello world!", High(), compact = true)
-25×25 BitArray{2}:
- true   true   true   true  …   true   true   true
- true  false  false  false     false  false   true
-    ⋮                       ⋱
- true  false  false  false     false  false  false
- true   true   true   true     false  false   true
+julia> qrcode("Hello world!", compact = false)
+29×29 BitMatrix:
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ ⋮              ⋮              ⋮              ⋮              ⋮              ⋮        
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
 ```
+
+Keywords `eclevel`, `version`, `mode` and `mask`.
+1. The error correction level `eclevel` can be picked from four values `Low()`, `Medium()`, `Quartile()` or `High()`. Higher levels make denser QR codes.
+
+2. The version of the QR code `version` can be picked from 1 to 40. If the assigned version is too small to contain the message, the first available version is used.
+
+3. The encoding mode `mode` can be picked from five values: `Numeric()`, `Alphanumeric()`, `Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or is failed to contain the message, the mode will be picked automatically.
+
+4. The mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is `nothing`, the mask pattern will picked by the penalty rules.
 
 ### Export a QR Code as a PNG file
 
@@ -50,10 +65,10 @@ A file will be saved at `./qrcode.png`.
 
 > ![QRCode1](https://raw.githubusercontent.com/jiegillet/QRCode.jl/966b11d0334e050992d4167bda34a495fb334a6c/qrcode.png)
 
-There are three optional parameters.
+There is an extra optional parameter for `exportqrcode`:
 
 ```julia
-julia> exportqrcode("Hello world!", "img/hello.png", Medium(), targetsize = 10, compact = true)
+julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10, compact = true)
 ```
 
 This file will be saved as `./img/hello.png` (if the `img` directory already exists), have a size of (approximately) 10 centimeters and be compact. Please note that compact codes may be hard to read depending on their background.
@@ -69,13 +84,17 @@ QR Codes and be encoded with four error correction levels `Low`, `Medium`, `Quar
 * `Quartile` can restore up to 25% of missing codewords.
 * `High` can restore up to 30% of missing codewords.
 
-The four levels are encoded as types in `QRCoders.jl`, grouped under the abstract type `ErrCorrLevel`. Don't forget to use parentheses when you call the values: `qrcode("Hello", High())`.
+The four levels are encoded as types in `QRCoders.jl`, grouped under the abstract type `ErrCorrLevel`. Don't forget to use parentheses when you call the values: `qrcode("Hello", eclevel = High())`.
 
 ### Encoding Modes
 
-QR Codes can encode data using several encoding schemes. `QRCoders.jl` supports three of them: `Numeric`, `Alphanumeric` and `Byte`.
+QR Codes can encode data using several encoding schemes. `QRCoders.jl` supports five of them: `Numeric`, `Alphanumeric`, `Kanji`, `Byte` and `UTF8`.
 
-`Numeric` is used for messages composed of digits only, `Alphanumeric` for messages composed of digits, characters `A`-`Z` (capital only) space and `%` `*` `+` `-` `.` `/` `:` `\$`, and `Bytes` for messages composed of ISO 8859-1 or UTF-8 characters. Please not that QR Code reader don't always support arbitrary UTF-8 characters.
+`Numeric` is used for messages composed of digits only, `Alphanumeric` for messages composed of digits, characters `A`-`Z` (capital only) space and `%` `*` `+` `-` `.` `/` `:` `\$`, `Kanji` for kanji for Shift JIS(Shift Japanese Industrial Standards) characters, `Bytes` for messages composed of one-byte characters, and `UTF8` for messages composed of Unicode characters.
+
+Please not that QR Code reader don't always support arbitrary UTF-8 characters.
+
+> Important: For non-ascii characters in `Byte` mode, we use the one-byte characters instead of ISO-8859-1.
 
 ### Acknowledgments
 

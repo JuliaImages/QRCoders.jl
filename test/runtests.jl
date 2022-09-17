@@ -4,22 +4,41 @@ using FileIO
 using ImageCore
 using Random
 
-using QRCoders: makeblocks, getecblock, interleave, emptymatrix, 
-               characterscapacity, modeindicators, getcharactercountindicator,
-               encodedata, ecblockinfo, padencodedmessage, makemasks, addformat!,
-               placedata!, bitarray2int, int2bitarray, kanji, charactercountlength,
-               penalty, addformat!, getmode, remainderbits, alphanumeric, antialphanumeric,
-               kanji, antikanji, makemask, encodemessage
-using QRCoders.Polynomial: Poly, antilogtable, logtable, generator, iszeropoly, degree,
-                            rpadzeros, rstripzeros, gfpow2, gflog2, gfinv, mult, divide,
-                            zero, unit, euclidean_divide, geterrorcorrection, init!, lead,
-                            makelogtable
-
+using QRCoders:
+    # build
+    makeblocks, getecblock, interleave, 
+    emptymatrix, makemask, makemasks, penalty,
+    placedata!, addformat!, addversion!,
+    # tables
+    alphanumeric, antialphanumeric, kanji, antikanji, 
+    mode2bin, qrversion, qrformat, qrversionbits,
+    ecblockinfo, remainderbits,
+    # encode
+    getmode, characterscapacity, modeindicators, 
+    getcharactercountindicator, charactercountlength,
+    padencodedmessage, encodedata, encodemessage,
+    # data convert
+    bitarray2int, int2bitarray, bits2bytes
+                 
+using QRCoders.Polynomial:
+    # operator for GF(256) integers
+    makelogtable, antilogtable, logtable, 
+    gfpow2, gflog2, gfinv, mult, divide,
+    # operator for polynomials
+    iszeropoly, degree, init!, lead, zero, unit,
+    rpadzeros, rstripzeros, generator, 
+    geterrorcorrection, euclidean_divide
+                            
 randpoly(n::Int) = Poly([rand(0:255, n-1)..., rand(1:255)])
 randpoly(range::AbstractVector{Int}) = randpoly(rand(range))
+imgpath = "testimages/"
+eclevels = [Low(), Medium(), Quartile(), High()]
 
-## test for operations
+## operations
 include("tst_operation.jl")
+
+# format and version information
+include("tst_fmtver.jl")
 
 ## encode message
 include("tst_encode.jl")
