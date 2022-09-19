@@ -35,8 +35,8 @@ Encoding mode for messages composed of digits, characters `A`-`Z` (capital only)
 """
 struct Alphanumeric <: Mode end
 """
-Encoding mode for messages composed of one-byte, ISO-8859-1, characters, but it also allows \
-undefined characters range from 0x80 to 0x9f.
+Encoding mode for messages composed of one-byte characters(unicode range from
+0x00 to 0xff, including ISO-8859-1 and undefined characters)
 """
 struct Byte <: Mode end
 """
@@ -53,7 +53,6 @@ import Base: issubset
 """
     issubset(mode1::Mode, mode2::Mode)
     ⊆(mode1::Mode, mode2::Mode)
-    ⊇(mode2::Mode, mode1::Mode)
 
 Returns `true` if the character set of `mode1` is a subset of the character set of `mode2`.
 """
@@ -192,19 +191,21 @@ function exportqrcode( message::AbstractString
                      , mask::Union{Nothing, Int} = nothing
                      , targetsize::Int = 5
                      , compact::Bool = false )
-
+    # check if the image format is supported
+    supportexts = ["png", "jpg"]
+    if isnothing(match(r"\.\w+", path))
+        path *= ".png"
+    else
+        ext = match(r"\.(\w+)", path).captures[1]
+        ext ∈ supportexts || throw(EncodeError(
+            "Unsupported file extension: $ext\n Supported extensions: $supportexts"))
+    end
+    # encode data
     matrix = qrcode(message; eclevel=eclevel,
                              version=version,
                              mode=mode,
                              mask=mask,
                              compact=compact)
-
-    
-    if !contains("hello", r"\.[a-z0-9]+"i)
-        @warn "No file extension detected. Attaching'.png' to the end of the file path."
-        path = "$path.png"
-    end
-
     # Seems the default setting is 72 DPI
     pixels = size(matrix, 1)
     scale = ceil(Int, 72 * targetsize / 2.45 / pixels)
