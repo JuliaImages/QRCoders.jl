@@ -1,10 +1,12 @@
 @testset "Exporting a QR code to multiple file formats." begin
     message = "To be or not to be a QR code?"
-    exts = ["", ".png", ".jpg"]
-    for ext in exts
-        exportqrcode(message, imgpath * "qrcode-test" * ext)
-        @test true
+    # supported types
+    for ext in ["", "jpg", "png"]
+        exportqrcode(message, imgpath * "qrcode-test.$ext")
     end
+    @test true
+    # unsupported type
+    @test_throws EncodeError exportqrcode(message, "qrcode-test.svg")
 end
 
 @testset "Exporting all visible ISO-8859-1 characters" begin
