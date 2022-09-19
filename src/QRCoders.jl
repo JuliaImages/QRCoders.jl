@@ -35,7 +35,8 @@ Encoding mode for messages composed of digits, characters `A`-`Z` (capital only)
 """
 struct Alphanumeric <: Mode end
 """
-Encoding mode for messages composed of one-byte characters.
+Encoding mode for messages composed of one-byte characters(unicode range from
+0x00 to 0xff, including ISO-8859-1 and undefined characters)
 """
 struct Byte <: Mode end
 """
@@ -48,17 +49,18 @@ Encoding mode for messages composed of utf-8 characters.
 struct UTF8 <: Mode end
 
 # relationships between the encoding modes
-import Base: ⊆
+import Base: issubset
 """
+    issubset(mode1::Mode, mode2::Mode)
     ⊆(mode1::Mode, mode2::Mode)
 
 Returns `true` if the character set of `mode1` is a subset of the character set of `mode2`.
 """
-⊆(::Mode, ::UTF8) = true
-⊆(mode::Mode, ::Numeric) = mode == Numeric()
-⊆(mode::Mode, ::Alphanumeric) = (mode == Alphanumeric() || mode == Numeric())
-⊆(mode::Mode, ::Byte) = (mode != UTF8() && mode != Kanji())
-⊆(mode::Mode, ::Kanji) = mode == Kanji()
+issubset(::Mode, ::UTF8) = true
+issubset(mode::Mode, ::Numeric) = mode == Numeric()
+issubset(mode::Mode, ::Alphanumeric) = (mode == Alphanumeric() || mode == Numeric())
+issubset(mode::Mode, ::Byte) = (mode != UTF8() && mode != Kanji())
+issubset(mode::Mode, ::Kanji) = mode == Kanji()
 
 # Error correction level of the QR code
 """
@@ -189,17 +191,21 @@ function exportqrcode( message::AbstractString
                      , mask::Union{Nothing, Int} = nothing
                      , targetsize::Int = 5
                      , compact::Bool = false )
-
+    # check if the image format is supported
+    supportexts = ["png", "jpg"]
+    if isnothing(match(r"\.\w+", path))
+        path *= ".png"
+    else
+        ext = match(r"\.(\w+)", path).captures[1]
+        ext ∈ supportexts || throw(EncodeError(
+            "Unsupported file extension: $ext\n Supported extensions: $supportexts"))
+    end
+    # encode data
     matrix = qrcode(message; eclevel=eclevel,
                              version=version,
                              mode=mode,
                              mask=mask,
                              compact=compact)
-
-    if !endswith(path, ".png")
-        path = "$path.png"
-    end
-
     # Seems the default setting is 72 DPI
     pixels = size(matrix, 1)
     scale = ceil(Int, 72 * targetsize / 2.45 / pixels)
