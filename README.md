@@ -93,7 +93,7 @@ QR Codes can encode data using several encoding schemes. `QRCoders.jl` supports 
 
 `Numeric` is used for messages composed of digits only, `Alphanumeric` for messages composed of digits, characters `A`-`Z` (capital only) space and `%` `*` `+` `-` `.` `/` `:` `\$`, `Kanji` for kanji for Shift JIS(Shift Japanese Industrial Standards) characters, `Bytes` for messages composed of one-byte characters(including undefined characters), and `UTF8` for messages composed of Unicode characters.
 
-Please not that QR Code reader don't always support arbitrary UTF-8 characters.
+Please note that QR Code reader don't always support arbitrary UTF-8 characters.
 
 Another thing to point out is that, for `Byte` mode, we allow the use of undefined characters(Unicode range from 0x7f to 0x9f), following the original setting in QRCode.jl. For example:
 ```jl
