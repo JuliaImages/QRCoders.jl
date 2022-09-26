@@ -25,7 +25,7 @@ using QRCoders.Polynomial:
     makelogtable, antilogtable, logtable, 
     gfpow2, gflog2, gfinv, mult, divide,
     # operator for polynomials
-    iszeropoly, degree, init!, lead, zero, unit,
+    iszeropoly, degree, zero, unit,
     rpadzeros, rstripzeros, generator, 
     geterrorcorrection, euclidean_divide
                             

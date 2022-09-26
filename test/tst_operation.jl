@@ -4,6 +4,8 @@
 @testset "Euclidean division" begin
     ## original method of `geterrorcorrection`
     tail!(p::Poly)::Poly = Poly(deleteat!(p.coeff, 1))
+    init!(p::Poly)::Poly = Poly(deleteat!(p.coeff, length(p)))
+    Base.:(*)(a::Integer, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
     function geterrcode(a::Poly, n::Int)::Poly
         la = length(a)
         a = a << n
@@ -11,7 +13,7 @@
     
         for _ in 1:la
             tail!(g)
-            a = init!(lead(a) * g + a)
+            a = init!(last(a.coeff) * g + a)
         end
         return a
     end
@@ -78,10 +80,13 @@ end
     p2.coeff[1] = 3
     @test p2 != p1
     
-    ## zeros, unit
+    ## zeros, unit, rstripzeros, rpadzeros
     @test zero(Poly) == Poly([0])
     @test rstripzeros(Poly([1, 0, 2, 0, 0])) == Poly([1, 0, 2])
     @test rstripzeros(Poly([0, 0, 0, 0, 0])) == Poly([0])
+    @test rpadzeros(Poly([1, 0, 2]), 5) == Poly([1, 0, 2, 0, 0])
+    @test rpadzeros(Poly([1, 0, 2]), 3) == Poly([1, 0, 2])
+    @test_throws String rpadzeros(Poly([1, 0, 2]), 2)
     f = randpoly(1:255)
     @test f * unit(Poly) == f == unit(Poly) * f
     @test unit(Poly) == Poly([1])
@@ -108,8 +113,13 @@ end
     @test !(Alphanumeric() ⊆ Numeric())
 end
 
-## original tests
 @testset "Test set for polynomials and error encoding" begin
+    function oriprod(a::Poly, b::Poly)::Poly
+        return sum([ c * (a << (p - 1)) for (p, c) in enumerate(b.coeff)])
+    end
+    a, b = randpoly(1:255), randpoly(1:255)
+    @test a * b == oriprod(a, b)
+    
     @test all(i == antilogtable[logtable[i]] for i in 0:254)
     @test all(i == logtable[antilogtable[i]] for i in 1:255)
 
@@ -123,6 +133,8 @@ end
 
     @test Poly([1, 1]) * Poly([2, 1]) == Poly([2, 3, 1])
     @test Poly([1, 1]) * Poly([2, 1]) * Poly([4, 1]) == Poly([8, 14, 7, 1])
+    a, p = rand(UInt8), randpoly(1:255)
+    @test Poly([a]) * p == a * p
 
     @test generator(2) == Poly([2, 3, 1])
     @test generator(3) == Poly([8, 14, 7, 1])

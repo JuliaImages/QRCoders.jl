@@ -78,7 +78,7 @@ This file will be saved as `./img/hello.png` (if the `img` directory already exi
 
 ### Error Correction Level
 
-QR Codes and be encoded with four error correction levels `Low`, `Medium`, `Quartile` and `High`. Error correction can restore missing data from the QR code.
+QR Codes can be encoded with four error correction levels `Low`, `Medium`, `Quartile` and `High`. Error correction can restore missing data from the QR code.
 
 * `Low` can restore up to 7% of missing codewords.
 * `Medium` can restore up to 15% of missing codewords.
@@ -93,7 +93,7 @@ QR Codes can encode data using several encoding schemes. `QRCoders.jl` supports 
 
 `Numeric` is used for messages composed of digits only, `Alphanumeric` for messages composed of digits, characters `A`-`Z` (capital only) space and `%` `*` `+` `-` `.` `/` `:` `\$`, `Kanji` for kanji for Shift JIS(Shift Japanese Industrial Standards) characters, `Bytes` for messages composed of one-byte characters(including undefined characters), and `UTF8` for messages composed of Unicode characters.
 
-Please not that QR Code reader don't always support arbitrary UTF-8 characters.
+Please note that QR Code reader don't always support arbitrary UTF-8 characters.
 
 Another thing to point out is that, for `Byte` mode, we allow the use of undefined characters(Unicode range from 0x7f to 0x9f), following the original setting in QRCode.jl. For example:
 ```jl

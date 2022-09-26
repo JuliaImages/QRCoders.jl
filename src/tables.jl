@@ -127,7 +127,7 @@ const charactercountlength = Dict{Mode, Array{Int, 1}}(
 
 """
 Information about the error correction codeblocks per level and version
-(ec, block1length, numofblock1s, block2length, numofblock2s).
+(eclevel, numofblock1s, block1length, numofblock2s, block2length).
 """
 const ecblockinfo = Dict{ErrCorrLevel,Array{Int,2}}(
     Low() =>
