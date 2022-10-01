@@ -57,13 +57,25 @@ function gflog2(n::Integer)
 end
 
 """
-    function mult(a::Integer, b::Integer)
+Multiplication table of non-zero elements in GF(256).
+"""
+const multtable = [gfpow2(gflog2(i) + gflog2(j)) for i in 1:255, j in 1:255]
+
+
+"""
+Division table of non-zero elements in GF(256).
+"""
+const divtable = [gfpow2(gflog2(i) - gflog2(j)) for i in 1:255, j in 1:255]
+
+"""
+    mult(a::Integer, b::Integer)
 
 Multiplies two integers in GF(256).
 """
 function mult(a::Integer, b::Integer)
     (a == 0 || b == 0) && return 0
-    return gfpow2(gflog2(a) + gflog2(b))
+    # gfpow2(gflog2(a) - gflog2(b))
+    return multtable[a, b]
 end
 
 """
@@ -74,8 +86,7 @@ Division of intergers in GF(256).
 function divide(a::Integer, b::Integer)
     b == 0 && throw(DivideError())
     a == 0 && return 0
-    b == 1 && return a ## cases when dealing with generator polynomial
-    return gfpow2(gflog2(a) - gflog2(b))
+    return divtable[a, b]
 end
 
 """
@@ -95,9 +106,11 @@ iszeropoly(p::Poly) = all(iszero, p)
 
 Remove trailing zeros from polynomial p.
 """
-function rstripzeros(p::Poly)
+rstripzeros(p::Poly) = rstripzeros!(copy(p))
+function rstripzeros!(p::Poly)
     iszeropoly(p) && return zero(Poly)
-    return Poly(p.coeff[1:findlast(!iszero, p.coeff)])
+    deleteat!(p.coeff, findlast(!iszero, p.coeff) + 1:length(p))
+    return p
 end
 
 """
@@ -105,9 +118,11 @@ end
 
 Add zeros to the right side of p(x) such that length(p) == n.
 """
-function rpadzeros(p::Poly, n::Int)
+rpadzeros(p::Poly, n::Int) = rpadzeros!(copy(p), n)
+function rpadzeros!(p::Poly, n::Int)
     length(p) > n && throw("rpadzeros: length(p) > n")
-    return Poly(vcat(p.coeff, zeros(Int, n - length(p))))
+    append!(p.coeff, zeros(Int, n - length(p)))
+    return p
 end
 
 """
@@ -151,7 +166,7 @@ length(p::Poly) = length(p.coeff)
 iterate(p::Poly) = iterate(p.coeff)
 iterate(p::Poly, i) = iterate(p.coeff, i)
 
-==(a::Poly, b::Poly)::Bool = a.coeff == b.coeff
+==(a::Poly, b::Poly)::Bool = iszeropoly(a + b)
 
 """
     <<(p::Poly, n::Int)
@@ -166,9 +181,12 @@ function +(a::Poly, b::Poly)::Poly
 end
 
 *(a::Integer, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
-
 function *(a::Poly, b::Poly)::Poly
-    return sum([ c * (a << (p - 1)) for (p, c) in enumerate(b.coeff)])
+    prodpoly = Poly(zeros(Int, length(a) + length(b) - 1))
+    @inbounds for (i, c1) in enumerate(a.coeff), (j, c2) in enumerate(b.coeff)
+        prodpoly.coeff[i + j - 1] ⊻= mult(c2, c1) # column first
+    end
+    return prodpoly
 end
 
 """
@@ -176,27 +194,42 @@ end
 
 Returns the quotient and the remainder of Euclidean division.
 """
-function euclidean_divide(f::Poly, g::Poly)
+euclidean_divide(f::Poly, g::Poly) = euclidean_divide!(copy(f), copy(g))
+
+"""
+    euclidean_divide!(f::Poly, g::Poly)
+
+Implement of Euclidean division with minimized allocations.
+"""
+function euclidean_divide!(f::Poly, g::Poly)
     ## remove trailing zeros
-    g, f = rstripzeros(g), rstripzeros(f)
-    g == zero(Poly) && throw(DivideError())
+    g, f = rstripzeros!(g), rstripzeros!(f)
+    iszeropoly(g) && throw(DivideError())
+    fcoef, gcoef, lf, lg = f.coeff, g.coeff, length(f), length(g)
     ## leading term of g(x)
-    gn = lead(g)
+    gn = last(gcoef)
     ## g(x) is a constant
-    length(g) == 1 && return Poly(divide.(f.coeff, gn)), zero(Poly)
-    diffdeg = length(f) - length(g)
-    ## deg(f) < deg(g)
-    diffdeg < 0 && return zero(Poly), f
-    g <<= diffdeg # g(x)⋅x^{diffdeg}
-    ## quotient polynomial
-    quocoef = Vector{Int}(undef, diffdeg + 1)
-    for i in 1:diffdeg
-        quocoef[i] = divide(lead(f), gn)
-        f = init!(quocoef[i] * g + f)
-        popfirst!(g.coeff)
+    if lg == 1
+        @inbounds for i in eachindex(fcoef)
+            fcoef[i] = divide(fcoef[i], gn)
+        end
+        return f, zero(Poly)
     end
-    quocoef[end] = divide(lead(f), gn)
-    return Poly(reverse!(quocoef)), init!(divide(lead(f), gn) * g + f)
+    ## degree of the quotient polynomial
+    quodeg = lf - lg
+    ## deg(f) < deg(g)
+    quodeg < 0 && return zero(Poly), f
+    ## quotient polynomial
+    @inbounds for i in 0:quodeg
+        leadterm = divide(fcoef[end-i], gn)
+        for (j, c) in enumerate(gcoef)
+            fcoef[quodeg - i + j] ⊻= mult(leadterm, c)
+        end
+        fcoef[end-i] = leadterm
+    end
+    quo = Poly(fcoef[end-quodeg:end]) # here @view will be a little bit slower
+    deleteat!(fcoef, lf-quodeg:lf)
+    return quo, f
 end
 
 """
@@ -218,29 +251,12 @@ Remainder of Euclidean division.
 
 Create the Generator Polynomial of degree `n`.
 """
-function generator(n::Int)::Poly
-    prod([Poly([gfpow2(i - 1), 1]) for i in 1:n])
-end
-
-"""
-    lead(p::Poly)
-
-Return the leading coefficient of `p`.
-"""
-lead(p::Poly) = last(p.coeff)
-
-"""
-    init!(p::Poly)
-
-Delete the leading coefficient of `p`.
-"""
-init!(p::Poly)::Poly = Poly(deleteat!(p.coeff, length(p)))
+generator(n::Int) = prod([Poly([gfpow2(i - 1), 1]) for i in 1:n])
 
 """
     geterrorcorrection(f::Poly, n::Int)
 
 Return a polynomial containing the `n` error correction codewords of `f`.
 """
-geterrorcorrection(f::Poly, n::Int) = rpadzeros(f << n % generator(n), n)
-
+geterrorcorrection(f::Poly, n::Int) = rpadzeros!(f << n % generator(n), n)
 end # module

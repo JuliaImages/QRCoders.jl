@@ -12,7 +12,7 @@ using .Polynomial: Poly, geterrorcorrection
 Return the length of a UTF-8 message.
 Note: utf-8 character has flexialbe length range from 1 to 4.
 """
-utf8len(message::AbstractString) = length(Vector{UInt8}(message))
+utf8len(message::AbstractString) = length(codeunits(message))
 
 """
     bitarray2int(bits::AbstractVector)
@@ -149,7 +149,7 @@ function encodedata(message::AbstractString, ::Byte)::BitArray{1}
     vcat(int2bitarray.(UInt8.(collect(message)))...)
 end
 function encodedata(message::AbstractString, ::UTF8)::BitArray{1}
-    vcat(int2bitarray.(Vector{UInt8}(message))...)
+    vcat(int2bitarray.(codeunits(message))...)
 end
 
 function encodedata(message::AbstractString, ::Kanji)::BitArray{1}
