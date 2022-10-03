@@ -54,7 +54,17 @@ Keywords `eclevel`, `version`, `mode` and `mask`.
 
 4. The mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is `nothing`, the mask pattern will picked by the penalty rules.
 
-### Export a QR Code as a PNG file
+### Unicode Plot
+Unicode plot of the QR Code.
+
+```julia
+julia> unicodeplot("Hello world!")
+```
+![深度截图_选择区域_20221003234211](https://cdn.jsdelivr.net/gh/zhihongecnu/PicBed3/picgo/深度截图_选择区域_20221003234211.png)
+
+Note: this only works in the REPL.
+
+### Export a QR Code as a PNG/JPG file
 
 Exporting files is also easy.
 
