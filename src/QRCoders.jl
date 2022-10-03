@@ -3,14 +3,30 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 """
 module QRCoders
 
+# create QR code
+export qrcode, exportqrcode
+
+# supported modes
 export Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8
+
+# error correction levels
 export ErrCorrLevel, Low, Medium, Quartile, High
-export getmode, getversion, qrcode, exportqrcode
+
+# get information about QR code
+export getmode, getversion
+
+# data type of Reed Solomon code
 export Poly
+
+# error type
 export EncodeError
+
+# QR code style
+export unicodeplot
 
 using ImageCore
 using FileIO
+using UnicodePlots
 
 """
 Invalid step in encoding process.
@@ -89,6 +105,7 @@ include("tables.jl")
 include("errorcorrection.jl")
 include("matrix.jl")
 include("encode.jl")
+include("style.jl")
 
 """
     qrcode(message::AbstractString;
