@@ -31,7 +31,8 @@ The value `1(true)` represents a dark space and `0(false)` a white square.
 There are some optional arguments.
 
 Keyword `compact` with default value `true`. 
-If `compact` is `false`, the QR Code will be surrounded by a white border of width 3.
+
+If `compact` is `false`, the QR Code will be surrounded by a white border of width 4.
 
 ```julia
 julia> qrcode("Hello world!", compact = false)
@@ -45,7 +46,7 @@ julia> qrcode("Hello world!", compact = false)
  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
 ```
 
-Keywords `eclevel`, `version`, `mode` and `mask`.
+Keywords: `eclevel`, `version`, `mode` and `mask`.
 1. The error correction level `eclevel` can be picked from four values `Low()`, `Medium()`, `Quartile()` or `High()`. Higher levels make denser QR codes.
 
 2. The version of the QR code `version` can be picked from 1 to 40. If the assigned version is too small to contain the message, the first available version is used.
@@ -78,9 +79,9 @@ Method2, Unicode plot by [UnicodePlots.jl](https://github.com/JuliaPlots/Unicode
 ```julia
 julia> unicodeplot("Hello world!")
 ```
-![深度截图_选择区域_20221003234211](https://cdn.jsdelivr.net/gh/zhihongecnu/PicBed3/picgo/深度截图_选择区域_20221003234211.png)
+> <img src="https://cdn.jsdelivr.net/gh/zhihongecnu/PicBed3/picgo/深度截图_选择区域_20221005233521.png" width="100">
 
-Note: this only works in the REPL.
+Note: method 2 dosen't work in text string.
 
 ### Export a QR Code as a PNG/JPG file
 
