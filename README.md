@@ -54,7 +54,35 @@ Keywords `eclevel`, `version`, `mode` and `mask`.
 
 4. The mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is `nothing`, the mask pattern will picked by the penalty rules.
 
-### Export a QR Code as a PNG file
+### Unicode Plot
+Method1, as mentioned in [issue#25](https://github.com/JuliaImages/QRCoders.jl/issues/25).
+```jl
+julia> unicodeplotbychar("Hello world!") |> print
+█████████████████████████
+██ ▄▄▄▄▄ █▀ █ ▄█ ▄▄▄▄▄ ██
+██ █   █ █▄ █▀▄█ █   █ ██
+██ █▄▄▄█ █ ██▀ █ █▄▄▄█ ██
+██▄▄▄▄▄▄▄█ ▀ ▀ █▄▄▄▄▄▄▄██
+██▄ ▀ ▀▀▄ ▀ ▄███ ▄▄█▄ ▀██
+████▄ █ ▄▄ █▄▀▄▄███ ▄▀ ██
+██████▄█▄▄▀  ▀▄█▄▀ █▀█▀██
+██ ▄▄▄▄▄ █▄  ▀▀ █ ▀▄▄▄███
+██ █   █ █▀▄▀ ██▄ ▄▀▀▀ ██
+██ █▄▄▄█ █▀  █▄▀▀█▄█▄█▄██
+██▄▄▄▄▄▄▄█▄█▄▄▄██▄█▄█▄███
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+```
+
+Method2, Unicode plot by [UnicodePlots.jl](https://github.com/JuliaPlots/UnicodePlots.jl).
+
+```julia
+julia> unicodeplot("Hello world!")
+```
+![深度截图_选择区域_20221003234211](https://cdn.jsdelivr.net/gh/zhihongecnu/PicBed3/picgo/深度截图_选择区域_20221003234211.png)
+
+Note: this only works in the REPL.
+
+### Export a QR Code as a PNG/JPG file
 
 Exporting files is also easy.
 

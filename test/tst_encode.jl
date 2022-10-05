@@ -9,7 +9,6 @@
 end
 
 @testset "Capacity of the QRCode -- getversion " begin
-    modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
     alphabets = [join('0':'9'), keys(alphanumeric), join(Char.(0:255)), keys(kanji)]
     for (mode, alphabet) in zip(modes, alphabets)
         tag = true
@@ -55,7 +54,6 @@ end
 
 @testset "Indicator and pad codes" begin
     ## getcharactercountindicator, padencodedmessage
-    modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
     alphabets = [join('0':'9'), vcat('0':'Z', collect(" \$%*+-./:")), join(Char.(0:255)), keys(kanji)]
     v = rand(1:40)
     i = (v ≥ 1) + (v ≥ 10) + (v ≥ 27)
@@ -250,7 +248,6 @@ end
 
     # test case -- Random
     alphabets = [join('0':'9'), keys(alphanumeric), join(Char.(0:255)), keys(kanji)]
-    modes = [Byte(), Alphanumeric(), UTF8(), Kanji()]
     for (alphabet, mode) in zip(alphabets, modes), eclevel in eclevels
         cap = last(characterscapacity[(eclevel, mode)])
         msg = join(rand(alphabet, rand(1:cap)))
