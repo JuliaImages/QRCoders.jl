@@ -22,7 +22,7 @@ export Poly
 export EncodeError
 
 # QR code style
-export unicodeplot
+export unicodeplot, unicodeplotbychar
 
 using ImageCore
 using FileIO
@@ -113,7 +113,8 @@ include("style.jl")
            version = 0,
            mode::Union{Nothing, Mode} = nothing, 
            mask::Union{Nothing, Int} = nothing, 
-           compact = true)
+           compact::Bool = true,
+           width::Int = 4)
 
 Create a `BitArray{2}` with the encoded `message`, with `true` (`1`) for the black
 areas and `false` (`0`) as the white ones. If `compact` is `false`, white space
@@ -138,7 +139,8 @@ function qrcode( message::AbstractString
                , version::Int = 0
                , mode::Union{Nothing, Mode} = nothing
                , mask::Union{Nothing, Int} = nothing
-               , compact::Bool = true)
+               , compact::Bool = true
+               , width::Int=4)
     # Determining mode and version of the QR code
     bestmode = getmode(message)
     mode = !isnothing(mode) && bestmode ⊆ mode ? mode : bestmode
@@ -169,8 +171,8 @@ function qrcode( message::AbstractString
 
     # Format and version information
     compact && return matrix
-    background = falses(size(matrix) .+ (8, 8))
-    background[5:end-4, 5:end-4] = matrix
+    background = falses(size(matrix) .+ (width*2, width*2))
+    background[width+1:end-width, width+1:end-width] = matrix
     return background
 end
 

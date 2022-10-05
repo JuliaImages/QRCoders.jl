@@ -37,17 +37,17 @@ imgpath = "testimages/"
 eclevels = [Low(), Medium(), Quartile(), High()]
 modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
 
-## operations
-# include("tst_operation.jl")
+# operations
+include("tst_operation.jl")
 
-# # format and version information
-# include("tst_fmtver.jl")
+# format and version information
+include("tst_fmtver.jl")
 
-# ## encode message
-# include("tst_encode.jl")
+# encode message
+include("tst_encode.jl")
 
-# ## original tests
-# include("tst_overall.jl")
+# original tests
+include("tst_overall.jl")
 
-## style
+# style
 include("tst_style.jl")

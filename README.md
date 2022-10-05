@@ -55,7 +55,25 @@ Keywords `eclevel`, `version`, `mode` and `mask`.
 4. The mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is `nothing`, the mask pattern will picked by the penalty rules.
 
 ### Unicode Plot
-Unicode plot of the QR Code.
+Method1, as mentioned in [issue#25](https://github.com/JuliaImages/QRCoders.jl/issues/25).
+```jl
+julia> unicodeplotbychar("Hello world!") |> print
+█████████████████████████
+██ ▄▄▄▄▄ █▀ █ ▄█ ▄▄▄▄▄ ██
+██ █   █ █▄ █▀▄█ █   █ ██
+██ █▄▄▄█ █ ██▀ █ █▄▄▄█ ██
+██▄▄▄▄▄▄▄█ ▀ ▀ █▄▄▄▄▄▄▄██
+██▄ ▀ ▀▀▄ ▀ ▄███ ▄▄█▄ ▀██
+████▄ █ ▄▄ █▄▀▄▄███ ▄▀ ██
+██████▄█▄▄▀  ▀▄█▄▀ █▀█▀██
+██ ▄▄▄▄▄ █▄  ▀▀ █ ▀▄▄▄███
+██ █   █ █▀▄▀ ██▄ ▄▀▀▀ ██
+██ █▄▄▄█ █▀  █▄▀▀█▄█▄█▄██
+██▄▄▄▄▄▄▄█▄█▄▄▄██▄█▄█▄███
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+```
+
+Method2, Unicode plot by [UnicodePlots.jl](https://github.com/JuliaPlots/UnicodePlots.jl).
 
 ```julia
 julia> unicodeplot("Hello world!")
