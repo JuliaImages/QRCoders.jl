@@ -52,9 +52,8 @@ end
 
 Plot of the QR code using Unicode characters.
 
-Note that `true` represents black and `false` represents white in qrcode.
-
-Which is the opposite of the image convention.
+Note that `true` represents black and `false` represents white in qrcode, 
+which is the opposite of the image convention.
 """
 function unicodeplotbychar(message::AbstractString)
     unicodeplotbychar(.! qrcode(message; eclevel=Low(), compact=false, width=2))
