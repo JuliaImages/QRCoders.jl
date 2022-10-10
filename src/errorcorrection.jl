@@ -59,13 +59,13 @@ end
 """
 Multiplication table of non-zero elements in GF(256).
 """
-const multtable = [gfpow2(gflog2(i) + gflog2(j)) for i in 1:255, j in 1:255]
+const multtable = [i*j == 0 ? 0 : gfpow2(gflog2(i) + gflog2(j)) for i in 0:255, j in 0:255]
 
 
 """
 Division table of non-zero elements in GF(256).
 """
-const divtable = [gfpow2(gflog2(i) - gflog2(j)) for i in 1:255, j in 1:255]
+const divtable = [i == 0 ? 0 : gfpow2(gflog2(i) - gflog2(j)) for i in 0:255, j in 1:255]
 
 """
     mult(a::Integer, b::Integer)
@@ -73,9 +73,9 @@ const divtable = [gfpow2(gflog2(i) - gflog2(j)) for i in 1:255, j in 1:255]
 Multiplies two integers in GF(256).
 """
 function mult(a::Integer, b::Integer)
-    (a == 0 || b == 0) && return 0
+    # (a == 0 || b == 0) && return 0
     # gfpow2(gflog2(a) - gflog2(b))
-    return multtable[a, b]
+    return multtable[a + 1, b + 1]
 end
 
 """
@@ -85,8 +85,7 @@ Division of intergers in GF(256).
 """
 function divide(a::Integer, b::Integer)
     b == 0 && throw(DivideError())
-    a == 0 && return 0
-    return divtable[a, b]
+    return divtable[a + 1, b]
 end
 
 """
@@ -183,8 +182,8 @@ end
 *(a::Integer, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
 function *(a::Poly, b::Poly)::Poly
     prodpoly = Poly(zeros(Int, length(a) + length(b) - 1))
-    @inbounds for (i, c1) in enumerate(a.coeff), (j, c2) in enumerate(b.coeff)
-        prodpoly.coeff[i + j - 1] ⊻= mult(c2, c1) # column first
+    for (i, c1) in enumerate(a.coeff), (j, c2) in enumerate(b.coeff)
+        @inbounds prodpoly.coeff[i + j - 1] ⊻= mult(c2, c1) # column first
     end
     return prodpoly
 end
@@ -210,16 +209,14 @@ function euclidean_divide!(f::Poly, g::Poly)
     gn = last(gcoef)
     ## g(x) is a constant
     if lg == 1
-        @inbounds for i in eachindex(fcoef)
-            fcoef[i] = divide(fcoef[i], gn)
-        end
+        fcoef .= divide.(fcoef, gn)
         return f, zero(Poly)
     end
     ## degree of the quotient polynomial
     quodeg = lf - lg
     ## deg(f) < deg(g)
     quodeg < 0 && return zero(Poly), f
-    ## quotient polynomial
+    ## remainder and quotient polynomial
     @inbounds for i in 0:quodeg
         leadterm = divide(fcoef[end-i], gn)
         for (j, c) in enumerate(gcoef)

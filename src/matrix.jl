@@ -134,9 +134,10 @@ function makemask(matrix::AbstractArray, rule::Function)::BitArray{2}
     n = size(matrix, 1)
     mask = falses(size(matrix))
     for row in 1:n, col in 1:n
-        if isnothing(matrix[row, col]) && iszero(rule(row - 1, col - 1))
-            mask[row, col] = true
+        if isnothing(matrix[row, col]) && rule(row - 1, col - 1) == 0
+            @inbounds mask[row, col] = true
         end
+        # @inbounds mask[row, col] = isnothing(matrix[row, col]) && rule(row - 1, col - 1) == 0
     end
     return mask
 end
