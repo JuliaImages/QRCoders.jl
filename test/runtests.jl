@@ -24,7 +24,7 @@ using QRCoders:
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
-    makelogtable, antilogtable, logtable, 
+    antipowtable, powtable, 
     gfpow2, gflog2, gfinv, mult, divide,
     # operator for polynomials
     iszeropoly, degree, zero, unit,

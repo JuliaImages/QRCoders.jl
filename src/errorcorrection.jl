@@ -12,39 +12,38 @@ struct Poly
 end
 
 """
-    makelogtable()
+Values of 2⁰, 2¹,..., 2²⁵⁴ in Galois Field GF(256).
 
-Retrun a list of logarithm values for the Galois Field GF(256).
+Note that 2²⁵⁵ = 1, so we don't need to store it.
 """
-function makelogtable()
-    t = ones(Int, 256)
+const powtable = let
+    table = ones(Int, 255)
     v = 1
-    for i in 2:256
+    for i in 2:255
         v <<= 1
         if v > 255
             v = xor(v, 285) # According to the specs
         end
-        t[i] = v
+        table[i] = v
     end
-    return t
+    table
 end
 
 """
-Logarithm table for GF(256).
+Values of log₂1, log₂2, ..., log₂255 in GF(256).
 """
-const logtable = Dict{Int, Int}(zip(0:255, makelogtable()))
-
-"""
-Anti-logarithm table for GF(256).
-"""
-const antilogtable = Dict{Int, Int}(zip(makelogtable(), 0:254))
+const antipowtable = let
+    table = Vector{Int}(undef, 255)
+    table[powtable] .= 0:254
+    table
+end
 
 """
     gfpow2(n::Int)
 
-Returns 2^n in GF(256).
+Returns 2ⁿ in GF(256).
 """
-gfpow2(n::Int) = logtable[mod(n, 255)]
+gfpow2(n::Int) = powtable[mod(n, 255) + 1]
 
 """
     gflog2(n::Integer)
@@ -53,7 +52,7 @@ Returns the logarithm of n to base 2 in GF(256).
 """
 function gflog2(n::Integer)
     1 ≤ n ≤ 255 || throw(DomainError("gflog2: $n must be between 1 and 255"))
-    return antilogtable[n]
+    return antipowtable[n]
 end
 
 """
@@ -73,7 +72,6 @@ const divtable = [i == 0 ? 0 : gfpow2(gflog2(i) - gflog2(j)) for i in 0:255, j i
 Multiplies two integers in GF(256).
 """
 function mult(a::Integer, b::Integer)
-    # (a == 0 || b == 0) && return 0
     # gfpow2(gflog2(a) - gflog2(b))
     return multtable[a + 1, b + 1]
 end

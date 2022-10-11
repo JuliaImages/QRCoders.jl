@@ -71,8 +71,7 @@ end
     @test_throws DomainError gfinv(0)
 
     ## log table
-    gftable = makelogtable()
-    @test sort(gftable) == vcat(1, 1:255)
+    @test sort(powtable) == 1:255
     
     ## copy
     p1 = Poly([1, 2, 3])
@@ -120,8 +119,8 @@ end
     a, b = randpoly(1:255), randpoly(1:255)
     @test a * b == oriprod(a, b)
     
-    @test all(i == antilogtable[logtable[i]] for i in 0:254)
-    @test all(i == logtable[antilogtable[i]] for i in 1:255)
+    @test all(i == antipowtable[powtable[i+1]] for i in 0:254)
+    @test all(i == powtable[antipowtable[i]+1] for i in 1:255)
 
     p = Poly(rand(UInt8, 10))
     q = Poly(rand(UInt8, 20))
@@ -140,16 +139,16 @@ end
     @test generator(3) == Poly([8, 14, 7, 1])
 
     g7 = [21, 102, 238, 149, 146, 229, 87, 0]
-    @test generator(7) == Poly(map(n -> logtable[n], g7))
+    @test generator(7) == Poly(map(n -> powtable[n+1], g7))
 
     g8 = [28, 196, 252, 215, 249, 208, 238, 175, 0]
-    @test generator(8) == Poly(map(n -> logtable[n], g8))
+    @test generator(8) == Poly(map(n -> powtable[n+1], g8))
 
     g9 = [36, 123, 11, 149, 235, 231, 137, 246, 95, 0]
-    @test generator(9) == Poly(map(n -> logtable[n], g9))
+    @test generator(9) == Poly(map(n -> powtable[n+1], g9))
 
     g12 = [66, 157, 87, 131, 143, 198, 113, 187, 121, 98, 43, 102, 0]
-    @test generator(12) == Poly(map(n -> logtable[n], g12))
+    @test generator(12) == Poly(map(n -> powtable[n+1], g12))
 
     msg = [17, 236, 17, 236, 17, 236, 64, 67, 77, 220, 114, 209, 120, 11, 91, 32]
     r = [23, 93, 226, 231, 215, 235, 119, 39, 35, 196]
