@@ -50,10 +50,7 @@ gfpow2(n::Int) = powtable[mod(n, 255) + 1]
 
 Returns the logarithm of n to base 2 in GF(256).
 """
-function gflog2(n::Integer)
-    1 ≤ n ≤ 255 || throw(DomainError("gflog2: $n must be between 1 and 255"))
-    return antipowtable[n]
-end
+gflog2(n::Integer) = antipowtable[n]
 
 """
 Multiplication table of non-zero elements in GF(256).
@@ -72,7 +69,7 @@ const divtable = [i == 0 ? 0 : gfpow2(gflog2(i) - gflog2(j)) for i in 0:255, j i
 Multiplies two integers in GF(256).
 """
 function mult(a::Integer, b::Integer)
-    # gfpow2(gflog2(a) - gflog2(b))
+    # same as gfpow2(gflog2(a) + gflog2(b))
     return multtable[a + 1, b + 1]
 end
 

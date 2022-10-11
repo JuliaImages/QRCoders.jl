@@ -119,7 +119,7 @@ function placedata!( matrix::Array{Union{Bool,Nothing},2}
     return BitArray{2}(matrix)
 end
 
-_maskrules = [
+const _maskrules = [
     (x, y) -> (x ⊻ y) & 1,
     (x, _) -> x & 1,
     (_, y) -> y % 3,
@@ -137,7 +137,6 @@ function makemask(matrix::AbstractArray, rule::Function)::BitArray{2}
         if isnothing(matrix[row, col]) && rule(row - 1, col - 1) == 0
             @inbounds mask[row, col] = true
         end
-        # @inbounds mask[row, col] = isnothing(matrix[row, col]) && rule(row - 1, col - 1) == 0
     end
     return mask
 end

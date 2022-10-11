@@ -65,10 +65,10 @@ end
     @test mult(divide(a, b), c) == gfpow2(ap - bp + cp)
     @test divide(0, rand(1:255)) == 0
     @test_throws DivideError divide(rand(1:255), 0)
-    @test_throws DomainError gflog2(-1)
-    @test_throws DomainError gflog2(0)
+    @test_throws BoundsError gflog2(-1)
+    @test_throws BoundsError gflog2(0)
     @test all(1 == mult(i, gfinv(i)) for i in 1:255)
-    @test_throws DomainError gfinv(0)
+    @test_throws BoundsError gfinv(0)
 
     ## log table
     @test sort(powtable) == 1:255
@@ -133,7 +133,7 @@ end
     @test Poly([1, 1]) * Poly([2, 1]) == Poly([2, 3, 1])
     @test Poly([1, 1]) * Poly([2, 1]) * Poly([4, 1]) == Poly([8, 14, 7, 1])
     a, p = rand(UInt8), randpoly(1:255)
-    @test Poly([a]) * p == a * p
+    @test Poly([a]) * p == a * p == Int(a) * p
 
     @test generator(2) == Poly([2, 3, 1])
     @test generator(3) == Poly([8, 14, 7, 1])
