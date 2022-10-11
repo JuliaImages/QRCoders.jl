@@ -236,8 +236,8 @@ Encode an integer into a `BitArray`.
 """
 function int2bitarray(k::Integer; pad::Int = 8)
     res = BitArray{1}(undef, pad)
-    @inbounds for i in pad:-1:1
-        res[i] = k & 1
+    for i in pad:-1:1
+        @inbounds res[i] = k & 1
         k >>= 1
     end
     k != 0 && throw("int2bitarray: bit-length of $k is longer than $pad")

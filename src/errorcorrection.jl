@@ -12,60 +12,56 @@ struct Poly
 end
 
 """
-    makelogtable()
+Values of 2⁰, 2¹,..., 2²⁵⁴ in Galois Field GF(256).
 
-Retrun a list of logarithm values for the Galois Field GF(256).
+Note that 2²⁵⁵ = 1, so we don't need to store it.
 """
-function makelogtable()
-    t = ones(Int, 256)
+const powtable = let
+    table = ones(Int, 255)
     v = 1
-    for i in 2:256
+    for i in 2:255
         v <<= 1
         if v > 255
             v = xor(v, 285) # According to the specs
         end
-        t[i] = v
+        table[i] = v
     end
-    return t
+    table
 end
 
 """
-Logarithm table for GF(256).
+Values of log₂1, log₂2, ..., log₂255 in GF(256).
 """
-const logtable = Dict{Int, Int}(zip(0:255, makelogtable()))
-
-"""
-Anti-logarithm table for GF(256).
-"""
-const antilogtable = Dict{Int, Int}(zip(makelogtable(), 0:254))
+const antipowtable = let
+    table = Vector{Int}(undef, 255)
+    table[powtable] .= 0:254
+    table
+end
 
 """
     gfpow2(n::Int)
 
-Returns 2^n in GF(256).
+Returns 2ⁿ in GF(256).
 """
-gfpow2(n::Int) = logtable[mod(n, 255)]
+gfpow2(n::Int) = powtable[mod(n, 255) + 1]
 
 """
     gflog2(n::Integer)
 
 Returns the logarithm of n to base 2 in GF(256).
 """
-function gflog2(n::Integer)
-    1 ≤ n ≤ 255 || throw(DomainError("gflog2: $n must be between 1 and 255"))
-    return antilogtable[n]
-end
+gflog2(n::Integer) = antipowtable[n]
 
 """
 Multiplication table of non-zero elements in GF(256).
 """
-const multtable = [gfpow2(gflog2(i) + gflog2(j)) for i in 1:255, j in 1:255]
+const multtable = [i*j == 0 ? 0 : gfpow2(gflog2(i) + gflog2(j)) for i in 0:255, j in 0:255]
 
 
 """
 Division table of non-zero elements in GF(256).
 """
-const divtable = [gfpow2(gflog2(i) - gflog2(j)) for i in 1:255, j in 1:255]
+const divtable = [i == 0 ? 0 : gfpow2(gflog2(i) - gflog2(j)) for i in 0:255, j in 1:255]
 
 """
     mult(a::Integer, b::Integer)
@@ -73,9 +69,8 @@ const divtable = [gfpow2(gflog2(i) - gflog2(j)) for i in 1:255, j in 1:255]
 Multiplies two integers in GF(256).
 """
 function mult(a::Integer, b::Integer)
-    (a == 0 || b == 0) && return 0
-    # gfpow2(gflog2(a) - gflog2(b))
-    return multtable[a, b]
+    # same as gfpow2(gflog2(a) + gflog2(b))
+    return multtable[a + 1, b + 1]
 end
 
 """
@@ -85,8 +80,7 @@ Division of intergers in GF(256).
 """
 function divide(a::Integer, b::Integer)
     b == 0 && throw(DivideError())
-    a == 0 && return 0
-    return divtable[a, b]
+    return divtable[a + 1, b]
 end
 
 """
@@ -183,8 +177,8 @@ end
 *(a::Integer, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
 function *(a::Poly, b::Poly)::Poly
     prodpoly = Poly(zeros(Int, length(a) + length(b) - 1))
-    @inbounds for (i, c1) in enumerate(a.coeff), (j, c2) in enumerate(b.coeff)
-        prodpoly.coeff[i + j - 1] ⊻= mult(c2, c1) # column first
+    for (i, c1) in enumerate(a.coeff), (j, c2) in enumerate(b.coeff)
+        @inbounds prodpoly.coeff[i + j - 1] ⊻= mult(c2, c1) # column first
     end
     return prodpoly
 end
@@ -210,16 +204,14 @@ function euclidean_divide!(f::Poly, g::Poly)
     gn = last(gcoef)
     ## g(x) is a constant
     if lg == 1
-        @inbounds for i in eachindex(fcoef)
-            fcoef[i] = divide(fcoef[i], gn)
-        end
+        fcoef .= divide.(fcoef, gn)
         return f, zero(Poly)
     end
     ## degree of the quotient polynomial
     quodeg = lf - lg
     ## deg(f) < deg(g)
     quodeg < 0 && return zero(Poly), f
-    ## quotient polynomial
+    ## remainder and quotient polynomial
     @inbounds for i in 0:quodeg
         leadterm = divide(fcoef[end-i], gn)
         for (j, c) in enumerate(gcoef)

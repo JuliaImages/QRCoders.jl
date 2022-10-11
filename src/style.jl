@@ -7,10 +7,12 @@
     unicodeplot(mat::AbstractMatrix{Bool}; border=:none)
 
 Uses UnicodePlots.jl to draw the matrix.
+
+Note: In UnicodePlots.jl, matrix index start from the left-down corner.
 """
 function unicodeplot(mat::AbstractMatrix{Bool}; border=:none)
     width, height = size(mat)
-    return heatmap(mat;
+    return heatmap(@view(mat[end:-1:1,:]);
                   labels=false, 
                   border=border, 
                   colormap=:gray,
