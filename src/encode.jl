@@ -4,7 +4,7 @@
 ### 2. make blocks with error-correction bits
 ### 3. interleave the blocks
 
-using .Polynomial: Poly, geterrorcorrection
+using .Polynomial: Poly, geterrcode
 
 """
     utf8len(message::AbstractString)
@@ -24,11 +24,13 @@ bitarray2int(bits::AbstractVector) = foldl((i, j) -> (i << 1 ⊻ j), bits)
 """
     bits2bytes(bits::AbstractVector)
 
-Convert bits to bytes. The remainder bits will be truncated.
+Convert bits to bytes.
+
+Note: The remainder bits will be truncated.
 """
 function bits2bytes(bits::AbstractVector)
     nbits = length(bits)
-    return @views [bitarray2int(bits[i:i + 7]) for i in 1:8:(nbits & 7 ⊻ nbits)]
+    return @views UInt8[bitarray2int(bits[i:i + 7]) for i in 1:8:(nbits & 7 ⊻ nbits)]
 end
 
 ## mode, indicator and message bits
@@ -188,12 +190,14 @@ end
 Divide the encoded message into 1 or 2 groups with `nbX` blocks in group `X` and
 `ncX` codewords per block. Each block is a collection of integers which 
 represents a message polynomial in GF(256).
+
+The output is a collection of blocks, and each block is a collection of `UInt8` integers.
 """
 function makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
     bytes = bits2bytes(bits)
     
     ind = 1
-    blocks = Vector{Vector{Int}}(undef, nb1 + nb2)
+    blocks = Vector{Vector{UInt8}}(undef, nb1 + nb2)
     for i in 1:nb1
         blocks[i] = @view(bytes[ind:ind + nc1 - 1])
         ind += nc1
@@ -211,7 +215,7 @@ end
 Return the error correction blocks, with `ncodewords` codewords per block.
 """
 function getecblock(block::AbstractVector, ncodewords::Int)
-    ecpoly = geterrorcorrection(Poly(@view(block[end:-1:1])), ncodewords)
+    ecpoly = geterrcode(Poly{UInt8}(@view(block[end:-1:1])), ncodewords)
     return @view(ecpoly.coeff[end:-1:1])
 end
 
@@ -230,7 +234,7 @@ function interleave( blocks::AbstractVector
                    , nc1::Int, nb2::Int
                    , nc2::Int, version::Int
                    )::BitArray{1}
-    bytes = Vector{Int}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
+    bytes = Vector{UInt8}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
     ind = 1
     ## Encoded data
     for i in 1:nc1, j in 1:(nb1 + nb2)

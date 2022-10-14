@@ -29,10 +29,13 @@ using QRCoders.Polynomial:
     # operator for polynomials
     iszeropoly, degree, zero, unit,
     rpadzeros, rstripzeros, generator, 
-    geterrorcorrection, euclidean_divide
-                            
-randpoly(n::Int) = Poly([rand(0:255, n-1)..., rand(1:255)])
-randpoly(range::AbstractVector{Int}) = randpoly(rand(range))
+    geterrcode, euclidean_divide
+
+# random polynomial
+randpoly(::Type{T}, n::Int) where T = Poly{T}([rand(0:255, n-1)..., rand(1:255)])
+randpoly(n::Int) = randpoly(UInt8, n)
+randpoly(::Type{T}, range::AbstractVector{Int}) where T = randpoly(T, rand(range))
+randpoly(range::AbstractVector{Int}) = randpoly(UInt8, range)
 imgpath = "testimages/"
 eclevels = [Low(), Medium(), Quartile(), High()]
 modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
