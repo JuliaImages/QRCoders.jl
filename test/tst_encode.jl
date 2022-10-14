@@ -170,7 +170,7 @@ end
     mask = argmin(scores) - 1
     matrix = maskedmats[mask + 1]
 
-    mat = qrcode(msg; compact=true)
+    mat = qrcode(msg)
     @test penalty(matrix) == minimum(scores)
     @test mat == matrix
 end

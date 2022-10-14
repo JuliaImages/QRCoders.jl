@@ -8,6 +8,7 @@
 
 Create [QR Codes](https://en.wikipedia.org/wiki/QR_code) as data within Julia, or export as PNG.
 
+## Usage
 ### Create a QR Code as data
 
 Creating a QR Code couldn't be simpler.
@@ -28,35 +29,9 @@ julia> qrcode("Hello world!")
 
 The value `1(true)` represents a dark space and `0(false)` a white square.
 
-There are some optional arguments.
-
-Keyword `compact` with default value `true`. 
-
-If `compact` is `false`, the QR Code will be surrounded by a white border of width 4.
-
-```julia
-julia> qrcode("Hello world!", compact = false)
-29×29 BitMatrix:
- 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- ⋮              ⋮              ⋮              ⋮              ⋮              ⋮        
- 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
- 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
-```
-
-Keywords: `eclevel`, `version`, `mode` and `mask`.
-1. The error correction level `eclevel` can be picked from four values `Low()`, `Medium()`, `Quartile()` or `High()`. Higher levels make denser QR codes.
-
-2. The version of the QR code `version` can be picked from 1 to 40. If the assigned version is too small to contain the message, the first available version is used.
-
-3. The encoding mode `mode` can be picked from five values: `Numeric()`, `Alphanumeric()`, `Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is `nothing` or is failed to contain the message, the mode will be picked automatically.
-
-4. The mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is `nothing`, the mask pattern will picked by the penalty rules.
-
 ### Unicode Plot
-Method1, as mentioned in [issue#25](https://github.com/JuliaImages/QRCoders.jl/issues/25).
+Method 1, as mentioned in [issue#25](https://github.com/JuliaImages/QRCoders.jl/issues/25).
+
 ```jl
 julia> unicodeplotbychar("Hello world!") |> print
 █████████████████████████
@@ -74,14 +49,43 @@ julia> unicodeplotbychar("Hello world!") |> print
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 ```
 
-Method2, Unicode plot by [UnicodePlots.jl](https://github.com/JuliaPlots/UnicodePlots.jl).
+Method 2, Unicode plot by [UnicodePlots.jl](https://github.com/JuliaPlots/UnicodePlots.jl).
 
 ```julia
 julia> unicodeplot("Hello world!")
 ```
-> <img src="https://cdn.jsdelivr.net/gh/zhihongecnu/PicBed3/picgo/深度截图_选择区域_20221005233521.png" width="100">
+<img src="https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/unicodeplot.png" width="100">
 
-Note: method 2 dosen't work in text string.
+Note: method 2 dosen't work for text strings.
+
+### Optional Parameters
+
+There are some optional arguments.
+
+Keyword `width` with default value `0`. The QR Code will be surrounded by a white border of width `width`.
+
+```julia
+julia> qrcode("Hello world!", width=1)
+23×23 BitMatrix:
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ 0  1  1  1  1  1  1  1  0  1  1  1  1  1  0  1  1  1  1  1  1  1  0
+ 0  1  0  0  0  0  0  1  0  1  0  1  0  1  0  1  0  0  0  0  0  1  0
+ ⋮              ⋮              ⋮              ⋮              ⋮     
+ 0  1  0  0  0  0  0  1  0  0  1  0  1  0  1  1  1  1  0  0  0  1  0
+ 0  1  1  1  1  1  1  1  0  1  0  1  1  0  1  1  1  0  0  1  0  0  0
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+```
+
+Keywords `eclevel`, `version`, `mode` and `mask`:
+
+1. Error correction level `eclevel` can be picked from four values `Low()`, `Medium()`, `Quartile()` or `High()`. Higher levels make denser QR codes.
+
+2. Version of the QR code `version` can be picked from 1 to 40. If the assigned version is too small to contain the message, the first available version is used.
+
+3. Encoding mode `mode` can be picked from five values: `Numeric()`, `Alphanumeric()`, `Byte()`, `Kanji()` or `UTF8()`. If the assigned `mode` is failed to contain the message, it will be picked automatically.
+
+4. Mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is not valid, it will be picked automatically.
+
 
 ### Export a QR Code as a PNG/JPG file
 
@@ -93,18 +97,19 @@ julia> exportqrcode("Hello world!")
 
 A file will be saved at `./qrcode.png`.
 
-> ![QRCode1](https://raw.githubusercontent.com/jiegillet/QRCode.jl/966b11d0334e050992d4167bda34a495fb334a6c/qrcode.png)
+> ![QRCode1](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode.png)
 
-There is an extra optional parameter for `exportqrcode`:
+The keywords in `qrcode` are also available in `exportqrcode`. Moreover, there is one more keyword `targetsize` to control the size of the exported file.
 
 ```julia
-julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10, compact = true)
+julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10)
 ```
 
 This file will be saved as `./img/hello.png` (if the `img` directory already exists), have a size of (approximately) 10 centimeters and be compact. Please note that compact codes may be hard to read depending on their background.
 
-> ![QRCode2](https://raw.githubusercontent.com/jiegillet/QRCode.jl/966b11d0334e050992d4167bda34a495fb334a6c/hello.png)
+> ![QRCode2](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/hello.png)
 
+## About QRCode
 ### Error Correction Level
 
 QR Codes can be encoded with four error correction levels `Low`, `Medium`, `Quartile` and `High`. Error correction can restore missing data from the QR code.
@@ -130,7 +135,7 @@ julia> exportqrcode(join(Char.(0x80:0x9f)))
 ```
 ![qrcode](https://user-images.githubusercontent.com/62223937/190864667-0b24f7ad-e905-453d-a6fe-4d7d6d9feb15.png)
 
-### Acknowledgments
+## Acknowledgments
 
 `QRCoders.jl` was built following this [excellent tutorial](https://www.thonky.com/qr-code-tutorial/).
 

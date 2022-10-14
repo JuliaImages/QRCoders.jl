@@ -27,7 +27,7 @@ end
 Uses UnicodePlots.jl to draw the QR code of `message`.
 """
 function unicodeplot(message::AbstractString; border=:none)
-    unicodeplot(qrcode(message;eclevel=Low(), compact=false, width=2); border=border) 
+    unicodeplot(qrcode(message;eclevel=Low(), width=2); border=border) 
 end
 
 ## idea by @notinaboat
@@ -58,5 +58,5 @@ Note that `true` represents black and `false` represents white in qrcode,
 which is the opposite of the image convention.
 """
 function unicodeplotbychar(message::AbstractString)
-    unicodeplotbychar(.! qrcode(message; eclevel=Low(), compact=false, width=2))
+    unicodeplotbychar(.! qrcode(message; eclevel=Low(), width=2))
 end
