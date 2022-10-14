@@ -62,7 +62,7 @@ Note: method 2 dosen't work for text strings.
 
 There are some optional arguments.
 
-Keyword `width` with default value `0`. The QR Code will be surrounded by a white border of width `width`.
+Keyword `width` with default value `0`. 
 
 ```julia
 julia> qrcode("Hello world!", width=1)
@@ -75,6 +75,8 @@ julia> qrcode("Hello world!", width=1)
  0  1  1  1  1  1  1  1  0  1  0  1  1  0  1  1  1  0  0  1  0  0  0
  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
 ```
+
+The QR Code will be surrounded by a white border of width `width`.
 
 Keywords `eclevel`, `version`, `mode` and `mask`:
 
