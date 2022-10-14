@@ -32,7 +32,7 @@ end
 """
 Values of log₂1, log₂2, ..., log₂255 in GF(256).
 
-Note that it is a table of `Int64`s instead of `UInt8`s.
+It is a table of `Int` instead of `UInt8` to avoid integers overflow.
 """
 const antipowtable = let
     table = Vector{Int}(undef, 255)
@@ -41,11 +41,13 @@ const antipowtable = let
 end
 
 """
-    gfpow2(n::Int)
+    gfpow2(n::Integer)
 
 Returns 2ⁿ in GF(256).
 """
 gfpow2(n::Integer) = powtable[mod(n, 255) + 1]
+# aviod the use of `mod`
+gfpow2(n::UInt8) = powtable[n + 0x1 + (n == 0xff)]
 
 """
     gflog2(n::Integer)
@@ -53,6 +55,11 @@ gfpow2(n::Integer) = powtable[mod(n, 255) + 1]
 Returns the logarithm of n to base 2 in GF(256).
 """
 gflog2(n::Integer) = antipowtable[n]
+
+"""
+    gfinv(a::Integer)
+"""
+gfinv(a::Integer) = gfpow2(-gflog2(a))
 
 """
 Multiplication table of non-zero elements in GF(256).
@@ -84,11 +91,6 @@ function divide(a::Integer, b::Integer)
     iszero(b) && throw(DivideError())
     return divtable[a + 1, b]
 end
-
-"""
-    gfinv(a::Integer)
-"""
-gfinv(a::Integer) = gfpow2(-gflog2(a))
 
 """
     iszeropoly(p::Poly)

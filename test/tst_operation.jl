@@ -5,7 +5,6 @@
     ## original method of `geterrcode`
     tail!(p::Poly)::Poly = Poly(deleteat!(p.coeff, 1))
     init!(p::Poly)::Poly = Poly(deleteat!(p.coeff, length(p)))
-    Base.:(*)(a::Integer, p::Poly)::Poly = Poly(map(x->mult(a, x), p.coeff))
     function geterrorcorrection(a::Poly, n::Int)::Poly
         la = length(a)
         a = a << n
@@ -60,6 +59,7 @@ end
     @test mult(b, c) == mult(c, b) == a
 
     ## divide, gfpow2, gflog2, gfinv
+    @test gfpow2.(0:255) == gfpow2.(0x0:0xff)
     ap, bp, cp = [rand(1:255) for _ in 1:3]
     a, b, c = gfpow2.([ap, bp, cp])
     @test mult(divide(a, b), c) == gfpow2(ap - bp + cp)
@@ -111,9 +111,16 @@ end
     @test Kanji() ⊆ UTF8() && !(Kanji() ⊆ Byte())
     @test !(Numeric() ⊆ Kanji())
     @test !(Alphanumeric() ⊆ Numeric())
+
+    ## eltype
+    @test eltype(collect(randpoly(Int, 13))) == Int
+    @test eltype(collect(randpoly(UInt8, 13))) == UInt8
 end
 
-@testset "Test set for polynomials and error encoding" begin
+@testset "Tests for polynomials and error encoding" begin
+    @test 2 * Poly([1,2]) == Poly([2,4]) == Poly([1,2]) * 2
+    @test 0x2 * Poly(UInt8[1,2]) == Poly(UInt8[2,4]) == Poly(UInt8[1,2]) * 0x2
+    
     function oriprod(a::Poly, b::Poly)::Poly
         return sum([ c * (a << (p - 1)) for (p, c) in enumerate(b.coeff)])
     end
@@ -133,12 +140,12 @@ end
 
     @test Poly([1, 1]) * Poly([2, 1]) == Poly([2, 3, 1])
     @test Poly([1, 1]) * Poly([2, 1]) * Poly([4, 1]) == Poly([8, 14, 7, 1])
-    a, p = rand(UInt8), randpoly(1:255)
-    @test Poly([a]) * p == a * p == Int(a) * p
+    a, p = rand(UInt8), randpoly(UInt8, 1:255)
+    @test Poly([a]) * p == a * p
 
     @test generator(Int, 2) == Poly([2, 3, 1])
     @test generator(Int, 3) == Poly([8, 14, 7, 1])
-    @test generator(2) == Poly{UInt8}([2, 3, 1])
+    @test generator(UInt8, 2) == Poly{UInt8}([2, 3, 1])
     @test generator(3) == Poly(UInt8[8, 14, 7, 1])
 
     g7 = [21, 102, 238, 149, 146, 229, 87, 0]
