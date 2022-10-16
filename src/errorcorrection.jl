@@ -31,11 +31,9 @@ end
 
 """
 Values of log₂1, log₂2, ..., log₂255 in GF(256).
-
-It is a table of `Int` instead of `UInt8` to avoid integers overflow.
 """
 const antipowtable = let
-    table = Vector{Int}(undef, 255)
+    table = Vector{UInt8}(undef, 255)
     table[powtable] .= 0:254
     table
 end
@@ -59,18 +57,17 @@ gflog2(n::Integer) = antipowtable[n]
 """
     gfinv(a::Integer)
 """
-gfinv(a::Integer) = gfpow2(-gflog2(a))
+gfinv(a::Integer) = gfpow2(0xff-gflog2(a))
 
 """
 Multiplication table of non-zero elements in GF(256).
 """
-const multtable = [iszero(i * j) ? 0x0 : gfpow2(gflog2(i) + gflog2(j)) for i in 0:255, j in 0:255]
-
+const multtable = [iszero(i * j) ? 0x0 : gfpow2(Int(gflog2(i)) + gflog2(j)) for i in 0:255, j in 0:255] 
 
 """
 Division table of non-zero elements in GF(256).
 """
-const divtable = [iszero(i) ? 0x0 : gfpow2(gflog2(i) - gflog2(j)) for i in 0:255, j in 1:255]
+const divtable = [iszero(i) ? 0x0 : gfpow2(Int(gflog2(i)) - gflog2(j)) for i in 0:255, j in 1:255]
 
 """
     mult(a::Integer, b::Integer)
@@ -176,8 +173,8 @@ Increase the degree of `p` by `n`.
 <<(p::Poly{T}, n::Int) where T = Poly{T}(vcat(zeros(T, n), p.coeff))
 
 function +(a::Poly{T}, b::Poly{T}) where T
-    l = max(length(a), length(b))
-    return Poly{T}([xor(get(a.coeff, i, zero(T)), get(b.coeff, i, zero(T))) for i in 1:l])
+    l, o = max(length(a), length(b)), zero(T)
+    return Poly{T}([xor(get(a.coeff, i, o), get(b.coeff, i, o)) for i in 1:l])
 end
 
 """
@@ -185,8 +182,8 @@ end
 
 Multiply two polynomials or a polynomial with a scalar.
 """
-*(a::T, p::Poly{T}) where T = Poly{T}(mult.(a, p.coeff))
-*(p::Poly{T}, a::T) where T = Poly{T}(mult.(a, p.coeff))
+*(a::Integer, p::Poly{T}) where T = Poly{T}(mult.(a, p.coeff))
+*(p::Poly{T}, a::Integer) where T = Poly{T}(mult.(a, p.coeff))
 function *(a::Poly{T}, b::Poly{T}) where T
     prodpoly = Poly(zeros(T, length(a) + length(b) - 1))
     for (i, c1) in enumerate(a.coeff), (j, c2) in enumerate(b.coeff)

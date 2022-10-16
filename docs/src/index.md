@@ -7,18 +7,27 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 ```@docs
 qrcode
 exportqrcode
-getversion
-getmode
+```
+
+## styled QR codes
+
+Plot in REPL.
+
+```@docs
+unicodeplot
+unicodeplotbychar
 ```
 
 ## Encoding modes
-There are three several encoding mode currently supported.
+There are five several encoding mode currently supported.
 
 ```@docs
 Mode
 Numeric
 Alphanumeric
 Byte
+Kanji
+UTF8
 ```
 
 ## Error Correction
