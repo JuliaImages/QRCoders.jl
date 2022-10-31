@@ -212,7 +212,7 @@ function exportqrcode( message::AbstractString
                      , compact::Bool = false
                      , width::Int = 4 )
     # check if the image format is supported
-    supportexts = ["png", "jpg"]
+    supportexts = ["png", "jpg", "gif"]
     if isnothing(match(r"\.\w+", path))
         path *= ".png"
     else

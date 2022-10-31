@@ -120,6 +120,34 @@ end
     @test true
 end
 
+@testset "Generate QRCode -- image extensions" begin
+    ## Byte mode
+    exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.png")
+    exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.gif")
+    exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.jpg")
+    @test true
+    ## UTF8 mode
+    exportqrcode("你好αβ", imgpath * "qrcode-helloab.png")
+    exportqrcode("你好αβ", imgpath * "qrcode-helloab.gif")
+    exportqrcode("你好αβ", imgpath * "qrcode-helloab.jpg")
+    @test true
+    ## Kanji mode
+    exportqrcode("瀚文茗荷", imgpath * "qrcode-瀚文茗荷.png")
+    exportqrcode("瀚文茗荷", imgpath * "qrcode-瀚文茗荷.gif")
+    exportqrcode("瀚文茗荷", imgpath * "qrcode-瀚文茗荷.jpg")
+    @test true
+    ## Alphanumeric mode
+    exportqrcode("HELLO WORLD 123", imgpath * "qrcode-hello123.png")
+    exportqrcode("HELLO WORLD 123", imgpath * "qrcode-hello123.gif")
+    exportqrcode("HELLO WORLD 123", imgpath * "qrcode-hello123.jpg")
+    @test true
+    ## Numeric mode
+    exportqrcode("123456789", imgpath * "qrcode-123456789.png")
+    exportqrcode("123456789", imgpath * "qrcode-123456789.gif")
+    exportqrcode("123456789", imgpath * "qrcode-123456789.jpg")
+    @test true
+end
+
 @testset "Generate QRCode -- demo (Numeric)" begin
     alphabet = join('0':'9')
     msg = join(rand(alphabet, rand(1:5596)))
