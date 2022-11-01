@@ -1,6 +1,8 @@
-# style of QR code
-## support tables
+# special QR codes
+## supportted list
 ## 1. Unicode plot
+### 1.1 Unicode plot by UnicodePlots.jl
+### 1.2 Unicode plot by Unicode characters
 
 # 1. Unicode plot
 """

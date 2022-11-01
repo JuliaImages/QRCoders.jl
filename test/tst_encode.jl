@@ -126,26 +126,31 @@ end
     exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.gif")
     exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.jpg")
     @test true
+    @test_throws EncodeError exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.svg")
     ## UTF8 mode
     exportqrcode("你好αβ", imgpath * "qrcode-helloab.png")
     exportqrcode("你好αβ", imgpath * "qrcode-helloab.gif")
     exportqrcode("你好αβ", imgpath * "qrcode-helloab.jpg")
     @test true
+    @test_throws EncodeError exportqrcode("你好αβ", imgpath * "qrcode-helloab.svg")
     ## Kanji mode
     exportqrcode("瀚文茗荷", imgpath * "qrcode-瀚文茗荷.png")
     exportqrcode("瀚文茗荷", imgpath * "qrcode-瀚文茗荷.gif")
     exportqrcode("瀚文茗荷", imgpath * "qrcode-瀚文茗荷.jpg")
     @test true
+    @test_throws EncodeError exportqrcode("瀚文茗荷", imgpath * "qrcode-瀚文茗荷.svg")
     ## Alphanumeric mode
     exportqrcode("HELLO WORLD 123", imgpath * "qrcode-hello123.png")
     exportqrcode("HELLO WORLD 123", imgpath * "qrcode-hello123.gif")
     exportqrcode("HELLO WORLD 123", imgpath * "qrcode-hello123.jpg")
     @test true
+    @test_throws EncodeError exportqrcode("HELLO WORLD 123", imgpath * "qrcode-hello123.svg")
     ## Numeric mode
     exportqrcode("123456789", imgpath * "qrcode-123456789.png")
     exportqrcode("123456789", imgpath * "qrcode-123456789.gif")
     exportqrcode("123456789", imgpath * "qrcode-123456789.jpg")
     @test true
+    @test_throws EncodeError exportqrcode("123456789", imgpath * "qrcode-123456789.svg")
 end
 
 @testset "Generate QRCode -- demo (Numeric)" begin

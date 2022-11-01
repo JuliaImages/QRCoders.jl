@@ -131,8 +131,6 @@ the mode is automatically picked.
 
 The mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is `nothing`,
 the mask pattern will picked by the penalty rules.
-
-
 """
 function qrcode( message::AbstractString
                ; eclevel::ErrCorrLevel = Medium()
@@ -169,11 +167,35 @@ function qrcode( message::AbstractString
     end
     matrix = maskedmats[mask + 1]
 
-    # Format and version information
+    # white border
     (compact || width == 0) && return matrix # keyword compact will be removed in the future
     background = falses(size(matrix) .+ (width*2, width*2))
     background[width+1:end-width, width+1:end-width] = matrix
     return background
+end
+
+"""
+    exportbitmat(matrix::BitMatrix, path::AbstractString; targetsize::Int=5)
+    
+Export the `BitMatrix` `matrix` to an image with file path `path`.
+"""
+function exportbitmat(matrix::BitMatrix, path::AbstractString; targetsize::Int = 5)
+    # check whether the image format is supported
+    supportexts = ["png", "jpg", "gif"]
+    if !endswith(path, r"\.\w+")
+        path *= ".png"
+    else
+        ext = last(split(path, '.'))
+        ext ∈ supportexts || throw(EncodeError(
+            "Unsupported file extension: $ext\n Supported extensions: $supportexts"))
+    end
+
+    # Seems the default setting is 72 DPI
+    pixels = size(matrix, 1)
+    scale = ceil(Int, 72 * targetsize / 2.45 / pixels)
+    matrix = kron(matrix, trues(scale, scale))
+
+    save(path, BitArray(.! matrix))
 end
 
 """
@@ -208,18 +230,9 @@ function exportqrcode( message::AbstractString
                      , version::Int = 0
                      , mode::Mode = Numeric()
                      , mask::Int = -1
-                     , targetsize::Int = 5
+                     , width::Int = 4
                      , compact::Bool = false
-                     , width::Int = 4 )
-    # check if the image format is supported
-    supportexts = ["png", "jpg", "gif"]
-    if isnothing(match(r"\.\w+", path))
-        path *= ".png"
-    else
-        ext = match(r"\.(\w+)", path).captures[1]
-        ext ∈ supportexts || throw(EncodeError(
-            "Unsupported file extension: $ext\n Supported extensions: $supportexts"))
-    end
+                     , targetsize::Int = 5)
     # encode data
     matrix = qrcode(message; eclevel=eclevel,
                              version=version,
@@ -227,12 +240,6 @@ function exportqrcode( message::AbstractString
                              mask=mask,
                              compact=compact,
                              width=width)
-    # Seems the default setting is 72 DPI
-    pixels = size(matrix, 1)
-    scale = ceil(Int, 72 * targetsize / 2.45 / pixels)
-    matrix = kron(matrix, trues(scale, scale))
-
-    save(path, BitArray(.! matrix))
+    exportbitmat(matrix, path; targetsize=targetsize)
 end
-
 end # module
