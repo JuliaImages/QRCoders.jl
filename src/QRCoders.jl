@@ -4,7 +4,7 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 module QRCoders
 
 # create QR code
-export qrcode, exportqrcode
+export qrcode, exportqrcode, QRCode
 
 # supported modes
 export Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8
@@ -100,6 +100,63 @@ struct Quartile <: ErrCorrLevel end
 Error correction level that can restore up to 30% of missing codewords.
 """
 struct High <: ErrCorrLevel end
+
+"""
+    QRCode
+
+A type that represents a QR code.
+
+# Fields
+- `version::Int`: version of the QR code
+- `mode::Mode`: encoding mode of the QR code
+- `eclevel::ErrCorrLevel`: error correction level of the QR code
+- `mask::Int`: mask pattern of the QR code
+- `message::AbstractString`: message to be encoded
+- `width::Int`: width of the white border
+"""
+mutable struct QRCode
+    version::Int # version of the QR code
+    mode::Mode # encoding mode
+    eclevel::ErrCorrLevel
+    mask::Int # mask pattern
+    message::AbstractString # message to be encoded
+    width::Int # width of the white border
+end
+
+"""
+    QRCode(message::AbstractString)
+
+Create a QR code with the default settings.
+"""
+function QRCode(message::AbstractString; mask = -1)
+    mode, eclevel = getmode(message), Medium()
+    version = getversion(message, mode, eclevel)
+    width = 1 # default width of the white border
+    # valid mask pattern (0-7)
+    0 ≤ mask ≤ 7 && return QRCode(version, mode, eclevel, mask, message, width)
+
+    # find the best mask
+    data = encodemessage(message, mode, eclevel, version)
+    matrix = emptymatrix(version)
+    masks = makemasks(matrix)
+    matrix = placedata!(matrix, data) # fill in data bits
+    addversion!(matrix, version) # fill in version bits
+
+    # Apply mask and add format information
+    maskedmats = [addformat!(xor.(matrix, mat), i-1, eclevel) 
+                  for (i, mat) in enumerate(masks)]
+    
+    # Pick the best mask
+    mask = argmin(penalty.(maskedmats)) - 1
+    QRCode(version, mode, eclevel, mask, message, width)
+end
+
+"""
+    show(io::IO, code::QRCode)
+
+Show the QR code in REPL using `unicodeplotbycahr`.
+"""
+Base.show(io::IO, code::QRCode) = print(io, unicodeplotbychar(.! qrcode(code)))
 
 include("tables.jl")
 include("errorcorrection.jl")
@@ -207,7 +264,7 @@ end
                 , targetsize::Int = 5
                 , width::int=4)
 
-Create a `PNG` file with the encoded `message` of approximate size `targetsize`
+Create an image with the encoded `message` of approximate size `targetsize`
 cm. If `compact` is `false`, white space is added around the QR code.
 
 The error correction level `eclevel` can be picked from four values: `Low()`
@@ -242,4 +299,51 @@ function exportqrcode( message::AbstractString
                              width=width)
     exportbitmat(matrix, path; targetsize=targetsize)
 end
+
+# new API for qrcode and exportqrcode
+"""
+    qrcode(code::QRCode)
+
+Create a QR code matrix by the `QRCode` object.
+
+Note: It would raise an error if failed to use the specified `mode`` or `version`.
+"""
+function qrcode(code::QRCode)
+    # raise error if failed to use the specified mode or version
+    mode, eclevel, version, mask = code.mode, code.eclevel, code.version, code.mask
+    message, width = code.message, code.width
+    getmode(message) ⊆ mode || throw(EncodeError("Mode $mode can not encode the message"))
+    getversion(message, mode, eclevel) < version && throw(EncodeError("The version $version is too small"))
+
+    # encode message
+    data = encodemessage(message, mode, eclevel, version)
+
+    # Generate qr code matrix
+    matrix = emptymatrix(version)
+    maskmat = makemask(matrix, mask)
+    matrix = placedata!(matrix, data) # fill in data bits
+    addversion!(matrix, version) # fill in version bits
+    matrix = addformat!(xor.(matrix, maskmat), mask, eclevel)
+
+    # white border
+    width == 0 && return matrix
+    background = falses(size(matrix) .+ (width*2, width*2))
+    background[width+1:end-width, width+1:end-width] = matrix
+    return background
+end
+
+"""
+    exportqrcode( code::QRCode
+                , path::AbstractString = "qrcode.png"
+                ; targetsize::Int = 5)
+
+Create an image with the encoded `message` of approximate size `targetsize`.
+"""
+function exportqrcode( code::QRCode
+                     , path::AbstractString = "qrcode.png"
+                     ; targetsize::Int = 5)
+    matrix = qrcode(code)
+    exportbitmat(matrix, path; targetsize = targetsize)
+end
+
 end # module
