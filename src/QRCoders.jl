@@ -376,7 +376,7 @@ The frame rate `fps` is the number of frames per second.
 Note: The `codes` should have the same size while the other properties can be different.
 """
 function exportqrcode( codes::AbstractVector{QRCode}
-                     , path::AbstractString = "qrcodes.gif"
+                     , path::AbstractString = "qrcode.gif"
                      ; targetsize::Int = 5
                      , fps::Int = 2)
     # check whether the image format is supported
@@ -400,7 +400,7 @@ end
 
 """
     exportqrcode( msgs::AbstractVector{<:AbstractString}
-                , path::AbstractString = "qrcodes.gif"
+                , path::AbstractString = "qrcode.gif"
                 ; eclevel::ErrCorrLevel = Medium()
                 , version::Int = 0
                 , mode::Mode = Numeric()
@@ -414,7 +414,7 @@ Create an animated gif with `msgs` of approximate size `targetsize`.
 The frame rate `fps` is the number of frames per second.
 """
 function exportqrcode( msgs::AbstractVector{<:AbstractString}
-                     , path::AbstractString = "qrcodes.gif"
+                     , path::AbstractString = "qrcode.gif"
                      ; eclevel::ErrCorrLevel = Medium()
                      , version::Int = 0
                      , mode::Mode = Numeric()
