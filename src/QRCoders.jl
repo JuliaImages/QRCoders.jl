@@ -128,10 +128,16 @@ end
 
 Create a QR code with the default settings.
 """
-function QRCode(message::AbstractString; mask = -1)
-    mode, eclevel = getmode(message), Medium()
-    version = getversion(message, mode, eclevel)
-    width = 1 # default width of the white border
+function QRCode( message::AbstractString
+               ; mask = -1
+               , eclevel = Medium()
+               , mode = Numeric()
+               , version = 0
+               , width = 1)
+    minmode = getmode(message)
+    mode = issubset(minmode, mode) ? mode : minmode
+    minversion = getversion(message, mode, eclevel)
+    version = version ≥ minversion ? version : minversion
     # valid mask pattern (0-7)
     0 ≤ mask ≤ 7 && return QRCode(version, mode, eclevel, mask, message, width)
 
@@ -149,6 +155,16 @@ function QRCode(message::AbstractString; mask = -1)
     # Pick the best mask
     mask = argmin(penalty.(maskedmats)) - 1
     QRCode(version, mode, eclevel, mask, message, width)
+end
+
+"""
+    shape(code::QRCode)
+
+Return the shape of the QR code.
+"""
+function shape(code::QRCode)
+    n = 4 * code.version + 17 + 2 * code.width
+    n, n
 end
 
 """
@@ -344,6 +360,74 @@ function exportqrcode( code::QRCode
                      ; targetsize::Int = 5)
     matrix = qrcode(code)
     exportbitmat(matrix, path; targetsize = targetsize)
+end
+
+"""
+    exportqrcode( codes::AbstractVector{QRCode}
+                , path::AbstractString = "qrcode.gif"
+                ; targetsize::Int = 5
+                , fps::Int = 2)
+
+Create an animated gif with `codes` of approximate size `targetsize`.
+
+The frame rate `fps` is the number of frames per second.
+
+Note: The `codes` should have the same size while the other properties can be different.
+"""
+function exportqrcode( codes::AbstractVector{QRCode}
+                     , path::AbstractString = "qrcodes.gif"
+                     ; targetsize::Int = 5
+                     , fps::Int = 2)
+    # check whether the image format is supported
+    if !endswith(path, r"\.\w+")
+        path *= ".gif"
+    else
+        ext = last(split(path, '.'))
+        ext == "gif" || throw(EncodeError(
+            "$ext\n is not a valid format for animated images"))
+    end
+    # code = cat(qrcode.(codes)...; dims=3)
+    n, _ = shape(first(codes))
+    scale = ceil(Int, 72 * targetsize / 2.45 / n)
+    code = Array{Bool}(undef, n * scale, n * scale, length(codes))
+    for (i, c) in enumerate(codes)
+        mat = qrcode(c)
+        code[:,:,i] = kron(mat, trues(scale, scale))
+    end
+    save(path, BitArray(.! code), fps=fps)
+end
+
+"""
+    exportqrcode( msgs::AbstractVector{<:AbstractString}
+                , path::AbstractString = "qrcodes.gif"
+                ; eclevel::ErrCorrLevel = Medium()
+                , version::Int = 0
+                , mode::Mode = Numeric()
+                , mask::Int = -1
+                , width::Int = 4
+                , targetsize::Int = 5
+                , fps::Int = 2)
+
+Create an animated gif with `msgs` of approximate size `targetsize`.
+
+The frame rate `fps` is the number of frames per second.
+"""
+function exportqrcode( msgs::AbstractVector{<:AbstractString}
+                     , path::AbstractString = "qrcodes.gif"
+                     ; eclevel::ErrCorrLevel = Medium()
+                     , version::Int = 0
+                     , mode::Mode = Numeric()
+                     , mask::Int = -1
+                     , width::Int = 4
+                     , targetsize::Int = 5
+                     , fps::Int = 2)
+    codes = QRCode.( msgs
+                   ; eclevel=eclevel
+                   , version=version
+                   , mode=mode
+                   , mask=mask
+                   , width=width)
+    exportqrcode(codes, path; targetsize=targetsize, fps=fps)
 end
 
 end # module
