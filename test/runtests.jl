@@ -49,6 +49,9 @@ include("tst_fmtver.jl")
 # encode message
 include("tst_encode.jl")
 
+# struct QRCode
+include("tst_construct.jl")
+
 # original tests
 include("tst_overall.jl")
 

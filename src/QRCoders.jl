@@ -170,7 +170,7 @@ end
 """
     show(io::IO, code::QRCode)
 
-Show the QR code in REPL using `unicodeplotbycahr`.
+Show the QR code in REPL using `unicodeplotbychar`.
 """
 Base.show(io::IO, code::QRCode) = print(io, unicodeplotbychar(.! qrcode(code)))
 
@@ -216,6 +216,7 @@ function qrcode( message::AbstractString
     bestmode = getmode(message)
     mode = bestmode ⊆ mode ? mode : bestmode
     
+    version > 40 && throw(EncodeError("Version $version should be no larger than 40"))
     minversion = getversion(message, mode, eclevel)
     if version < minversion # the specified version is too small
         version = minversion
@@ -329,7 +330,7 @@ function qrcode(code::QRCode)
     mode, eclevel, version, mask = code.mode, code.eclevel, code.version, code.mask
     message, width = code.message, code.width
     getmode(message) ⊆ mode || throw(EncodeError("Mode $mode can not encode the message"))
-    getversion(message, mode, eclevel) < version && throw(EncodeError("The version $version is too small"))
+    getversion(message, mode, eclevel) ≤ version ≤ 40 || throw(EncodeError("The version $version is too small"))
 
     # encode message
     data = encodemessage(message, mode, eclevel, version)
