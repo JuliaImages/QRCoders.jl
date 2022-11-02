@@ -101,10 +101,10 @@ A file will be saved at `./qrcode.png`.
 
 > ![QRCode1](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode.png)
 
-The keywords in `qrcode` are also available in `exportqrcode`. Moreover, there is one more keyword `targetsize` to control the size of the exported file.
+The keywords in `qrcode` are also available in `exportqrcode`. Moreover, a new keyword `targetsize` is used to control the size of the exported file.
 
 ```julia
-julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10)
+julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10, width = 0)
 ```
 
 This file will be saved as `./img/hello.png` (if the `img` directory already exists), have a size of (approximately) 10 centimeters and be compact. Please note that compact codes may be hard to read depending on their background.
