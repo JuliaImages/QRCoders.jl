@@ -29,7 +29,7 @@ julia> qrcode("Hello world!")
 
 The value `1(true)` represents a dark space and `0(false)` a white square.
 
-### Export a QR Code as a PNG/JPG file
+### Export a QR Code as a file
 
 Exporting files is also easy.
 
@@ -42,7 +42,7 @@ A file will be saved at `./qrcode.png`.
 > ![QRCode1](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode.png)
 
 ### QRCode struct
-One can use `QRCode` to display in REPL, or export as an image.
+`QRCode` is a data type that contains the data of a QR Code.
 
 ```jl
 julia> code = QRCode("Hello world!")
@@ -62,7 +62,7 @@ julia> code = QRCode("Hello world!")
 julia> exportqrcode(code)
 ```
 
-Animated QRCode is supported in version 1.3+.
+Animated QR code is supported in version 1.3+.
 
 ```jl
 julia> exportqrcode(["Hello world!", "Hello Julia!"], fps=2)
@@ -102,13 +102,13 @@ Keywords `eclevel`, `version`, `mode` and `mask` in `qrcode`:
 
 4. Mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is not valid, it will be picked automatically.
 
-The keywords in `qrcode` are also available in `exportqrcode`. Moreover, a new keyword `targetsize` is used to control the size of the exported file.
+Keywords in `qrcode` are also available in `exportqrcode`. Moreover, a new keyword `pixels` is used to control the size of the exported image.
 
 ```julia
-julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10, width = 0)
+julia> exportqrcode("Hello world!", "img/hello.png", pixels = 160, width = 0)
 ```
 
-This file will be saved as `./img/hello.png` (if the `img` directory already exists), have a size of (approximately) 10 centimeters and be compact.
+This file will be saved as `./img/hello.png` (if the `img` directory already exists), have a size of (approximately) 160 centimeters and be compact.
 
 > ![QRCode2](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/hello.png)
 
@@ -144,7 +144,7 @@ julia> exportqrcode(join(Char.(0x80:0x9f)))
 
 The original repository [QRCode.jl](https://github.com/JuliaImages/QRCode.jl) was created during the [Efficient Scientific Computing with Julia](https://groups.oist.jp/grad/skill-pill-67) workshop, taught by [Valentin Churavy](https://github.com/vchuravy) at the [Okinawa Institute of Science and Technology](https://www.oist.jp) in July 2019. [Slides available here](https://github.com/JuliaLabs/Workshop-OIST).
 
-The current version QRCoders.jl(v1.0.0) is proposed as part of the [OSPP'2022 project](https://summer-ospp.ac.cn/).
+The current version QRCoders.jl(≥v1.0.0) is proposed as part of the [OSPP'2022 project](https://summer-ospp.ac.cn/).
 
 <!-- URLS -->
 

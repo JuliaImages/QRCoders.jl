@@ -73,7 +73,6 @@ A file will be saved at `./qrcode.png`.
 Create a `.gif` file from messages.
 
 ```julia
-exportqrcode(codes)
 julia> # QR codes with different masks
 julia> using QRCoders: penalty
 julia> codes = [QRCode("Hello world!", mask = i) for i in 0:7]
@@ -82,4 +81,4 @@ julia> qrcode.(codes) .|> penalty |> print
 julia> exportqrcode(codes, fps=3)
 ```
 
-> ![QRCode-masks](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl/docs/src/qrcode-masks.gif)
+> ![QRCode-masks](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl/docs/src/assets/qrcode-masks.gif)

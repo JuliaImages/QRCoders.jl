@@ -146,6 +146,12 @@ end
     @test_throws EncodeError exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.pdf")
     @test_throws EncodeError exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.eps")
     @test_throws EncodeError exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.ai")
+
+    ## invalid keys in future works
+    exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.png", targetsize=5)
+    exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.gif", targetsize=5)
+    exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.jpg", targetsize=5)
+    exportqrcode(["julia", "is", "fast"], imgpath * "qrcode-hellojulia.gif", targetsize=5)
 end
 
 @testset "Generate QRCode -- animated images" begin
