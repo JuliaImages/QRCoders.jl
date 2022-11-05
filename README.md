@@ -29,11 +29,23 @@ julia> qrcode("Hello world!")
 
 The value `1(true)` represents a dark space and `0(false)` a white square.
 
-### Unicode Plot
-Method 1, as mentioned in [issue#25](https://github.com/JuliaImages/QRCoders.jl/issues/25).
+### Export a QR Code as a file
+
+Exporting files is also easy.
+
+```julia
+julia> exportqrcode("Hello world!")
+```
+
+A file will be saved at `./qrcode.png`.
+
+> ![QRCode1](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode.png)
+
+### QRCode struct
+`QRCode` is a data type that contains the data of a QR Code.
 
 ```jl
-julia> unicodeplotbychar("Hello world!") |> print
+julia> code = QRCode("Hello world!")
 █████████████████████████
 ██ ▄▄▄▄▄ █▀ █ ▄█ ▄▄▄▄▄ ██
 ██ █   █ █▄ █▀▄█ █   █ ██
@@ -47,18 +59,20 @@ julia> unicodeplotbychar("Hello world!") |> print
 ██ █▄▄▄█ █▀  █▄▀▀█▄█▄█▄██
 ██▄▄▄▄▄▄▄█▄█▄▄▄██▄█▄█▄███
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+julia> exportqrcode(code)
 ```
 
-Method 2, Unicode plot by [UnicodePlots.jl](https://github.com/JuliaPlots/UnicodePlots.jl).
+Animated QR code is supported in version 1.3+.
 
-```julia
-julia> unicodeplot("Hello world!")
+```jl
+julia> exportqrcode(["Hello world!", "Hello Julia!"], fps=2)
 ```
-<img src="https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/unicodeplot.png" width="100">
 
-Note: method 2 dosen't work for text strings.
+> ![QRCode2](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/hellojulia.gif)
 
-### Optional Parameters
+The keyword `fps` controls the frame rate of the animation.
+
+### Parameters
 
 There are some optional arguments.
 
@@ -78,7 +92,7 @@ julia> qrcode("Hello world!", width=1)
 
 The QR Code will be surrounded by a white border of width `width`.
 
-Keywords `eclevel`, `version`, `mode` and `mask`:
+Keywords `eclevel`, `version`, `mode` and `mask` in `qrcode`:
 
 1. Error correction level `eclevel` can be picked from four values `Low()`, `Medium()`, `Quartile()` or `High()`. Higher levels make denser QR codes.
 
@@ -88,26 +102,13 @@ Keywords `eclevel`, `version`, `mode` and `mask`:
 
 4. Mask pattern `mask` can be picked from 0 to 7. If the assigned `mask` is not valid, it will be picked automatically.
 
-
-### Export a QR Code as a PNG/JPG file
-
-Exporting files is also easy.
+Keywords in `qrcode` are also available in `exportqrcode`. Moreover, a new keyword `pixels` is used to control the size of the exported image.
 
 ```julia
-julia> exportqrcode("Hello world!")
+julia> exportqrcode("Hello world!", "img/hello.png", pixels = 160, width = 0)
 ```
 
-A file will be saved at `./qrcode.png`.
-
-> ![QRCode1](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode.png)
-
-The keywords in `qrcode` are also available in `exportqrcode`. Moreover, a new keyword `targetsize` is used to control the size of the exported file.
-
-```julia
-julia> exportqrcode("Hello world!", "img/hello.png", targetsize = 10, width = 0)
-```
-
-This file will be saved as `./img/hello.png` (if the `img` directory already exists), have a size of (approximately) 10 centimeters and be compact. Please note that compact codes may be hard to read depending on their background.
+This file will be saved as `./img/hello.png` (if the `img` directory already exists), have a size of (approximately) 160 centimeters and be compact.
 
 > ![QRCode2](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/hello.png)
 
@@ -143,7 +144,7 @@ julia> exportqrcode(join(Char.(0x80:0x9f)))
 
 The original repository [QRCode.jl](https://github.com/JuliaImages/QRCode.jl) was created during the [Efficient Scientific Computing with Julia](https://groups.oist.jp/grad/skill-pill-67) workshop, taught by [Valentin Churavy](https://github.com/vchuravy) at the [Okinawa Institute of Science and Technology](https://www.oist.jp) in July 2019. [Slides available here](https://github.com/JuliaLabs/Workshop-OIST).
 
-The current version QRCoders.jl(v1.0.0) is proposed as part of the [OSPP'2022 project](https://summer-ospp.ac.cn/).
+The current version QRCoders.jl(≥v1.0.0) is proposed as part of the [OSPP'2022 project](https://summer-ospp.ac.cn/).
 
 <!-- URLS -->
 
