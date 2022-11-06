@@ -74,7 +74,7 @@ end
 
 Extract indexes of message bits from the QR code of version `v`.
 
-The procedure is similar to the one in `placedata!` in `matrix.jl`.
+The procedure is similar to `placedata!` in `matrix.jl`.
 """
 function getindexes(v::Int)
     mat, n = emptymatrix(v), 17 + 4 * v
@@ -109,3 +109,53 @@ function getindexes(v::Int)
 end
 
 ## 2.2 split indexes into several segments(de-interleave)
+
+"""
+    getsegments(v::Int, mode::Mode, eclevel::ErrCorrLevel)
+
+Get indexes segments of the corresponding settings.
+Each of the segments has atmost 8 * 255 elements.
+
+The procedure is similar to `deinterleave` in `QRDecoders.jl`.
+"""
+function getsegments(v::Int, eclevel::ErrCorrLevel)
+    # initialize
+    ## get information about error correction
+    ncodewords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][v, :]
+    ## initialize blocks
+    blocks = vcat([Vector{Int}(undef, nc1) for _ in 1:nb1],
+                    [Vector{Int}(undef, nc2) for _ in 1:nb2])
+    ecblocks = [Vector{Int}(undef, ncodewords) for _ in 1:nb1 + nb2]
+
+    # get segments from the QR code
+    ## indexes of message bits
+    inds = getindexes(v)
+    ## discard remainder bits
+    inds = @view inds[1:end-remainderbits[v]]
+    length(inds) & 7 == 0 || throw(ArgumentError(
+        "The number of indexes is not correct."))
+    
+    ## get blocks
+    ind = length(inds) >> 3 # number of bytes
+    ### error correction bytes
+    for i in ncodewords:-1:1, j in (nb1 + nb2):-1:1
+        ecblocks[j][i] = ind
+        ind -= 1
+    end
+    ### message bytes
+    for i in nc2:-1:(1 + nc1), j in (nb1 + nb2):-1:(nb1 + 1)
+        blocks[j][i] = ind
+        ind -= 1
+    end
+    for i in nc1:-1:1, j in (nb1 + nb2):-1:1
+        blocks[j][i] = ind
+        ind -= 1
+    end
+    ind != 0 && throw(ArgumentError("getsegments: not all data is recorded"))
+
+    ## expand blocks to get segments
+    expand(x) = (8 * x - 7):8 * x
+    segments = [inds[vcat(expand.(block)...)] for block in blocks]
+    ecsegments = [inds[vcat(expand.(block)...)] for block in ecblocks]
+    return segments, ecsegments
+end

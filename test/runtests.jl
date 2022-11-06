@@ -20,7 +20,7 @@ using QRCoders:
     # data convert
     bitarray2int, int2bitarray, bits2bytes,
     # style
-    unicodeplot, getindexes
+    unicodeplot, getindexes, getsegments
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
