@@ -185,6 +185,12 @@ end
     exportqrcode(msgs, imgpath * "qrcode-瀚文茗荷.gif", fps=2)
     @test true
 
+    # large image
+    msgs = [join(rand('0':'9', 5596)) for _ in 1:5];
+    codes = QRCode.(msgs, version=40, width=4);
+    exportqrcode(codes, "qrcodes.gif")
+    @test true
+
     # test failed
     exportqrcode(msgs, imgpath * "qrcode-瀚文茗荷", fps=2) # no extension
     @test_throws EncodeError exportqrcode(msgs, imgpath * "qrcode-瀚文茗荷.jpg", fps=2) # invalid extension
