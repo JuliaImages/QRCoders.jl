@@ -12,7 +12,7 @@ using QRCoders:
     # tables
     alphanumeric, antialphanumeric, kanji, antikanji, 
     mode2bin, qrversion, qrformat, qrversionbits,
-    ecblockinfo, remainderbits,
+    ecblockinfo, remainderbits, msgbitslen,
     # encode
     getmode, characterscapacity, modeindicators, 
     getcharactercountindicator, charactercountlength,
@@ -20,7 +20,7 @@ using QRCoders:
     # data convert
     bitarray2int, int2bitarray, bits2bytes,
     # style
-    unicodeplot
+    unicodeplot, getindexes
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers

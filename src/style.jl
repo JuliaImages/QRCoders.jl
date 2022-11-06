@@ -1,8 +1,11 @@
 # special QR codes
-## supportted list
+## supported list
 ## 1. Unicode plot
-### 1.1 Unicode plot by UnicodePlots.jl
-### 1.2 Unicode plot by Unicode characters
+### I. Unicode plot by UnicodePlots.jl
+### II. Unicode plot by Unicode characters
+## 2. plot image in QR code
+### 2.1 extract indexes of message bits
+### 2.2 split indexes into several segments(de-interleave)
 
 # 1. Unicode plot
 """
@@ -62,3 +65,47 @@ which is the opposite of the image convention.
 function unicodeplotbychar(message::AbstractString)
     unicodeplotbychar(.! qrcode(message; eclevel=Low(), width=2))
 end
+
+# 2. plot image in QR code
+## 2.1 extract indexes of message bits
+
+"""
+    getindexes(v::Int)
+
+Extract indexes of message bits from the QR code of version `v`.
+
+The procedure is similar to the one in `placedata!` in `matrix.jl`.
+"""
+function getindexes(v::Int)
+    mat, n = emptymatrix(v), 17 + 4 * v
+    inds = Vector{Int}(undef, msgbitslen[v])
+    col, row, ind = n, n + 1, 1
+    while col > 0
+        # Skip the column with the timing pattern
+        if col == 7
+            col -= 1
+            continue
+        end
+        # path goes up and down
+        row, δrow = row > n ? (n, -1) : (1, 1)
+        # recode index if the matrix element is nothing
+        for _ in 1:n
+            if isnothing(mat[row, col])
+                inds[ind] = (col - 1) * n + row
+                ind += 1
+            end
+            if isnothing(mat[row, col - 1])
+                inds[ind] = (col - 2) * n + row
+                ind += 1
+            end
+            row += δrow
+        end
+        # move to the next column
+        col -= 2
+    end
+    ind == length(inds) + 1 || throw(ArgumentError(
+        "The number of indexes is not correct."))
+    return inds
+end
+
+## 2.2 split indexes into several segments(de-interleave)
