@@ -4,7 +4,7 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 module QRCoders
 
 # create QR code
-export qrcode, exportqrcode, QRCode
+export qrcode, exportqrcode, exportbitmat, QRCode
 
 # supported modes
 export Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8
@@ -278,7 +278,7 @@ function exportbitmat( matrix::BitMatrix
         n = size(matrix, 1)
         pixels = ceil(Int, 72 * targetsize / 2.45 / n) * n
     end
-    save(path, BitArray(.! _resize(matrix, pixels)))
+    save(path, .! _resize(matrix, pixels))
 end
 
 """
@@ -392,7 +392,6 @@ function exportqrcode( codes::AbstractVector{QRCode}
                      , fps::Int = 2)
     # all equal valid only in Julia 1.8+
     length(unique!(qrwidth.(codes))) == 1 || throw(EncodeError("The codes should have the same size"))
-    targetwidth = qrwidth(first(codes))
     # check whether the image format is supported
     if !endswith(path, r"\.\w+")
         path *= ".gif"
@@ -402,15 +401,18 @@ function exportqrcode( codes::AbstractVector{QRCode}
             "$ext\n is not a valid format for animated images"))
     end
     # generate frames
+    matwidth = qrwidth(first(codes))
     if targetsize > 0 # original keyword -- will be removed in the future
-        pixels = ceil(Int, 72 * targetsize / 2.45 / targetwidth) * targetwidth
+        Base.depwarn("keyword `targetsize` will be removed in the future, use `pixels` instead", :exportbitmat)
+        pixels = ceil(Int, 72 * targetsize / 2.45 / matwidth) * matwidth
+    else
+        pixels = ceil(Int, pixels / matwidth) * matwidth
     end
-    pixels = pixels ÷ targetwidth * targetwidth
     code = Array{Bool}(undef, pixels, pixels, length(codes))
     for (i, c) in enumerate(codes)
         code[:,:,i] = _resize(qrcode(c), pixels)
     end
-    save(path, BitArray(.! code), fps=fps)
+    save(path, .! code, fps=fps)
 end
 
 """

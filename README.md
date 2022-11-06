@@ -42,7 +42,7 @@ A file will be saved at `./qrcode.png`.
 > ![QRCode1](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode.png)
 
 ### QRCode struct
-`QRCode` is a data type that contains the data of a QR Code.
+`QRCode` is a structure type that contains the data of a QR Code.
 
 ```jl
 julia> code = QRCode("Hello world!")
