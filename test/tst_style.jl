@@ -15,10 +15,9 @@
         canvas = unicodeplotbychar(msg)
     end
     @test true
-    unicodeplotbychar("https://github.com/JuliaImages/QRCoders.jl") |> println
 end
 
-@testset "image plot" begin
+@testset "locate msg bits" begin
     # length of message bits
     @test msgbitslen == [length(encodemessage("a", Byte(), High(), i)) for i in 1:40]
 
@@ -62,4 +61,32 @@ end
         msgbits = mat[msginds]
         @test encoded == msgbits
     end
+end
+
+@testset "display -- use white modules in msgbits" begin
+    # common settings
+    mode, eclevel = Alphanumeric(), Quartile()
+    msg = "HELLO WORLD"
+    mat = qrcode(msg, mode=mode, eclevel=eclevel, version=7, mask=0, width=0)
+    segments, ecsegments = getsegments(7, eclevel)
+    msginds = vcat(segments...)
+    ecinds = vcat(ecsegments...)
+    mat[msginds] .= 1
+    mat[ecinds] .= 1
+    unicodeplotbychar(mat) |> println
+end
+
+@testset "simulate image" begin
+    # image in qrcode
+    img = load("assets/badapple.png")
+    img = .! (Bool ∘ round ∘ Gray).(imresize(img, 37, 37))
+    code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
+    mat = imageinqrcode(code, img, rate=2/3)
+    exportbitmat(mat, "testimages/badapple_code.png")
+
+    # test for animate
+    code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
+    code2 = QRCode("Hello julia!", eclevel=High(), version=16, width=4)
+    codes = [code, code2]
+    animatebyqrcode(codes, [img, img], "testimages/badapple.gif", rate=2/3)
 end

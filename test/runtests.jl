@@ -3,6 +3,7 @@ using Test
 using FileIO
 using ImageCore
 using Random
+using ImageTransformations
 
 using QRCoders:
     # build
@@ -20,7 +21,8 @@ using QRCoders:
     # data convert
     bitarray2int, int2bitarray, bits2bytes,
     # style
-    unicodeplot, getindexes, getsegments
+    unicodeplot, getindexes, getsegments,
+    imageinqrcode
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
@@ -57,3 +59,6 @@ include("tst_overall.jl")
 
 # style
 include("tst_style.jl")
+
+# final message
+unicodeplotbychar("https://github.com/JuliaImages/QRCoders.jl") |> println

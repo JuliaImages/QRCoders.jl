@@ -3,30 +3,34 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 """
 module QRCoders
 
-# create QR code
-export qrcode, exportqrcode, exportbitmat, QRCode
+export
+    # create QR code
+    qrcode, exportqrcode, exportbitmat, QRCode,
+    
+    # supported modes
+    Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8,
+    
+    # error correction levels
+    ErrCorrLevel, Low, Medium, Quartile, High,
 
-# supported modes
-export Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8
+    # get information about QR code
+    getmode, getversion, qrwidth, getsegments,
 
-# error correction levels
-export ErrCorrLevel, Low, Medium, Quartile, High
+    # data type of Reed Solomon code
+    Poly, geterrcode,
 
-# get information about QR code
-export getmode, getversion, qrwidth
+    # error type
+    EncodeError,
 
-# data type of Reed Solomon code
-export Poly, geterrcode
-
-# error type
-export EncodeError
-
-# QR code style
-export unicodeplot, unicodeplotbychar
+    # QR code style
+    unicodeplot, unicodeplotbychar,
+    imageinqrcode, animatebyqrcode
 
 using ImageCore
 using FileIO
 using UnicodePlots
+using ImageTransformations
+using StatsBase: sample
 
 """
 Invalid step in encoding process.
@@ -124,6 +128,15 @@ mutable struct QRCode
 end
 
 """
+    copy(code::QRCode)
+
+Returns a copy of `code`.
+"""
+function Base.copy(code::QRCode)
+    QRCode(code.version, code.mode, code.eclevel, code.mask, code.message, code.border)
+end
+
+"""
     QRCode(message::AbstractString)
 
 Create a QR code with the default settings.
@@ -173,7 +186,6 @@ include("tables.jl")
 include("errorcorrection.jl")
 include("matrix.jl")
 include("encode.jl")
-include("style.jl")
 
 """
     qrcode( message::AbstractString
@@ -459,5 +471,7 @@ function exportqrcode( msgs::AbstractVector{<:AbstractString}
     # setproperty!.(codes, :width, width)
     exportqrcode(codes, path; targetsize=targetsize, pixels=pixels, fps=fps)
 end
+
+include("style.jl")
 
 end # module
