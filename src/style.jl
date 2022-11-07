@@ -275,7 +275,7 @@ function imageinqrcode( message::AbstractString
                       , eclevel::ErrCorrLevel = High()
                       , width::Int=0
                       , rate::Real=2/3)
-    code = QRCode(message, version=version, eclevel=eclevel, mode=mode, border=width)
+    code = QRCode(message, version=version, eclevel=eclevel, mode=mode, width=width)
     return imageinqrcode!(code, targetmat, rate=rate)
 end
 

@@ -85,6 +85,10 @@ end
     mat = imageinqrcode(code, img, rate=2/3)
     exportbitmat(mat, "testimages/badapple_code.png")
     @test true
+    mat = imageinqrcode("hello world!", img, version=10, rate=1)
+    mat |> unicodeplotbychar |> println
+    @test true
+
 
     # test for animate
     code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
