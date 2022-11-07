@@ -180,6 +180,18 @@ include("matrix.jl")
 include("encode.jl")
 
 """
+    function addborder(matrix::AbstractMatrix, width::Int)
+
+Add a white border of width `width` to the QR code.
+"""
+function addborder(matrix::AbstractMatrix, width::Int)
+    width == 0 && return matrix
+    background = falses(size(matrix) .+ (width*2, width*2))
+    background[width+1:end-width, width+1:end-width] = matrix
+    return background
+end
+
+"""
     qrcode( message::AbstractString
           ; eclevel::ErrCorrLevel = Medium()
           , version::Int = 0
@@ -242,9 +254,7 @@ function qrcode( message::AbstractString
 
     # white border
     (compact || width == 0) && return matrix # keyword compact will be removed in the future
-    background = falses(size(matrix) .+ (width*2, width*2))
-    background[width+1:end-width, width+1:end-width] = matrix
-    return background
+    return addborder(matrix, width)
 end
 
 """
@@ -356,10 +366,7 @@ function qrcode(code::QRCode)
     matrix = addformat!(xor.(matrix, maskmat), mask, eclevel)
 
     # white border
-    width == 0 && return matrix
-    background = falses(size(matrix) .+ (width*2, width*2))
-    background[width+1:end-width, width+1:end-width] = matrix
-    return background
+    addborder(matrix, width)
 end
 
 """

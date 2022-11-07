@@ -109,7 +109,7 @@ function getindexes(v::Int)
         # move to the next column
         col -= 2
     end
-    ind == length(inds) + 1 || throw(ArgumentError(
+    ind == msgbitslen[v] + 1 || throw(ArgumentError(
         "The number of indexes is not correct."))
     return inds
 end
@@ -177,7 +177,7 @@ function pickcodewords( errinds::AbstractVector{<:Integer}
     length(blockinds) & 7 == 0 || throw(ArgumentError(
         "The number of indexes is not correct."))
     blocklen = length(blockinds) >> 3
-    damges = zeros(Int, blocklen)
+    damges = Vector{Int}(undef, blocklen)
     errinds = Set(errinds) # for fast searching
     for i in 1:blocklen
         damges[i] = @views count(in(errinds), blockinds[8 * i - 7:8 * i])
@@ -206,7 +206,8 @@ function imageinqrcode!( code::QRCode
                        , targetmat::AbstractMatrix
                        ; rate::Real=2/3)
     ## check parameters
-    0 ≤ rate ≤ 1 || throw(ArgumentError("Invalid rate $rate." *
+    rate ≥ 0 || throw(ArgumentError("rate should be non-negative."))
+    rate ≤ 1 || @warn(ArgumentError("Invalid rate $rate." *
             " It could risk to destroy the message if rate is bigger that 1."))
     border, code.border = code.border, 0 # reset border -- compat to indexes rule
     (imgx, imgy), qrlen = size(targetmat), qrwidth(code)
@@ -225,24 +226,24 @@ function imageinqrcode!( code::QRCode
     ncodewords = length(first(ecinds)) >> 3
     destroy = floor(Int, ncodewords * rate / 2)
     # indexes inside the image
-    ind2point(ind::Int) = (ind % qrlen, ind ÷ qrlen)
-    targetval(ind::Int) = targetmat[(ind2point(ind) .- leftop)...]
+    targetval(ind::Int) = targetmat[ind % qrlen - leftop[1], ind ÷ qrlen - leftop[2]]
     function isvalid(p::Int)
-         x, y = ind2point(p)
+         x, y = p % qrlen, p ÷ qrlen
          x1 ≤ x ≤ x2 && y1 ≤ y ≤ y2
     end
     validinds = vcat(filter!.(isvalid, msginds)...,
                      filter!.(isvalid, ecinds)...)
+    validmsgecinds = [vcat(inds1, inds2) for (inds1, inds2) in zip(msginds, ecinds)]
     ## cost function
-    penalty(newmat) = count(ind->newmat[ind] != targetval(ind), validinds)
+    penalty(newmat) = sum(newmat[validinds] .== targetval.(validinds))
 
     ## enumerate over masks
     bestmat, bestpenalty = nothing, Inf
     for mask in 0:7
         code.mask = mask
         newmat = qrcode(code)
-        for blockinds in msgecinds # enumerate over each blcok
-            errinds = filter(x -> isvalid(x) && newmat[x] != targetval(x), blockinds)
+        for (vinds, blockinds) in zip(validmsgecinds, msgecinds) # enumerate over each blcok
+            errinds = filter(x -> newmat[x] != targetval(x), vinds)
             inds = filter!(isvalid, pickcodewords(errinds, blockinds, destroy))
             newmat[inds] = targetval.(inds)
         end
@@ -252,9 +253,7 @@ function imageinqrcode!( code::QRCode
         end
     end
     # add white border
-    background = falses(size(bestmat) .+ (border*2, border*2))
-    background[border+1:end-border, border+1:end-border] = bestmat
-    return background
+    return addborder(bestmat, border)
 end
 
 """
@@ -272,7 +271,7 @@ function imageinqrcode( message::AbstractString
                       , targetmat::AbstractMatrix
                       ; version::Int=16
                       , mode::Mode=Numeric()
-                      , eclevel::ErrCorrLevel = High()
+                      , eclevel::ErrCorrLevel=High()
                       , width::Int=0
                       , rate::Real=2/3)
     code = QRCode(message, version=version, eclevel=eclevel, mode=mode, width=width)

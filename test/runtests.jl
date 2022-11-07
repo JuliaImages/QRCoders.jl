@@ -22,7 +22,8 @@ using QRCoders:
     bitarray2int, int2bitarray, bits2bytes,
     # style
     unicodeplot, getindexes, getsegments,
-    imageinqrcode
+    imageinqrcode, animatebyqrcode,
+    pickcodewords
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
