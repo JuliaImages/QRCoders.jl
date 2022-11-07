@@ -3,34 +3,26 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 """
 module QRCoders
 
-export
-    # create QR code
-    qrcode, exportqrcode, exportbitmat, QRCode,
-    
-    # supported modes
-    Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8,
-    
-    # error correction levels
-    ErrCorrLevel, Low, Medium, Quartile, High,
-
-    # get information about QR code
-    getmode, getversion, qrwidth, getsegments,
-
-    # data type of Reed Solomon code
-    Poly, geterrcode,
-
-    # error type
-    EncodeError,
-
-    # QR code style
-    unicodeplot, unicodeplotbychar,
-    imageinqrcode, animatebyqrcode
-
 using ImageCore
 using FileIO
 using UnicodePlots
-using ImageTransformations
-using StatsBase: sample
+
+export
+    # create QR code
+    qrcode, exportqrcode, exportbitmat, QRCode,
+    # supported modes
+    Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8,
+    # error correction levels
+    ErrCorrLevel, Low, Medium, Quartile, High,
+    # get information about QR code
+    getmode, getversion, qrwidth, getsegments,
+    # data type of Reed Solomon code
+    Poly, geterrcode,
+    # error type
+    EncodeError,
+    # QR code style
+    unicodeplot, unicodeplotbychar,
+    imageinqrcode, animatebyqrcode
 
 """
 Invalid step in encoding process.
@@ -402,8 +394,8 @@ function exportqrcode( codes::AbstractVector{QRCode}
                      ; targetsize::Int = 0
                      , pixels::Int = 160
                      , fps::Int = 2)
-    # all equal valid only in Julia 1.8+
-    length(unique!(qrwidth.(codes))) == 1 || throw(EncodeError("The codes should have the same size"))
+    matwidth = qrwidth(first(codes))
+    all(==(matwidth), qrwidth.(codes)) || throw(EncodeError("The codes should have the same size"))
     # check whether the image format is supported
     if !endswith(path, r"\.\w+")
         path *= ".gif"
@@ -413,7 +405,6 @@ function exportqrcode( codes::AbstractVector{QRCode}
             "$ext\n is not a valid format for animated images"))
     end
     # generate frames
-    matwidth = qrwidth(first(codes))
     if targetsize > 0 # original keyword -- will be removed in the future
         Base.depwarn("keyword `targetsize` will be removed in the future, use `pixels` instead", :exportbitmat)
         pixels = ceil(Int, 72 * targetsize / 2.45 / matwidth) * matwidth

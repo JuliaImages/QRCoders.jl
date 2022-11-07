@@ -128,11 +128,11 @@ function getsegments(v::Int, eclevel::ErrCorrLevel)
     # initialize
     ## get information about error correction
     ncodewords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][v, :]
-    ## initialize blocks
+    ## initialize blocks -- indirect method(TO DO)
     blocks = vcat([Vector{Int}(undef, nc1) for _ in 1:nb1],
                     [Vector{Int}(undef, nc2) for _ in 1:nb2])
     ecblocks = [Vector{Int}(undef, ncodewords) for _ in 1:nb1 + nb2]
-
+    
     # get segments from the QR code
     ## indexes of message bits
     inds = getindexes(v)
@@ -159,7 +159,7 @@ function getsegments(v::Int, eclevel::ErrCorrLevel)
     end
     ind != 0 && throw(ArgumentError("getsegments: not all data is recorded"))
 
-    ## expand blocks to get segments
+    ## expand blocks to get segments -- can be simplified
     expand(x) = (8 * x - 7):8 * x
     segments = [inds[vcat(expand.(block)...)] for block in blocks]
     ecsegments = [inds[vcat(expand.(block)...)] for block in ecblocks]
@@ -170,9 +170,10 @@ end
 ### I. use error correction
 
 """
-    pickcodewords(errinds::AbstractVector{<:Integer}, blockinds{<:Integer}, destroy::Int)
+    pickindexes(errinds::AbstractVector{<:Integer}, blockinds{<:Integer}, destroy::Int)
 
-Pick codewords from `blockinds` by `errinds`. The number of codewords is `destroy`.
+Pick indexes from `blockinds` by `errinds`. The number of codewords that will be 
+destroyed is `destroy`. Here 1 codeword = 8 bits.
 """
 function pickcodewords( errinds::AbstractVector{<:Integer}
                       , blockinds::AbstractVector{<:Integer}
@@ -189,7 +190,7 @@ function pickcodewords( errinds::AbstractVector{<:Integer}
     ## sort by damage cost
     inds = @views sort(1:blocklen, by=i->damges[i], rev=true)[1:destroy]
     ## recover the codewords
-    vcat([blockinds[8 * i - 7:8 * i] for i in inds]...)
+    @views vcat([blockinds[8 * i - 7:8 * i] for i in inds]...)
 end
 
 """
@@ -207,8 +208,8 @@ that will be destroyed. The default value is `2/3`, which means that
 imageinqrcode(code::QRCode, targtemat::AbstractMatrix; rate::Real=2/3) = imageinqrcode!(copy(code), targtemat; rate=rate)
 
 function imageinqrcode!( code::QRCode
-                   , targetmat::AbstractMatrix
-                   ; rate::Real=2/3)
+                       , targetmat::AbstractMatrix
+                       ; rate::Real=2/3)
     ## check parameters
     0 ≤ rate ≤ 1 || throw(ArgumentError("Invalid rate $rate." *
             " It could risk to destroy the message if rate is bigger that 1."))
@@ -220,35 +221,37 @@ function imageinqrcode!( code::QRCode
     ## image position
     x1, y1 = (qrlen - imgx + 1) >> 1, (qrlen - imgy + 1) >> 1
     x2, y2 = x1 + imgx - 1, y1 + imgy - 1
-    
+    leftop = (x1 - 1, y1 - 1)
+
     ## locations of message bits
-    ind2point(ind::Int) = (ind % qrlen, ind ÷ qrlen)
-    isvalid(p::Int) = (x1, y1) ≤ ind2point(p) ≤ (x2, y2)
     msginds, ecinds = getsegments(version, eclevel)
     msgecinds = [vcat(inds1, inds2) for (inds1, inds2) in zip(msginds, ecinds)]
     # number of error correction codewords
     ncodewords = length(first(ecinds)) >> 3
     destroy = floor(Int, ncodewords * rate / 2)
-    filter!.(isvalid, msginds) # filter out invalid indexes
-    filter!.(isvalid, ecinds) # filter out invalid indexes
     # indexes inside the image
-    validinds = vcat(msginds..., ecinds...)
+    ind2point(ind::Int) = (ind % qrlen, ind ÷ qrlen)
+    targetval(ind::Int) = targetmat[(ind2point(ind) .- leftop)...]
+    function isvalid(p::Int)
+         x, y = ind2point(p)
+         x1 ≤ x ≤ x2 && y1 ≤ y ≤ y2
+    end
+    validinds = vcat(filter!.(isvalid, msginds)...,
+                     filter!.(isvalid, ecinds)...)
     ## cost function
-    penalty(newmat, target) = count(newmat[validinds] .!= target[validinds])
+    penalty(newmat) = count(ind->newmat[ind] != targetval(ind), validinds)
 
     ## enumerate over masks
     bestmat, bestpenalty = nothing, Inf
     for mask in 0:7
         code.mask = mask
         newmat = qrcode(code)
-        background = copy(newmat) ## background can be avoided(TO DO)
-        background[x1:x2, y1:y2] .= targetmat
         for blockinds in msgecinds # enumerate over each blcok
-            errinds = filter(x -> newmat[x] != background[x], blockinds)
-            inds = pickcodewords(errinds, blockinds, destroy)
-            newmat[inds] .= background[inds]
+            errinds = filter(x -> isvalid(x) && newmat[x] != targetval(x), blockinds)
+            inds = filter!(isvalid, pickcodewords(errinds, blockinds, destroy))
+            newmat[inds] = targetval.(inds)
         end
-        newpenalty = penalty(newmat, background)
+        newpenalty = penalty(newmat)
         if newpenalty < bestpenalty
             bestmat, bestpenalty = newmat, newpenalty
         end
@@ -264,31 +267,30 @@ end
                 , targetmat::AbstractMatrix
                 ; version::Int=16
                 , mode::Mode=Numeric()
+                , eclevel::ErrCorrLevel=High()
                 , width::Int=2
                 , rate::Real=2/3)
 
 Plot the image inside the QR code of `message`.
-
-Note: in order to make good use of error correction bits, the quality is
-immutably set to be `High()`.
 """
 function imageinqrcode( message::AbstractString
-                     , targetmat::AbstractMatrix
-                     ; version::Int=16
-                     , mode::Mode=Numeric()
-                     , width::Int=0
-                     , rate::Real=2/3)
-    code = QRCode(message, version=version, eclevel=High(), mode=mode, border=width)
+                      , targetmat::AbstractMatrix
+                      ; version::Int=16
+                      , mode::Mode=Numeric()
+                      , eclevel::ErrCorrLevel = High()
+                      , width::Int=0
+                      , rate::Real=2/3)
+    code = QRCode(message, version=version, eclevel=eclevel, mode=mode, border=width)
     return imageinqrcode!(code, targetmat, rate=rate)
 end
 
 """
     animatebyqrcode( codes::AbstractVector{QRCode}
-                   , targetmats::AbstractVector{<:AbstractMatrix}
-                   ; rate::Real=2/3
-                   , pixels::Int=160
-                   , fps::Int=10
-                   , filename::AbstractString="animate.gif")
+                    , targetmats::AbstractVector{<:AbstractMatrix}
+                    ; rate::Real=2/3
+                    , pixels::Int=160
+                    , fps::Int=10
+                    , filename::AbstractString="animate.gif")
 
 Plot the image inside the QR code of `message` and save the animation
 to `filename`.
@@ -298,9 +300,8 @@ function animatebyqrcode( codes::AbstractVector{QRCode}
                         , filename::AbstractString="animate.gif"
                         ; rate::Real=2/3
                         , pixels::Int=160
-                        , fps::Int=10
-                        )
-    width = qrwidth(codes[1])
+                        , fps::Int=5)
+    width = qrwidth(first(codes))
     all(==(width), qrwidth.(codes)) || throw(ArgumentError(
         "All QR codes should have the same version."))
     length(codes) == length(targetmats) || throw(ArgumentError(

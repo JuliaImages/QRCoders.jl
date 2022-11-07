@@ -74,6 +74,7 @@ end
     mat[msginds] .= 1
     mat[ecinds] .= 1
     unicodeplotbychar(mat) |> println
+    @test true
 end
 
 @testset "simulate image" begin
@@ -83,10 +84,12 @@ end
     code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
     mat = imageinqrcode(code, img, rate=2/3)
     exportbitmat(mat, "testimages/badapple_code.png")
+    @test true
 
     # test for animate
     code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
     code2 = QRCode("Hello julia!", eclevel=High(), version=16, width=4)
     codes = [code, code2]
     animatebyqrcode(codes, [img, img], "testimages/badapple.gif", rate=2/3)
+    @test true
 end
