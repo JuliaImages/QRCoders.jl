@@ -128,11 +128,11 @@ function getsegments(v::Int, eclevel::ErrCorrLevel)
     # initialize
     ## get information about error correction
     ncodewords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][v, :]
-    ## initialize blocks -- indirect method(TO DO)
-    blocks = vcat([Vector{Int}(undef, nc1) for _ in 1:nb1],
-                    [Vector{Int}(undef, nc2) for _ in 1:nb2])
-    ecblocks = [Vector{Int}(undef, ncodewords) for _ in 1:nb1 + nb2]
-    
+    ## initialize blocks
+    expand(x) = (8 * x - 7):8 * x
+    segments = vcat([Vector{Int}(undef, 8 * nc1) for _ in 1:nb1],
+                    [Vector{Int}(undef, 8 * nc2) for _ in 1:nb2])
+    ecsegments = [Vector{Int}(undef, 8 * ncodewords) for _ in 1:nb1 + nb2]
     # get segments from the QR code
     ## indexes of message bits
     inds = getindexes(v)
@@ -145,24 +145,19 @@ function getsegments(v::Int, eclevel::ErrCorrLevel)
     ind = length(inds) >> 3 # number of bytes
     ### error correction bytes
     for i in ncodewords:-1:1, j in (nb1 + nb2):-1:1
-        ecblocks[j][i] = ind
+        ecsegments[j][expand(i)] = @view(inds[expand(ind)])
         ind -= 1
     end
     ### message bytes
     for i in nc2:-1:(1 + nc1), j in (nb1 + nb2):-1:(nb1 + 1)
-        blocks[j][i] = ind
+        segments[j][expand(i)] = @view(inds[expand(ind)])
         ind -= 1
     end
     for i in nc1:-1:1, j in (nb1 + nb2):-1:1
-        blocks[j][i] = ind
+        segments[j][expand(i)] = @view(inds[expand(ind)])
         ind -= 1
     end
     ind != 0 && throw(ArgumentError("getsegments: not all data is recorded"))
-
-    ## expand blocks to get segments -- can be simplified
-    expand(x) = (8 * x - 7):8 * x
-    segments = [inds[vcat(expand.(block)...)] for block in blocks]
-    ecsegments = [inds[vcat(expand.(block)...)] for block in ecblocks]
     return segments, ecsegments
 end
 
