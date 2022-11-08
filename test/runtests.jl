@@ -1,8 +1,10 @@
 using QRCoders
 using Test
 using FileIO
-using ImageCore
 using Random
+using ImageCore
+using ImageTransformations
+using TestImages
 
 using QRCoders:
     # build
@@ -12,7 +14,7 @@ using QRCoders:
     # tables
     alphanumeric, antialphanumeric, kanji, antikanji, 
     mode2bin, qrversion, qrformat, qrversionbits,
-    ecblockinfo, remainderbits,
+    ecblockinfo, remainderbits, msgbitslen,
     # encode
     getmode, characterscapacity, modeindicators, 
     getcharactercountindicator, charactercountlength,
@@ -20,7 +22,9 @@ using QRCoders:
     # data convert
     bitarray2int, int2bitarray, bits2bytes,
     # style
-    unicodeplot
+    unicodeplot, getindexes, getsegments,
+    imageinqrcode, animatebyqrcode,
+    pickcodewords
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
@@ -57,3 +61,6 @@ include("tst_overall.jl")
 
 # style
 include("tst_style.jl")
+
+# final message
+unicodeplotbychar("https://github.com/JuliaImages/QRCoders.jl") |> println

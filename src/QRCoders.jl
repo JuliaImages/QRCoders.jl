@@ -3,30 +3,26 @@ Module that can create QR codes as data or images using `qrcode` or `exportqrcod
 """
 module QRCoders
 
-# create QR code
-export qrcode, exportqrcode, exportbitmat, QRCode
-
-# supported modes
-export Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8
-
-# error correction levels
-export ErrCorrLevel, Low, Medium, Quartile, High
-
-# get information about QR code
-export getmode, getversion, qrwidth
-
-# data type of Reed Solomon code
-export Poly, geterrcode
-
-# error type
-export EncodeError
-
-# QR code style
-export unicodeplot, unicodeplotbychar
-
 using ImageCore
 using FileIO
 using UnicodePlots
+
+export
+    # create QR code
+    qrcode, exportqrcode, exportbitmat, QRCode,
+    # supported modes
+    Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8,
+    # error correction levels
+    ErrCorrLevel, Low, Medium, Quartile, High,
+    # get information about QR code
+    getmode, getversion, qrwidth, getsegments,
+    # data type of Reed Solomon code
+    Poly, geterrcode,
+    # error type
+    EncodeError,
+    # QR code style
+    unicodeplot, unicodeplotbychar,
+    imageinqrcode, animatebyqrcode
 
 """
 Invalid step in encoding process.
@@ -124,6 +120,15 @@ mutable struct QRCode
 end
 
 """
+    copy(code::QRCode)
+
+Returns a copy of `code`.
+"""
+function Base.copy(code::QRCode)
+    QRCode(code.version, code.mode, code.eclevel, code.mask, code.message, code.border)
+end
+
+"""
     QRCode(message::AbstractString)
 
 Create a QR code with the default settings.
@@ -173,7 +178,18 @@ include("tables.jl")
 include("errorcorrection.jl")
 include("matrix.jl")
 include("encode.jl")
-include("style.jl")
+
+"""
+    function addborder(matrix::AbstractMatrix, width::Int)
+
+Add a white border of width `width` to the QR code.
+"""
+function addborder(matrix::AbstractMatrix, width::Int)
+    width == 0 && return matrix
+    background = falses(size(matrix) .+ (width*2, width*2))
+    background[width+1:end-width, width+1:end-width] = matrix
+    return background
+end
 
 """
     qrcode( message::AbstractString
@@ -238,9 +254,7 @@ function qrcode( message::AbstractString
 
     # white border
     (compact || width == 0) && return matrix # keyword compact will be removed in the future
-    background = falses(size(matrix) .+ (width*2, width*2))
-    background[width+1:end-width, width+1:end-width] = matrix
-    return background
+    return addborder(matrix, width)
 end
 
 """
@@ -352,10 +366,7 @@ function qrcode(code::QRCode)
     matrix = addformat!(xor.(matrix, maskmat), mask, eclevel)
 
     # white border
-    width == 0 && return matrix
-    background = falses(size(matrix) .+ (width*2, width*2))
-    background[width+1:end-width, width+1:end-width] = matrix
-    return background
+    addborder(matrix, width)
 end
 
 """
@@ -390,8 +401,8 @@ function exportqrcode( codes::AbstractVector{QRCode}
                      ; targetsize::Int = 0
                      , pixels::Int = 160
                      , fps::Int = 2)
-    # all equal valid only in Julia 1.8+
-    length(unique!(qrwidth.(codes))) == 1 || throw(EncodeError("The codes should have the same size"))
+    matwidth = qrwidth(first(codes))
+    all(==(matwidth), qrwidth.(codes)) || throw(EncodeError("The codes should have the same size"))
     # check whether the image format is supported
     if !endswith(path, r"\.\w+")
         path *= ".gif"
@@ -401,7 +412,6 @@ function exportqrcode( codes::AbstractVector{QRCode}
             "$ext\n is not a valid format for animated images"))
     end
     # generate frames
-    matwidth = qrwidth(first(codes))
     if targetsize > 0 # original keyword -- will be removed in the future
         Base.depwarn("keyword `targetsize` will be removed in the future, use `pixels` instead", :exportbitmat)
         pixels = ceil(Int, 72 * targetsize / 2.45 / matwidth) * matwidth
@@ -459,5 +469,7 @@ function exportqrcode( msgs::AbstractVector{<:AbstractString}
     # setproperty!.(codes, :width, width)
     exportqrcode(codes, path; targetsize=targetsize, pixels=pixels, fps=fps)
 end
+
+include("style.jl")
 
 end # module

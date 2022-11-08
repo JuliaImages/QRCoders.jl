@@ -230,6 +230,14 @@ const alignmentlocation = Array{Array{Int, 1}, 1}(
 )
 
 """
+Length of message bits for version 1-40.
+"""
+const msgbitslen = [208, 359, 567, 807, 1079, 1383, 1568, 1936, 2336, 2768, 
+    3232, 3728, 4256, 4651, 5243, 5867, 6523, 7211, 7931, 8683, 9252, 
+    10068, 10916, 11796, 12708, 13652, 14628, 15371, 16411, 17483, 18587, 
+    19723, 20891, 22091, 23008, 24272, 25568, 26896, 28256, 29648]
+
+"""
     int2bitarray(n::Int)
 
 Encode an integer into a `BitArray`.

@@ -9,3 +9,6 @@ Manifest.toml
 .DS_Store
 .ipynb_checkpoints/
 
+*.gif
+*.png
+*.jpg

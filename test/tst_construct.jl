@@ -188,7 +188,7 @@ end
     # large image
     msgs = [join(rand('0':'9', 5596)) for _ in 1:5];
     codes = QRCode.(msgs, version=40, width=4);
-    exportqrcode(codes, "qrcodes.gif")
+    exportqrcode(codes, imgpath * "qrcodes.gif")
     @test true
 
     # test failed

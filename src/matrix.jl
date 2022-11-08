@@ -92,14 +92,8 @@ function placedata!( matrix::Array{Union{Bool,Nothing},2}
             col -= 1
             continue
         end
-
         # path goes up and down
-        if row > n
-            row, δrow = n, -1
-        else
-            row, δrow = 1, 1
-        end
-
+        row, δrow = row > n ? (n, -1) : (1, 1)
         # place data if matrix element is nothing
         for _ in 1:n
             if isnothing(matrix[row, col])
