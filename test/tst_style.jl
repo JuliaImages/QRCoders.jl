@@ -79,13 +79,13 @@ end
 
 @testset "simulate image" begin
     # image in qrcode
-    img = load("assets/badapple.png")
-    img = .! (Bool ∘ round ∘ Gray).(imresize(img, 37, 37))
+    img = testimage("cam")
+    img = .! (Bool ∘ round).(imresize(img, 37, 37))
     code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
     mat = imageinqrcode(code, img, rate=2/3)
-    exportbitmat(mat, "testimages/badapple_code.png")
+    exportbitmat(mat, "testimages/cam.png")
     @test true
-    mat = imageinqrcode("hello world!", img, version=10, rate=1.1)
+    mat = imageinqrcode("hello world!", img, version=10, width=2, rate=1.1)
     .! mat |> unicodeplotbychar |> println
     @test true
 
@@ -94,6 +94,6 @@ end
     code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
     code2 = QRCode("Hello julia!", eclevel=High(), version=16, width=4)
     codes = [code, code2]
-    animatebyqrcode(codes, [img, img], "testimages/badapple.gif", rate=2/3)
+    animatebyqrcode(codes, [img, img], "testimages/cam.gif", rate=2/3)
     @test true
 end

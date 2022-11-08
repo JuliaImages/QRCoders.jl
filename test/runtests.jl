@@ -1,9 +1,10 @@
 using QRCoders
 using Test
 using FileIO
-using ImageCore
 using Random
+using ImageCore
 using ImageTransformations
+using TestImages
 
 using QRCoders:
     # build
