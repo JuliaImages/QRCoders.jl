@@ -23,7 +23,7 @@ using QRCoders:
     bitarray2int, int2bitarray, bits2bytes,
     # style
     unicodeplot, getindexes, getsegments,
-    imageinqrcode, animatebyqrcode,
+    imagebyerrcor, animatebyerrcor,
     pickcodewords
                  
 using QRCoders.Polynomial:
@@ -45,19 +45,19 @@ eclevels = [Low(), Medium(), Quartile(), High()]
 modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
 
 # operations
-include("tst_operation.jl")
+# include("tst_operation.jl")
 
-# format and version information
-include("tst_fmtver.jl")
+# # format and version information
+# include("tst_fmtver.jl")
 
-# encode message
-include("tst_encode.jl")
+# # encode message
+# include("tst_encode.jl")
 
-# struct QRCode
-include("tst_construct.jl")
+# # struct QRCode
+# include("tst_construct.jl")
 
-# original tests
-include("tst_overall.jl")
+# # original tests
+# include("tst_overall.jl")
 
 # style
 include("tst_style.jl")

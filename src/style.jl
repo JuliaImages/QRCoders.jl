@@ -9,8 +9,8 @@ supported list:
         2.2 split indexes into several segments(de-interleave)
     3. plot image inside QR code
         I. use error correction
-        II. use remainder bits
-        III. use remainder bits and error correction
+        II. use pad bits
+        III. use pad bits and error correction
 =#
 
 # 1. Unicode plot
@@ -42,16 +42,18 @@ function unicodeplot(message::AbstractString; border=:none)
 end
 
 ## idea by @notinaboat
-const pixelchars = [' ', '▄', '▀', '█']
+const pixelchars = ['█', '▀', '▄', ' ']
 pixelchar(block::AbstractVector) = pixelchars[2 * block[1] + block[2] + 1]
-pixelchar(bit::Bool) = pixelchars[1 + 2 * bit]
+pixelchar(bit::Bool) = bit ? pixelchars[4] : pixelchars[2]
 
 """
     unicodeplotbychar(mat::AbstractMatrix)
 
 Plot of the QR code using Unicode characters.
 
-Note that `true` represents white and `false` represents black.
+The value `1(true)` represents a dark space and `0(false)` 
+a white square. It is the same convention as QR code and 
+is the opposite of general image settings.
 """
 function unicodeplotbychar(mat::AbstractMatrix)
     m = size(mat, 1)
@@ -64,12 +66,9 @@ end
     unicodeplotbychar(message::AbstractString)
 
 Plot of the QR code using Unicode characters.
-
-Note that `true` represents black and `false` represents white in qrcode, 
-which is the opposite of the image convention.
 """
 function unicodeplotbychar(message::AbstractString)
-    unicodeplotbychar(.! qrcode(message; eclevel=Low(), width=2))
+    unicodeplotbychar(qrcode(message; eclevel=Low(), width=2))
 end
 
 # 2. locate message bits
@@ -144,16 +143,16 @@ function getsegments(v::Int, eclevel::ErrCorrLevel)
     ## get blocks
     ind = length(inds) >> 3 # number of bytes
     ### error correction bytes
-    for i in ncodewords:-1:1, j in (nb1 + nb2):-1:1
+    @inbounds for i in ncodewords:-1:1, j in (nb1 + nb2):-1:1
         ecsegments[j][expand(i)] = @view(inds[expand(ind)])
         ind -= 1
     end
     ### message bytes
-    for i in nc2:-1:(1 + nc1), j in (nb1 + nb2):-1:(nb1 + 1)
+    @inbounds for i in nc2:-1:(1 + nc1), j in (nb1 + nb2):-1:(nb1 + 1)
         segments[j][expand(i)] = @view(inds[expand(ind)])
         ind -= 1
     end
-    for i in nc1:-1:1, j in (nb1 + nb2):-1:1
+    @inbounds for i in nc1:-1:1, j in (nb1 + nb2):-1:1
         segments[j][expand(i)] = @view(inds[expand(ind)])
         ind -= 1
     end
@@ -165,44 +164,45 @@ end
 ### I. use error correction
 
 """
-    pickindexes(errinds::AbstractVector{<:Integer}, blockinds{<:Integer}, destroy::Int)
+    pickindexes(errinds::AbstractVector{<:Integer}, blockinds{<:Integer}, modify::Int)
 
 Pick indexes from `blockinds` by `errinds`. The number of codewords that will be 
-destroyed is `destroy`. Here 1 codeword = 8 bits.
+modifyed is `modify`. Here 1 codeword = 8 bits.
 """
 function pickcodewords( errinds::AbstractVector{<:Integer}
-                      , blockinds::AbstractVector{<:Integer}
-                      , destroy::Int)
+                      , validbytes::AbstractVector{<:AbstractVector}
+                      , modify::Int)
     ## locate codewords
-    length(blockinds) & 7 == 0 || throw(ArgumentError(
-        "The number of indexes is not correct."))
-    blocklen = length(blockinds) >> 3
-    damges = Vector{Int}(undef, blocklen)
+    blocklen = length(validbytes)
+    modify ≥ blocklen && return validbytes
     errinds = Set(errinds) # for fast searching
-    for i in 1:blocklen
-        damges[i] = @views count(in(errinds), blockinds[8 * i - 7:8 * i])
-    end
+    damages = [count(in(errinds), bytes) for bytes in validbytes]
     ## sort by damage cost
-    inds = @views sort(1:blocklen, by=i->damges[i], rev=true)[1:destroy]
-    ## recover the codewords
-    @views vcat([blockinds[8 * i - 7:8 * i] for i in inds]...)
+    inds = @views sort(1:blocklen, by=i->damages[i], rev=true)[1:modify]
+    # inds = @views inds[1:count(!iszero, damages)] # discard the correct bits
+    @views validbytes[inds]
+end
+
+function pack2bytes(inds::AbstractVector{<:Integer})
+    n = length(inds)
+    return [inds[i:i+7] for i in 1:8:n & 7 ⊻ n] # discard remainder bits
 end
 
 """
-    imageinqrcode(code::QRCode, targetmat::AbstractMatrix, rate::Real=2/3)
+    imagebyerrcor(code::QRCode, targetmat::AbstractMatrix, rate::Real=2/3)
 
-Plot the image `targetmat` inside the QR code.
+Plot the image `targetmat` inside the QR code using error correction.
 
 In order to get the best simulation, the error correction level
 is recommended to be `High()`.
 
 The parameter `rate` is the rate of the error correction codewords
-that will be destroyed. The default value is `2/3`, which means that
-`1/2 * 2/3 = 1/3` of the error correction codewords will be destroyed.
+that will be modifyed. The default value is `2/3`, which means that
+`1/2 * 2/3 = 1/3` of the error correction codewords will be modifyed.
 """
-imageinqrcode(code::QRCode, targtemat::AbstractMatrix; rate::Real=2/3) = imageinqrcode!(copy(code), targtemat; rate=rate)
+imagebyerrcor(code::QRCode, targtemat::AbstractMatrix; rate::Real=2/3) = imagebyerrcor!(copy(code), targtemat; rate=rate)
 
-function imageinqrcode!( code::QRCode
+function imagebyerrcor!( code::QRCode
                        , targetmat::AbstractMatrix
                        ; rate::Real=2/3)
     ## check parameters
@@ -211,41 +211,44 @@ function imageinqrcode!( code::QRCode
             " It could risk to destroy the message if rate is bigger that 1."))
     border, code.border = code.border, 0 # reset border -- compat to indexes rule
     (imgx, imgy), qrlen = size(targetmat), qrwidth(code)
-    version, eclevel = code.version, code.eclevel
     qrlen ≥ max(imgx, imgy) || throw(ArgumentError("The image is too large."))
     
     ## image position
     x1, y1 = (qrlen - imgx + 1) >> 1, (qrlen - imgy + 1) >> 1
     x2, y2 = x1 + imgx - 1, y1 + imgy - 1
-    leftop = (x1 - 1, y1 - 1)
+    function isvalid(p::Int)
+        x, y = p % qrlen, p ÷ qrlen
+        x1 ≤ x ≤ x2 && y1 ≤ y ≤ y2
+    end  
 
     ## locations of message bits
+    version, eclevel = code.version, code.eclevel
     msginds, ecinds = getsegments(version, eclevel)
-    msgecinds = [vcat(inds1, inds2) for (inds1, inds2) in zip(msginds, ecinds)]
     # number of error correction codewords
     ncodewords = length(first(ecinds)) >> 3
-    destroy = floor(Int, ncodewords * rate / 2)
-    # indexes inside the image
-    targetval(ind::Int) = targetmat[ind % qrlen - leftop[1], ind ÷ qrlen - leftop[2]]
-    function isvalid(p::Int)
-         x, y = p % qrlen, p ÷ qrlen
-         x1 ≤ x ≤ x2 && y1 ≤ y ≤ y2
-    end
-    validinds = vcat(filter!.(isvalid, msginds)...,
-                     filter!.(isvalid, ecinds)...)
+    modify = floor(Int, ncodewords * rate / 2)
+
+    # valid indexes
     validmsgecinds = [vcat(inds1, inds2) for (inds1, inds2) in zip(msginds, ecinds)]
+    validbytes = [filter!.(isvalid, pack2bytes(inds)) for inds in validmsgecinds]
+    filter!.(isvalid, validmsgecinds) # filter out invalid indexes
+    validinds = vcat(validmsgecinds...)
+    # indexes inside the image
+    targetval(ind::Int) = targetmat[ind % qrlen - x1 + 1, ind ÷ qrlen - y1 + 1]
+      
     ## cost function
     penalty(newmat) = sum(newmat[validinds] .== targetval.(validinds))
-
     ## enumerate over masks
     bestmat, bestpenalty = nothing, Inf
     for mask in 0:7
         code.mask = mask
         newmat = qrcode(code)
-        for (vinds, blockinds) in zip(validmsgecinds, msgecinds) # enumerate over each blcok
+        for (vinds, vbytes) in zip(validmsgecinds, validbytes) # enumerate over each blcok
             errinds = filter(x -> newmat[x] != targetval(x), vinds)
-            inds = filter!(isvalid, pickcodewords(errinds, blockinds, destroy))
-            newmat[inds] = targetval.(inds)
+            bytes = pickcodewords(errinds, vbytes, modify)
+            @inbounds for inds in bytes
+                newmat[inds] = targetval.(inds)
+            end
         end
         newpenalty = penalty(newmat)
         if newpenalty < bestpenalty
@@ -257,7 +260,7 @@ function imageinqrcode!( code::QRCode
 end
 
 """
-    imageinqrcode( message::AbstractString
+    imagebyerrcor( message::AbstractString
                 , targetmat::AbstractMatrix
                 ; version::Int=16
                 , mode::Mode=Numeric()
@@ -265,9 +268,9 @@ end
                 , width::Int=2
                 , rate::Real=2/3)
 
-Plot the image inside the QR code of `message`.
+Plot the image inside the QR code of `message` using error correction.
 """
-function imageinqrcode( message::AbstractString
+function imagebyerrcor( message::AbstractString
                       , targetmat::AbstractMatrix
                       ; version::Int=16
                       , mode::Mode=Numeric()
@@ -275,21 +278,21 @@ function imageinqrcode( message::AbstractString
                       , width::Int=0
                       , rate::Real=2/3)
     code = QRCode(message, version=version, eclevel=eclevel, mode=mode, width=width)
-    return imageinqrcode!(code, targetmat, rate=rate)
+    return imagebyerrcor!(code, targetmat, rate=rate)
 end
 
 """
-    animatebyqrcode( codes::AbstractVector{QRCode}
-                    , targetmats::AbstractVector{<:AbstractMatrix}
-                    ; rate::Real=2/3
-                    , pixels::Int=160
-                    , fps::Int=10
-                    , filename::AbstractString="animate.gif")
+    animatebyerrcor( codes::AbstractVector{QRCode}
+                   , targetmats::AbstractVector{<:AbstractMatrix}
+                   ; rate::Real=2/3
+                   , pixels::Int=160
+                   , fps::Int=10
+                   , filename::AbstractString="animate.gif")
 
-Plot the image inside the QR code of `message` and save the animation
-to `filename`.
+Plot the image inside the QR code of `message` using error correction,
+and save the animation to `filename`.
 """
-function animatebyqrcode( codes::AbstractVector{QRCode}
+function animatebyerrcor( codes::AbstractVector{QRCode}
                         , targetmats::Vector{<:AbstractArray}
                         , filename::AbstractString="animate.gif"
                         ; rate::Real=2/3
@@ -304,10 +307,113 @@ function animatebyqrcode( codes::AbstractVector{QRCode}
     pixels = ceil(Int, pixels / width) * width
     animate = Array{Bool}(undef, pixels, pixels, length(codes))
     for (i, code) in enumerate(codes)
-        mat = imageinqrcode(code, targetmats[i], rate=rate)
+        mat = imagebyerrcor(code, targetmats[i], rate=rate)
         animate[:, :, i] = _resize(mat, pixels)
     end
     save(filename, .! animate, fps=fps)
 end
 
-### II. plot using remainder bits
+### II. plot using pad bits
+
+"""
+    numofpadblocks( msg::AbstractString
+                  , mode::Mode
+                  , eclevel::ErrCorrLevel
+                  , version::Int)
+
+Return the blocks indexes of pad bits.
+
+Notes about message bits.
+1. required bits
+    requiredbits = mode indicator(4) 
+                + ccindicator(mode, version)
+                + data bits(msg, mode)
+                + padbits # key point
+                = 8 * (nb1 * nc1 + nb2 * nc2)
+
+2. messge block and error correciton block
+   - message blocks are splited from required bits
+   - each msgblock is associated with an ecblock
+
+3. message bits
+    messagebits = msgblocks + ecblocks + remainder bits
+"""
+function numofpadblocks( msg::AbstractString
+                       , mode::Mode
+                       , eclevel::ErrCorrLevel
+                       , version::Int)
+    # number of blocks
+    _, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
+    (nb1 + nb2) == 1 && return 0 # no free block
+
+    # length of non-padbits
+    modelen = 4 # length of mode indicator
+    i = (version ≥ 1) + (version ≥ 10) + (version ≥ 27)
+    cclen = charactercountlength[i] # length of character count bits
+    datalen = length(encodedata(msg, mode)) # length of data bits
+    nonpadbits = modelen + cclen + datalen
+    # pad 0 to make the length of bits a multiple of 8
+    mod8 = nonpadbits & 7
+    if mod8 != 0
+        nonpadbits += 8 - mod8
+    end
+    # length of required bits
+    requiredlen = 8 * (nb1 * nc1 + nb2 * nc2)
+    nonpadbits ≥ requiredlen && return 0 # no free block
+
+    # number of bytes of *real* message bits
+    msgbyte = nonpadbits >> 3
+    grp1 = nb1 * nc1 # number of bytes of group 1
+    if msgbyte ≤ grp1
+        msgb = ceil(Int, msgbyte / nc1)
+        nb2 + nb1 - msgb
+    else
+        msgbyte -= grp1
+        msgb = ceil(Int, msgbyte / nc2)
+        nb2 - msgb
+    end
+end
+
+"""
+    imagebypadbits(code::QRCode, targetmat::AbstractMatrix)
+
+Plot the image `targetmat` inside the QR code using the pad bits.
+
+
+"""
+imagebypadbits(code::QRCode, targetmat::AbstractMatrix) = imagebypadbits!(copy(code), targetmat)
+
+function imagebypadbits!(code::QRCode, targetmat::AbstractMatrix)
+    # reset border -- compat to indexes rule
+    border, code.border = code.border, 0
+    # check inputs
+    (imgx, imgy), qrlen = size(targetmat), qrwidth(code)
+    qrlen ≥ max(imgx, imgy) || throw(ArgumentError("The image is too large."))
+
+    # get free blocks
+    version, eclevel = code.version, code.eclevel
+    msginds, ecinds = getsegments(version, eclevel)
+    msg, mode = code.message, code.mode
+    nfreeblock = numofpadblocks(msg, mode, eclevel, version)
+    if nfreeblock == 0 # no free block
+        @warn("No free block! Try using bigger version of lower error correction level.")
+        code.border = border
+        return qrcode(code)
+    end
+    freeblocks = [vcat(msginds[end-i], ecinds[end-i]) for i in 0:nfreeblock-1]
+
+    ## image position
+    x1, y1 = (qrlen - imgx + 1) >> 1, (qrlen - imgy + 1) >> 1
+    x2, y2 = x1 + imgx - 1, y1 + imgy - 1
+
+    # indexes inside the image
+    targetval(ind::Int) = targetmat[ind % qrlen - x1 + 1, ind ÷ qrlen - x2 + 1]
+    function isvalid(p::Int)
+         x, y = p % qrlen, p ÷ qrlen
+         x1 ≤ x ≤ x2 && y1 ≤ y ≤ y2
+    end
+    # 自由比特控制不了左侧的部分！！！
+    validinds = vcat(filter!.(isvalid, msginds)...,
+                     filter!.(isvalid, ecinds)...)
+    validmsgecinds = [vcat(inds1, inds2) for (inds1, inds2) in zip(msginds, ecinds)]
+end

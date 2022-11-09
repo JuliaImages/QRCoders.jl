@@ -80,20 +80,41 @@ end
 @testset "simulate image" begin
     # image in qrcode
     img = testimage("cam")
-    img = .! (Bool ∘ round).(imresize(img, 37, 37))
+    img = .!(Bool.(round.(imresize(img, 37, 37))))
     code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
-    mat = imageinqrcode(code, img, rate=2/3)
+    mat = imagebyerrcor(code, img, rate=2/3)
     exportbitmat(mat, "testimages/cam.png")
     @test true
-    mat = imageinqrcode("hello world!", img, version=10, width=2, rate=1.1)
-    .! mat |> unicodeplotbychar |> println
+    mat = imagebyerrcor("hello world!", img, version=10, width=2, rate=1.1)
+    mat |> unicodeplotbychar |> println
     @test true
-
 
     # test for animate
     code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
     code2 = QRCode("Hello julia!", eclevel=High(), version=16, width=4)
     codes = [code, code2]
-    animatebyqrcode(codes, [img, img], "testimages/cam.gif", rate=2/3)
+    animatebyerrcor(codes, [img, img], "testimages/cam.gif", rate=2/3)
     @test true
+end
+
+@testset "linear equation -- GF(256)" begin
+    # test for linear equation
+    A = [0x57 0x83 0x9d 0x27;
+         0x83 0x9d 0x27 0x57;
+         0x9d 0x27 0x57 0x83;
+         0x27 0x57 0x83 0x9d]
+    b = [0x1e, 0x2b, 0x39, 0x4f]
+    x = [0x0a, 0x7c, 0x60, 0x68]
+    @test solve(A, b) == x
+    @test mult(A, x) == b
+    ga, gb = gauss_elimination(A, b)
+    @test gauss_elimination(ga, gb) == (ga, gb)
+    @test solve(ga, gb) == x
+    @test mult(ga, x) == gb
+    
+    # test for multiplication
+    A, B, C = rand(0:255, 4, 4), rand(0:255, 4, 4), rand(0:255, 4, 4)
+    b = rand(0:255, 4)
+    @test mult(A, mult(B, C)) == mult(mult(A, B), C)
+    @test mult(A, mult(B, b)) == mult(mult(A, B), b)
 end
