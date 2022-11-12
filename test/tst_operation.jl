@@ -169,3 +169,28 @@ end
          131, 32, 178, 236]
     @test geterrcode(Poly(reverse(msg)), 18) == Poly(reverse(r))
 end
+
+@testset "Generator matrix" begin
+    # test for multiplication
+    A, B, C = rand(0:255, 4, 4), rand(0:255, 4, 4), rand(0:255, 4, 4)
+    b = rand(0:255, 4)
+    @test mult(A, mult(B, C)) == mult(mult(A, B), C)
+    @test mult(A, mult(B, b)) == mult(mult(A, B), b)
+
+    encode(f::Poly, n::Int) = (f << n) + (f << n) % generator(n)
+    G = generator_matrix(3, 4)
+    f = randpoly(3)
+    @test mult(G, f.coeff) == encode(f, 4).coeff
+
+    m = rand(1:254)
+    n = rand(1:255-m)
+    G = generator_matrix(m, n)
+    @test size(G) == (m+n, m)
+    f = randpoly(m)
+    @test mult(G, f.coeff) == encode(f, n).coeff
+
+    @test powx(Int, 2) == Poly([0, 0, 1])
+    @test powx(0) == Poly{UInt8}([1])
+    @test powx(1, 3) == Poly{UInt8}([0, 1, 0])
+    @test_throws DomainError powx(3, 3)
+end
