@@ -23,13 +23,13 @@ end
     modeindicator = modeindicators[mode]
     ccindicator = getcharactercountindicator(length(message), version, mode)
     encodeddata = encodedata(message, mode)
-    ncodewords, nb1, dc1, nb2, dc2 = ecblockinfo[eclevel][version, :]
+    necwords, nb1, dc1, nb2, dc2 = ecblockinfo[eclevel][version, :]
     requiredbits = 8 * (nb1 * dc1 + nb2 * dc2)
     encoded = vcat(modeindicator, ccindicator, encodeddata)
     encoded = padencodedmessage(encoded, requiredbits)
     blocks = makeblocks(encoded, nb1, dc1, nb2, dc2)
-    ecblocks = map(b->getecblock(b, ncodewords), blocks)
-    data0 = interleave(blocks, ecblocks, ncodewords, nb1, dc1, nb2, dc2, version)
+    ecblocks = map(b->getecblock(b, necwords), blocks)
+    data0 = interleave(blocks, ecblocks, necwords, nb1, dc1, nb2, dc2, version)
     matrix0 = emptymatrix(version)
     masks = makemasks(matrix0)
     image = falses((39,39*8))

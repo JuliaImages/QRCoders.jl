@@ -27,7 +27,7 @@ julia> qrcode("Hello world!")
  1  1  1  1  1  1  1  0  1  0  1  1  0  1  1  1  0  0  1  0  0
 ```
 
-The value `1(true)` represents a dark space and `0(false)` a white square.
+The value `1(true)` represents a dark space and `0(false)` a white space.
 
 ### Export a QR Code as a file
 
