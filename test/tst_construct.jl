@@ -217,7 +217,7 @@ end
     encodeddata = encodedata(msg, mode)
 
     # Getting parameters for the error correction
-    ncodewords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
+    necwords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
     requiredbits = 8 * (nb1 * nc1 + nb2 * nc2)
 
     # Pad encoded message before error correction
@@ -227,11 +227,11 @@ end
 
     # Getting error correction codes
     blocks = makeblocks(encoded, nb1, nc1, nb2, nc2)
-    ecblocks = getecblock.(blocks, ncodewords)
+    ecblocks = getecblock.(blocks, necwords)
 
     # Interleave code blocks
-    msgbits = interleave(blocks, ecblocks, ncodewords, nb1, nc1, nb2, nc2, version)
-    @test length(msgbits) == requiredbits + ncodewords * (nb1 + nb2) * 8 + remainderbits[version]
+    msgbits = interleave(blocks, ecblocks, necwords, nb1, nc1, nb2, nc2, version)
+    @test length(msgbits) == requiredbits + necwords * (nb1 + nb2) * 8 + remainderbits[version]
 
     # Pick the best mask
     matrix = emptymatrix(version)

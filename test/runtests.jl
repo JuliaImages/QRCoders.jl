@@ -23,7 +23,7 @@ using QRCoders:
     bitarray2int, int2bitarray, bits2bytes,
     # style
     unicodeplot, getindexes, getsegments,
-    imageinqrcode, animatebyqrcode,
+    imagebyerrcor, animatebyerrcor,
     pickcodewords
                  
 using QRCoders.Polynomial:

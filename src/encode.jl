@@ -210,12 +210,12 @@ function makeblocks(bits::BitArray{1}, nb1::Int, nc1::Int, nb2::Int, nc2::Int)
 end
 
 """
-    getecblock(block::AbstractVector, ncodewords::Int)
+    getecblock(block::AbstractVector, necwords::Int)
 
-Return the error correction blocks, with `ncodewords` codewords per block.
+Return the error correction blocks, with `necwords` codewords per block.
 """
-function getecblock(block::AbstractVector, ncodewords::Int)
-    ecpoly = geterrcode(Poly{UInt8}(@view(block[end:-1:1])), ncodewords)
+function getecblock(block::AbstractVector, necwords::Int)
+    ecpoly = geterrcode(Poly{UInt8}(@view(block[end:-1:1])), necwords)
     return @view(ecpoly.coeff[end:-1:1])
 end
 
@@ -223,18 +223,18 @@ end
 
 """
     interleave(blocks::AbstractVector, ecblocks::AbstractVector,
-               ncodewords::Int, nb1::Int, nc1::Int, nb2::Int, nc2::Int,
+               necwords::Int, nb1::Int, nc1::Int, nb2::Int, nc2::Int,
                version::Int)
 
 Mix the encoded data blocks and error correction blocks.
 """
 function interleave( blocks::AbstractVector
                    , ecblocks::AbstractVector
-                   , ncodewords::Int, nb1::Int
+                   , necwords::Int, nb1::Int
                    , nc1::Int, nb2::Int
                    , nc2::Int, version::Int
                    )::BitArray{1}
-    bytes = Vector{UInt8}(undef, nb1 * (nc1 + ncodewords) + nb2 * (nc2 + ncodewords))
+    bytes = Vector{UInt8}(undef, nb1 * (nc1 + necwords) + nb2 * (nc2 + necwords))
     ind = 1
     ## Encoded data
     for i in 1:nc1, j in 1:(nb1 + nb2)
@@ -247,7 +247,7 @@ function interleave( blocks::AbstractVector
     end
     
     ## Error correction data
-    for i in 1:ncodewords, j in 1:(nb1 + nb2)
+    for i in 1:necwords, j in 1:(nb1 + nb2)
         bytes[ind] = ecblocks[j][i]
         ind += 1
     end
@@ -278,7 +278,7 @@ function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, v
     # Getting parameters for the error correction
     # Number of error correction codewords per block, number of blocks in
     # group 1/2, number of data codewords per block in group 1/2
-    ncodewords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
+    necwords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
     requiredbits = 8 * (nb1 * nc1 + nb2 * nc2)
 
     # Pad encoded message before error correction
@@ -287,10 +287,10 @@ function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, v
 
     # Getting error correction codes
     blocks = makeblocks(encoded, nb1, nc1, nb2, nc2)
-    ecblocks = getecblock.(blocks, ncodewords)
+    ecblocks = getecblock.(blocks, necwords)
 
     # Interleave code blocks
-    msgbits = interleave(blocks, ecblocks, ncodewords, nb1, nc1, nb2, nc2, version)
+    msgbits = interleave(blocks, ecblocks, necwords, nb1, nc1, nb2, nc2, version)
 
     return msgbits
 end

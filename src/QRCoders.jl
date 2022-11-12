@@ -9,20 +9,22 @@ using UnicodePlots
 
 export
     # create QR code
-    qrcode, exportqrcode, exportbitmat, QRCode,
+    qrcode, exportqrcode, QRCode,
+    exportbitmat, addborder,
     # supported modes
     Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8,
     # error correction levels
     ErrCorrLevel, Low, Medium, Quartile, High,
     # get information about QR code
-    getmode, getversion, qrwidth, getsegments,
+    getmode, getversion, qrwidth, 
+    getindexes, getsegments,
     # data type of Reed Solomon code
     Poly, geterrcode,
     # error type
     EncodeError,
     # QR code style
     unicodeplot, unicodeplotbychar,
-    imageinqrcode, animatebyqrcode
+    imagebyerrcor, animatebyerrcor
 
 """
 Invalid step in encoding process.
@@ -172,7 +174,7 @@ qrwidth(code::QRCode) = 4 * code.version + 17 + 2 * code.border
 
 Show the QR code in REPL using `unicodeplotbychar`.
 """
-Base.show(io::IO, code::QRCode) = print(io, unicodeplotbychar(.! qrcode(code)))
+Base.show(io::IO, code::QRCode) = print(io, unicodeplotbychar(qrcode(code)))
 
 include("tables.jl")
 include("errorcorrection.jl")
@@ -223,6 +225,8 @@ function qrcode( message::AbstractString
                , mask::Int = -1
                , compact::Bool = false
                , width::Int = 0)
+    isempty(message) && @warn(
+        "Most QR code scanners don't support empty message!")
     # Determining mode and version of the QR code
     bestmode = getmode(message)
     mode = bestmode ⊆ mode ? mode : bestmode
