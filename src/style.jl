@@ -306,7 +306,7 @@ function animatebyerrcor( codes::AbstractVector{QRCode}
     
     pixels = ceil(Int, pixels / width) * width
     animate = Array{Bool}(undef, pixels, pixels, length(codes))
-    for (i, code) in enumerate(codes)
+    @inbounds for (i, code) in enumerate(codes)
         mat = imagebyerrcor(code, targetmats[i], rate=rate)
         animate[:, :, i] = _resize(mat, pixels)
     end

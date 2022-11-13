@@ -29,7 +29,7 @@ using QRCoders:
 using QRCoders.Polynomial:
     # operator for GF(256) integers
     antipowtable, powtable, 
-    gfpow2, gflog2, gfinv, mult, divide,
+    gfpow2, gflog2, gfinv, mult, divide, powx,
     # operator for polynomials
     iszeropoly, degree, zero, unit,
     rpadzeros, rstripzeros, generator, 

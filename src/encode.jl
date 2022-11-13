@@ -4,8 +4,6 @@
 ### 2. make blocks with error-correction bits
 ### 3. interleave the blocks
 
-using .Polynomial: Poly, geterrcode
-
 """
     utf8len(message::AbstractString)
 

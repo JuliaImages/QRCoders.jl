@@ -24,7 +24,8 @@ export
     EncodeError,
     # QR code style
     unicodeplot, unicodeplotbychar,
-    imagebyerrcor, animatebyerrcor
+    imagebyerrcor, animatebyerrcor,
+    generator_matrix
 
 """
 Invalid step in encoding process.
@@ -179,6 +180,7 @@ Base.show(io::IO, code::QRCode) = print(io, unicodeplotbychar(qrcode(code)))
 include("tables.jl")
 include("errorcorrection.jl")
 include("matrix.jl")
+using .Polynomial
 include("encode.jl")
 
 """
