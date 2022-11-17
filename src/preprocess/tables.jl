@@ -1,5 +1,7 @@
 # Data tables from the specificatioms
 
+include("kanji.jl")
+
 """
 Allowed characters for `Alphanumeric()` mode and their number.
 """
@@ -8,7 +10,6 @@ const alphanumeric = Dict{AbstractChar, Int}(
 
 const antialphanumeric = Dict{Int, AbstractChar}(val => key for (key, val) in alphanumeric)
 
-include("kanji.jl")
 const antikanji = Dict{Int, AbstractChar}(val => key for (key, val) in kanji)
 
 """
