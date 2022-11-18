@@ -34,7 +34,7 @@ In our notations, the generator matrix is rotate by 180 degrees.
 
 module Polynomial
 
-export Poly, geterrcode, mult, divide, generator_matrix
+export Poly, geterrcode, mult, divide, generator_matrix, gfinv, encodepoly
 
 import Base: length, iterate, ==, <<, +, *, ÷, %, copy, zero, eltype
 
@@ -312,6 +312,16 @@ generator(n::Int) = generator(UInt8, n)
 generator(::Type{T}, n::Int) where T = prod([Poly{T}([powtable[i], one(T)]) for i in 1:n])
 
 """
+    encodepoly(msgpoly::Poly{T}, n::Int) where T
+
+Encode the message polynomial to received polynomial.
+"""
+function encodepoly(msgpoly::Poly{T}, n::Int) where T
+    f = msgpoly << n
+    f + f % generator(T, n)
+end
+
+"""
     geterrcode(f::Poly, n::Int)
 
 Return a polynomial containing the `n` error correction codewords of `f`.
@@ -368,7 +378,8 @@ e.g. a_0, ..., a_n.
 In this sense, we still have G⋅x = c, where x is the message polynomial 
 and c is the received polynomial.
 
-To get an ordinary generator matrix, just rotate it by 180 degrees.
+To get an ordinary generator matrix, just rotate it by 180 degrees,
+i.e. @view(G[end:-1:1, end:-1:1])
 """
 generator_matrix(msglen::Int, necwords::Int) = generator_matrix(UInt8, msglen, necwords)
 function generator_matrix(::Type{T}, msglen::Int, necwords::Int) where T

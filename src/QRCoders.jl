@@ -49,4 +49,7 @@ include("styles/style.jl")
 # Generate and export QR code
 include("export.jl")
 
+# Tools for equation solving
+include("styles/equation.jl")
+
 end # module

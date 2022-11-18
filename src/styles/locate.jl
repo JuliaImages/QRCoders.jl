@@ -41,6 +41,12 @@ function getindexes(v::Int)
 end
 
 ## 2.2 split indexes into several segments(de-interleave)
+"""
+    getecinfo(v::Int, eclevel::ErrCorrLevel)
+
+Get the error correction information.
+"""
+getecinfo(v::Int, eclevel::ErrCorrLevel) = @views ecblockinfo[eclevel][v, :]
 
 """
     getsegments(v::Int, mode::Mode, eclevel::ErrCorrLevel)
@@ -53,7 +59,7 @@ The procedure is similar to `deinterleave` in `QRDecoders.jl`.
 function getsegments(v::Int, eclevel::ErrCorrLevel)
     # initialize
     ## get information about error correction
-    necwords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][v, :]
+    necwords, nb1, nc1, nb2, nc2 = getecinfo(v, eclevel)
     ## initialize blocks
     expand(x) = (8 * x - 7):8 * x
     segments = vcat([Vector{Int}(undef, 8 * nc1) for _ in 1:nb1],
