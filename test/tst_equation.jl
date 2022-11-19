@@ -1,4 +1,5 @@
 # Test for Gauss elimination
+"""fill blank using Forney algorithm"""
 function fillblankbyFA( block::AbstractVector{<:Integer}
                       , misinds::AbstractVector{<:Integer}
                       , necwords::Int)

@@ -24,9 +24,9 @@ using QRCoders:
     # data convert
     bitarray2int, int2bitarray, bits2bytes,
     # style
-    unicodeplot, getindexes, getsegments,
-    imagebyerrcor, animatebyerrcor,
-    pickcodewords, getecinfo,
+    unicodeplot, getindexes, getsegments, getecinfo,
+    # imagebyerrcor, animatebyerrcor,
+    # pickcodewords,
     gauss_elimination, fillblank
                  
 using QRCoders.Polynomial:
@@ -63,11 +63,11 @@ include("tst_construct.jl")
 # original tests
 include("tst_overall.jl")
 
-# style
-include("tst_style.jl")
-
 # equations
 include("tst_equation.jl")
+
+# style
+include("tst_style.jl")
 
 # final message
 unicodeplotbychar("https://github.com/JuliaImages/QRCoders.jl") |> println

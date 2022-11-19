@@ -18,14 +18,13 @@ export
     # get information about QR code
     getmode, getversion, qrwidth, 
     getindexes, getsegments,
-    # data type of Reed Solomon code
-    Poly, geterrcode,
+    # polynomial operations
+    Poly, geterrcode, generator_matrix,
     # error type
     EncodeError,
     # QR code style
     unicodeplot, unicodeplotbychar,
-    imagebyerrcor, animatebyerrcor,
-    generator_matrix
+    imageinqrcode, getfreeinfo
 
 # Data types in QRCoders
 include("types.jl")
@@ -48,8 +47,5 @@ include("styles/style.jl")
 
 # Generate and export QR code
 include("export.jl")
-
-# Tools for equation solving
-include("styles/equation.jl")
 
 end # module

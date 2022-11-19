@@ -43,8 +43,8 @@ end
         necwords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][v, :]
         requiredbits = 8 * (nb1 * nc1 + nb2 * nc2)
         segments, ecsegments = getsegments(v, eclevel)
-        msginds = vcat(segments...)
-        ecinds = vcat(ecsegments...)
+        msginds = vcat(vcat(segments...)...)
+        ecinds = vcat(vcat(ecsegments...)...)
         ## check the length of message segments
         @test length(msginds) == requiredbits
         
@@ -69,8 +69,8 @@ end
     msg = "HELLO WORLD"
     mat = qrcode(msg, mode=mode, eclevel=eclevel, version=7, mask=0, width=0)
     segments, ecsegments = getsegments(7, eclevel)
-    msginds = vcat(segments...)
-    ecinds = vcat(ecsegments...)
+    msginds = vcat(vcat(segments...)...)
+    ecinds = vcat(vcat(ecsegments...)...)
     mat[msginds] .= 1
     mat[ecinds] .= 1
     unicodeplotbychar(mat) |> println
@@ -82,7 +82,7 @@ end
     img = testimage("cam")
     img = .!(Bool.(round.(imresize(img, 37, 37))))
     code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
-    mat = imagebyerrcor(code, img, rate=2/3)
+    mat = imageinqrcode(code, img, rate=2/3)
     exportbitmat(mat, "testimages/cam.png")
     @test true
     mat = imagebyerrcor("hello world!", img, version=10, width=2, rate=1.1)

@@ -304,3 +304,4 @@ function addborder(matrix::AbstractMatrix, width::Int)
     background[width+1:end-width, width+1:end-width] = matrix
     return background
 end
+addborder(width::Int) = matrix -> addborder(matrix, width) # currying
