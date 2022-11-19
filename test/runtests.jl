@@ -5,6 +5,8 @@ using Random
 using ImageCore
 using ImageTransformations
 using TestImages
+using StatsBase
+using QRDecoders.Syndrome: fillerasures!
 
 using QRCoders:
     # build
@@ -24,7 +26,8 @@ using QRCoders:
     # style
     unicodeplot, getindexes, getsegments,
     imagebyerrcor, animatebyerrcor,
-    pickcodewords
+    pickcodewords, getecinfo,
+    gauss_elimination, fillblank
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
@@ -33,7 +36,8 @@ using QRCoders.Polynomial:
     # operator for polynomials
     iszeropoly, degree, zero, unit,
     rpadzeros, rstripzeros, generator, 
-    geterrcode, euclidean_divide
+    geterrcode, euclidean_divide,
+    encodepoly
 
 # random polynomial
 randpoly(::Type{T}, n::Int) where T = Poly{T}([rand(0:255, n-1)..., rand(1:255)])
@@ -61,6 +65,9 @@ include("tst_overall.jl")
 
 # style
 include("tst_style.jl")
+
+# equations
+include("tst_equation.jl")
 
 # final message
 unicodeplotbychar("https://github.com/JuliaImages/QRCoders.jl") |> println

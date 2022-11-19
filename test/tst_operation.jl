@@ -177,17 +177,18 @@ end
     @test mult(A, mult(B, C)) == mult(mult(A, B), C)
     @test mult(A, mult(B, b)) == mult(mult(A, B), b)
 
-    encode(f::Poly, n::Int) = (f << n) + (f << n) % generator(n)
     G = generator_matrix(3, 4)
     f = randpoly(3)
-    @test mult(G, f.coeff) == encode(f, 4).coeff
+    @test mult(G, f.coeff) == encodepoly(f, 4).coeff
 
     m = rand(1:254)
     n = rand(1:255-m)
     G = generator_matrix(m, n)
     @test size(G) == (m+n, m)
     f = randpoly(m)
-    @test mult(G, f.coeff) == encode(f, n).coeff
+    @test mult(G, f.coeff) == encodepoly(f, n).coeff
+    # @btime mult(G, f.coeff); # 8.311 μs (86 allocations: 10.66 KiB)
+    # @btime encodepoly(f, n).coeff; # 1.401 μs (25 allocations: 1.88 KiB)
 
     @test powx(Int, 2) == Poly([0, 0, 1])
     @test powx(0) == Poly{UInt8}([1])
