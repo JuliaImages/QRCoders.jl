@@ -76,23 +76,3 @@ end
     unicodeplotbychar(mat) |> println
     @test true
 end
-
-@testset "simulate image" begin
-    # image in qrcode
-    img = testimage("cam")
-    img = .!(Bool.(round.(imresize(img, 37, 37))))
-    code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
-    mat = imageinqrcode(code, img, rate=2/3)
-    exportbitmat(mat, "testimages/cam.png")
-    @test true
-    mat = imagebyerrcor("hello world!", img, version=10, width=2, rate=1.1)
-    mat |> unicodeplotbychar |> println
-    @test true
-
-    # test for animate
-    code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
-    code2 = QRCode("Hello julia!", eclevel=High(), version=16, width=4)
-    codes = [code, code2]
-    animatebyerrcor(codes, [img, img], "testimages/cam.gif", rate=2/3)
-    @test true
-end

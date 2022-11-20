@@ -5,17 +5,26 @@ Set value of mask from 0 to 7.
 =#
 
 """
-    imageinqrcode(code::QRCode, img::AbstractMatrix, rate::Real=1)
+    imageinqrcode( code::QRCode
+                 , img::AbstractMatrix{Bool}
+                 ; rate::Real=1
+                 , singlemask::Bool=false)
 
 Plot image inside QR code.
 """
 function imageinqrcode( code::QRCode
-                      , img::AbstractMatrix
+                      , img::AbstractMatrix{Bool}
                       ; rate::Real=1
-                      , singlemask=true)
+                      , singlemask::Bool=false) 
+    imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask)
+end
+function imageinqrcode!( code::QRCode
+                       , img::AbstractMatrix{Bool}
+                       ; rate::Real=1
+                       , singlemask::Bool=false)
     # ---- preprocess ---- #
         ## 1.1 check input
-        code.border == 0 || throw(ArgumentError("Border of the QR code should be 0"))
+        border, code.border = code.border, 0 # set border to 0
         (imgx, imgy), qrlen = size(img), qrwidth(code)
         qrlen ≥ max(imgx, imgy) || throw(ArgumentError("The image is too large."))
         rate ≥ 0 || throw(ArgumentError("The rate should be positive."))
@@ -29,7 +38,7 @@ function imageinqrcode( code::QRCode
 
         ## 1.3 plot image in canvas
         canvas = rand(Bool, qrlen, qrlen) # canvas = similar(stdmat)
-        x1, y1 = (qrlen - imgx + 1) >> 1, (qrlen - imgy + 1) >> 1
+        x1, y1 = 1 + (qrlen - imgx) >> 1, 1 + (qrlen - imgy) >> 1
         x2, y2 = x1 + imgx - 1, y1 + imgy - 1
         imgI = CartesianIndices((x1:x2, y1:y2))
         canvas[imgI] = img
@@ -149,7 +158,7 @@ function imageinqrcode( code::QRCode
             bestmat, bestpenalty = stdmat, penaltyval
         end
     end
-    return bestmat
+    return addborder(bestmat, border)
 end
 
 """
@@ -216,3 +225,18 @@ function getfreeinfo( msg::AbstractString
     return npureblock, nfreeblock, nfreebyte
 end
 getfreeinfo(code::QRCode) = getfreeinfo(code.message, code.mode, code.eclevel, code.version)
+
+"""
+    getimagescore(mat::AbstractMatrix{Bool}, img::AbstractMatrix{<:Bool})
+
+Return the number of pixels that are different from the given matrix.
+
+Note: the image should be plotted in the center.
+"""
+function getimagescore(mat::AbstractMatrix{Bool}, img::AbstractMatrix{<:Bool})
+    qrlen = size(mat, 1)
+    imgx, imgy = size(img)
+    x1, y1 = 1 + (qrlen - imgx) >> 1, 1 + (qrlen - imgy) >> 1
+    x2, y2 = x1 + imgx - 1, y1 + imgy - 1
+    sum(mat[x1:x2, y1:y2] .!= img)
+end

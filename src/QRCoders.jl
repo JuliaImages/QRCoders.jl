@@ -24,7 +24,7 @@ export
     EncodeError,
     # QR code style
     unicodeplot, unicodeplotbychar,
-    imageinqrcode, getfreeinfo
+    imageinqrcode, getfreeinfo, getimagescore
 
 # Data types in QRCoders
 include("types.jl")
