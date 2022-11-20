@@ -49,6 +49,7 @@ getindexes(code::QRCode) = getindexes(code.version)
 Get the error correction information.
 """
 getecinfo(v::Int, eclevel::ErrCorrLevel) = @views ecblockinfo[eclevel][v, :]
+getecinfo(code::QRCode) = getecinfo(code.version, code.eclevel)
 
 """
     getsegments(code::QRCode)

@@ -40,6 +40,7 @@ end
 
     # get segments of the QR code
     for v in 1:40
+        v = 1
         necwords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][v, :]
         requiredbits = 8 * (nb1 * nc1 + nb2 * nc2)
         segments, ecsegments = getsegments(v, eclevel)
@@ -47,6 +48,9 @@ end
         ecinds = vcat(vcat(ecsegments...)...)
         ## check the length of message segments
         @test length(msginds) == requiredbits
+        inds = getindexes(v)
+        byteinds = vcat(msginds..., ecinds...)
+        @test inds[1:length(byteinds)] == byteinds
         
         # test for QR matrix
         ## read from encoding process
@@ -61,6 +65,9 @@ end
         msgbits = mat[msginds]
         @test encoded == msgbits
     end
+    # dispatch for QRCode
+    code = QRCode("hello world")
+    @test getindexes(code) == getindexes(code.version)
 end
 
 @testset "display -- use white modules in msgbits" begin

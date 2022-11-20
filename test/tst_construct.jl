@@ -47,6 +47,10 @@
         code = QRCode(msg; eclevel=eclevel, mode=mode, version=version, width=0)
         @test mat == qrcode(code)
     end
+
+    # curry apply
+    code = QRCode("Hello world!", width=0)
+    code |> qrcode |> addborder(2) |> exportbitmat(imgpath * "qrcode-curry")
 end
 
 @testset "Generate QRCode -- small cases" begin

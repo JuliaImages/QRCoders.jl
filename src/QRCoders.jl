@@ -6,6 +6,7 @@ module QRCoders
 using ImageCore
 using FileIO
 using UnicodePlots
+using StatsBase
 
 export
     # create QR code

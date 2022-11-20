@@ -7,6 +7,7 @@ using ImageTransformations
 using TestImages
 using StatsBase
 using QRDecoders.Syndrome: fillerasures!
+using QRDecoders: qrdecode
 
 using QRCoders:
     # build
@@ -25,7 +26,7 @@ using QRCoders:
     bitarray2int, int2bitarray, bits2bytes,
     # style
     unicodeplot, getindexes, getsegments, getecinfo,
-    gauss_elimination, fillblank
+    gauss_elimination, fillblank, getimagescore
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
