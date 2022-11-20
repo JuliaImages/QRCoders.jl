@@ -27,47 +27,59 @@ function imageinqrcode( code::QRCode
         necwords, nb1, nc1, _, nc2 = getecinfo(version, eclevel)
         modify = floor(Int, necwords * rate / 2)
 
-        ## 1.3 standard QR matrix and masked matrix
-        stdmat = qrcode(code) # standard QR code
-        maskmat = makemask(emptymatrix(version), mask)
+        ## 1.3 plot image in canvas
         canvas = rand(Bool, qrlen, qrlen) # canvas = similar(stdmat)
-
-        ## 1.4 plot image in canvas
         x1, y1 = (qrlen - imgx + 1) >> 1, (qrlen - imgy + 1) >> 1
         x2, y2 = x1 + imgx - 1, y1 + imgy - 1
         imgI = CartesianIndices((x1:x2, y1:y2))
         canvas[imgI] = img
-        canvas .⊻= maskmat
 
-        ## 1.5 get indexes of block bytes
+        ## 1.4 get indexes of block bytes
         bytemsginds, byteecinds = getsegments(code)
         byteblockinds = [vcat(inds1, inds2) for (inds1, inds2) in zip(bytemsginds, byteecinds)]
         bitblockinds = [vcat(inds...) for inds in byteblockinds]
 
-        ## 1.6 information of free blocks
+        ## 1.5 information of free blocks
         npureblock, nfreeblock, nfreebyte = getfreeinfo(code)
         npurebyte = (npureblock > nb1 ? nc2 : nc1) - nfreebyte # number of message bytes in the partial free block
         bytefreeblockinds = @view(byteblockinds[npureblock + 2:end])
         bitfreeblockinds = @view(bitblockinds[npureblock + 2:end])
 
-    # ----- compute values of the bit blocks ----- #
-        ## 2.1 allocations
+        ## 1.6 allocations
+        ### current bit block vals and free bit block vals
         bitblockvals = [Vector{Bool}(undef, length(inds)) for inds in bitblockinds]
         bitfreeblockvals = @view(bitblockvals[npureblock + 2:end])
+
+        ## 1.7 common data for different mask
+        ### sort bytes by the intersection area with the image
+        #### free blocks
+        sortfreebytes = [sortperm(count.(∈(imgI), bytefreeblockinds[i]), rev=true) for i in 1:nfreeblock]
+        #### partial free block
+        scores = @views count.(∈(imgI), bytefreeblockinds[npureblock + 1][npurebyte+1:end])
+        sortparinds = vcat(1:npurebyte, # the first `npurebyte`
+            npurebyte .+ sortperm(scores, rev=true))
+
+    # ----- find best values of the bit blocks ----- #
+    masks = singlemask ? [mask] : [0:7;]
+    bestmat, bestpenalty = nothing, Inf
+    penalty(mat) = @views sum(mat[imgI] == img)
+    for mask in masks
+        code.mask = mask
+        stdmat = qrcode(code) # standard QR code
+        ## 2.1 enumerate over masks
+        maskmat = makemask(emptymatrix(version), mask)
+        canvas .⊻= maskmat # apply mask to canvas
 
         ## 2.2 pure message block -- read from standard QR matrix
         for i in 1:npureblock
             bitblockvals[i] = @view(stdmat[bitblockinds[i]])
         end
 
-        ## 2.3 free blocks -- error correction
-        ### sort bytes by the intersection area with the image
-        sortbytes = [sortperm(count.(∈(imgI), bytefreeblockinds[i]), rev=true) for i in 1:nfreeblock]
-        ### error correction
+        ## 2.3 free blocks -- error correction        
         for i in 1:nfreeblock
             bitvals = bitfreeblockvals[i] # **our target**
             bitinds, byteinds = bitfreeblockinds[i], bytefreeblockinds[i]
-            sortinds = sortbytes[i]
+            sortinds = sortfreebytes[i]
             reclen = length(byteinds) # length of the received message
             msglen = reclen - necwords
             validinds = @views sortinds[1:msglen]
@@ -87,17 +99,13 @@ function imageinqrcode( code::QRCode
         end
         
         ## 2.4 partial free block -- read from standard QR matrix + error correction
-        ### our target: `bitvals`
+        ### 2.4.1 our target: `bitvals`
         bitvals = bitblockvals[npureblock + 1]
-        bitinds, byteinds = bitblockinds[npureblock + 1], byteblockinds[npureblock + 1]
-        ### sort bytes by the intersection area with the image
-        scores = @views count.(∈(imgI), byteinds[npurebyte+1:end])
-        sortinds = vcat(1:npurebyte, # the first `npurebyte`
-            npurebyte .+ sortperm(scores, rev=true))
-        ### error correction
+        bitinds, byteinds = bitblockinds[npureblock + 1], byteblockinds[npureblock + 1]        
+        ### 2.4.2 error correction
         reclen = length(byteinds) # length of the received message
         msglen = reclen - necwords
-        validinds = @views sortinds[1:msglen]
+        validinds = @views sortparinds[1:msglen]
         #### initialize byte values
         bytevals = Vector{UInt8}(undef, reclen)
         for i in 1:npurebyte # read from standard QR matrix
@@ -105,7 +113,7 @@ function imageinqrcode( code::QRCode
             bits = @views stdmat[byteinds[i]] .⊻ maskmat[byteinds[i]]
             bytevals[i] = bitarray2int(bits)
         end
-        for i in @views sortinds[npurebyte+1:msglen] # read from canvas
+        for i in @views sortparinds[npurebyte+1:msglen] # read from canvas
             bytevals[i] = @views bitarray2int(canvas[byteinds[i]])
         end
         #### fill the rest of bytes
@@ -116,21 +124,32 @@ function imageinqrcode( code::QRCode
         end
         #### apply mask
         bitvals .⊻= @view(maskmat[bitinds])
-    
-    # ----- fill in by the modified bits ----- #
-    for (inds, vals) in zip(bitblockinds, bitblockvals)
-        stdmat[inds] = vals
-    end
-    # ----- return the modified QR code ----- #
-    canvas .⊻= maskmat # remove the mask
-    bytecost(byte) = count(ind->stdmat[ind] != canvas[ind], filter(∈(imgI), byte))
-    for block in byteblockinds
-        sortinds = sortperm(bytecost.(block), rev=true)
-        for byte in @views block[sortinds[1:modify]]
-            stdmat[byte] = @view(canvas[byte])
+
+        ## 2.5 fill in the QR matrix
+        for (inds, vals) in zip(bitblockinds, bitblockvals)
+            stdmat[inds] = vals
+        end
+
+        ## 2.6 error correction
+        canvas .⊻= maskmat # remove the mask
+        bytecost(byte) = count(ind->stdmat[ind] != canvas[ind], filter(∈(imgI), byte))
+        for block in byteblockinds
+            modify == 0 && break # no need to modify
+            scores = bytecost.(block)
+            sortinds = sortperm(scores, rev=true)
+            errind = @views findfirst(iszero, scores[sortinds])
+            sortinds = @views sortinds[1:min(errind-1, modify)]
+            for byte in @views block[sortinds]
+                stdmat[byte] = @view(canvas[byte])
+            end
+        end
+        ## 2.7 calculate penalty
+        penaltyval = penalty(stdmat)
+        if penaltyval < bestpenalty
+            bestmat, bestpenalty = stdmat, penaltyval
         end
     end
-    return stdmat
+    return bestmat
 end
 
 """
