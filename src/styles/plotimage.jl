@@ -4,20 +4,27 @@
     imageinqrcode( code::QRCode
                  , img::AbstractMatrix{Bool}
                  ; rate::Real=1
-                 , singlemask::Bool=false)
+                 , singlemask::Bool=true)
 
 Plot image inside QR code.
+
+## Arguments
+
+  * `code::QRCode`: QR code
+  * `img::AbstractMatrix{Bool}`: image to be plotted
+  * `rate::Real=1`: damage rate of the error correction codewords
+  * `singlemask::Bool=true`: use the default mask pattern
 """
 function imageinqrcode( code::QRCode
                       , img::AbstractMatrix{Bool}
                       ; rate::Real=1
-                      , singlemask::Bool=false) 
+                      , singlemask::Bool=true) 
     imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask)
 end
 function imageinqrcode!( code::QRCode
                        , img::AbstractMatrix{Bool}
                        ; rate::Real=1
-                       , singlemask::Bool=false)
+                       , singlemask::Bool=true)
     # ---- preprocess ---- #
     ## 1.1 check input
     border, code.border = code.border, 0 # set border to 0
