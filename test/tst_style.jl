@@ -40,13 +40,17 @@ end
 
     # get segments of the QR code
     for v in 1:40
+        v = 1
         necwords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][v, :]
         requiredbits = 8 * (nb1 * nc1 + nb2 * nc2)
         segments, ecsegments = getsegments(v, eclevel)
-        msginds = vcat(segments...)
-        ecinds = vcat(ecsegments...)
+        msginds = vcat(vcat(segments...)...)
+        ecinds = vcat(vcat(ecsegments...)...)
         ## check the length of message segments
         @test length(msginds) == requiredbits
+        inds = getindexes(v)
+        byteinds = vcat(msginds..., ecinds...)
+        @test inds[1:length(byteinds)] == byteinds
         
         # test for QR matrix
         ## read from encoding process
@@ -61,6 +65,9 @@ end
         msgbits = mat[msginds]
         @test encoded == msgbits
     end
+    # dispatch for QRCode
+    code = QRCode("hello world")
+    @test getindexes(code) == getindexes(code.version)
 end
 
 @testset "display -- use white modules in msgbits" begin
@@ -69,30 +76,10 @@ end
     msg = "HELLO WORLD"
     mat = qrcode(msg, mode=mode, eclevel=eclevel, version=7, mask=0, width=0)
     segments, ecsegments = getsegments(7, eclevel)
-    msginds = vcat(segments...)
-    ecinds = vcat(ecsegments...)
+    msginds = vcat(vcat(segments...)...)
+    ecinds = vcat(vcat(ecsegments...)...)
     mat[msginds] .= 1
     mat[ecinds] .= 1
     unicodeplotbychar(mat) |> println
-    @test true
-end
-
-@testset "simulate image" begin
-    # image in qrcode
-    img = testimage("cam")
-    img = .!(Bool.(round.(imresize(img, 37, 37))))
-    code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
-    mat = imagebyerrcor(code, img, rate=2/3)
-    exportbitmat(mat, "testimages/cam.png")
-    @test true
-    mat = imagebyerrcor("hello world!", img, version=10, width=2, rate=1.1)
-    mat |> unicodeplotbychar |> println
-    @test true
-
-    # test for animate
-    code = QRCode("HELLO WORLD", eclevel=High(), version=16, width=4)
-    code2 = QRCode("Hello julia!", eclevel=High(), version=16, width=4)
-    codes = [code, code2]
-    animatebyerrcor(codes, [img, img], "testimages/cam.gif", rate=2/3)
     @test true
 end

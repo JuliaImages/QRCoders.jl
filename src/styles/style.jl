@@ -21,3 +21,6 @@ include("locate.jl")
 
 # Plot image inside QR code
 include("plotimage.jl")
+
+# solve equations
+include("equation.jl")

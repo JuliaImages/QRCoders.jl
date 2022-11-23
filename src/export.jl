@@ -105,6 +105,7 @@ function exportbitmat( matrix::BitMatrix
     end
     save(path, .! _resize(matrix, pixels))
 end
+exportbitmat(path::AbstractString) = matrix -> exportbitmat(matrix, path)
 
 """
     exportqrcode( message::AbstractString

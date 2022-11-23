@@ -7,6 +7,7 @@ using ImageTransformations
 using TestImages
 using StatsBase
 using QRDecoders.Syndrome: fillerasures!
+using QRDecoders: qrdecode
 
 using QRCoders:
     # build
@@ -24,10 +25,8 @@ using QRCoders:
     # data convert
     bitarray2int, int2bitarray, bits2bytes,
     # style
-    unicodeplot, getindexes, getsegments,
-    imagebyerrcor, animatebyerrcor,
-    pickcodewords, getecinfo,
-    gauss_elimination, fillblank
+    unicodeplot, getindexes, getsegments, getecinfo,
+    gauss_elimination, fillblank, getimagescore
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
@@ -63,11 +62,14 @@ include("tst_construct.jl")
 # original tests
 include("tst_overall.jl")
 
+# equations
+include("tst_equation.jl")
+
 # style
 include("tst_style.jl")
 
-# equations
-include("tst_equation.jl")
+# qrimage
+include("tst_qrimage.jl")
 
 # final message
 unicodeplotbychar("https://github.com/JuliaImages/QRCoders.jl") |> println
