@@ -221,6 +221,13 @@ function validaligment(v::Int, imgI::AbstractSet)
 end
 
 """
+    fitimgwidth(code::QRCode)
+
+Return the fitted width of the image.
+"""
+fitimgwidth(code::QRCode) = qrwidth(code) - 2 * code.border - 14
+
+"""
 Fill data in the `stdmat` with the given datas. This function
 is sperated from `imageinqrcode` to make it shorter.
 """

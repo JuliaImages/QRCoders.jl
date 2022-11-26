@@ -1,9 +1,8 @@
-# QRCoders
+![logo-QRCoders](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/logo-QRCoders.png)
 
 [![][action-img]][action-url]
 [![][pkgeval-img]][pkgeval-url]
 [![][codecov-img]][codecov-url]
-[![][docs-stable-img]][docs-stable-url]
 [![][docs-dev-img]][docs-dev-url]
 
 Create [QR Codes](https://en.wikipedia.org/wiki/QR_code) as data within Julia, or export as PNG.
