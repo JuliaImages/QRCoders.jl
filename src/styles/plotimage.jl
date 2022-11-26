@@ -205,22 +205,6 @@ function sortindsample(scores::AbstractVector, msglen::Int)
 end
 
 """
-    validaligment(v::Int, imgx::Int, imgy::Int)
-
-Return the position of aligment pattern that has intersection
-with the image.
-"""
-function validaligment(v::Int, imgI::AbstractSet)
-    # version 1 does not have aligment pattern
-    v == 1 && return Tuple{Int, Int}[]
-    qrlen = 17 + 4 * v
-    # skip the aligment pattern that has intersection with the time pattern
-    aligns = filter(>(6), alignmentlocation[v]) .+ 1 # off set 1
-    # keep the aligment pattern that has intersection with the image
-    [CartesianIndex(x, y) for x in aligns for y in aligns if CartesianIndex(x, y) in imgI]
-end
-
-"""
     fitimgwidth(code::QRCode)
 
 Return the fitted width of the image.

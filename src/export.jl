@@ -81,6 +81,20 @@ function _resize(matrix::AbstractMatrix, widthpixels::Int = 160)
 end
 
 """
+Check wheter the path is valid.
+"""
+function _checkpath(path::AbstractString, supportexts::AbstractVector{<:AbstractString})
+    if !endswith(path, r"\.\w+")
+        path *= ".png"
+    else
+        ext = last(split(path, '.'))
+        ext ∈ supportexts || throw(EncodeError(
+            "Unsupported file extension: $ext\n Supported extensions: $supportexts"))
+    end
+    return path
+end
+
+"""
     exportbitmat(matrix::BitMatrix, path::AbstractString; pixels::Int = 160)
     
 Export the `BitMatrix` `matrix` to an image with file path `path`.
@@ -91,15 +105,11 @@ function exportbitmat( matrix::BitMatrix
                      , pixels::Int=160)
     # check whether the image format is supported
     supportexts = ["png", "jpg", "gif"]
-    if !endswith(path, r"\.\w+")
-        path *= ".png"
-    else
-        ext = last(split(path, '.'))
-        ext ∈ supportexts || throw(EncodeError(
-            "Unsupported file extension: $ext\n Supported extensions: $supportexts"))
-    end
+    path = _checkpath(path, supportexts)
+
     # resize the matrix
     if targetsize > 0 # original keyword -- will be removed in the future
+        Base.depwarn("keyword `targetsize` will be removed in the future, use `pixels` instead", :exportbitmat)
         n = size(matrix, 1)
         pixels = ceil(Int, 72 * targetsize / 2.45 / n) * n
     end
@@ -216,13 +226,8 @@ function exportqrcode( codes::AbstractVector{QRCode}
     matwidth = qrwidth(first(codes))
     all(==(matwidth), qrwidth.(codes)) || throw(EncodeError("The codes should have the same size"))
     # check whether the image format is supported
-    if !endswith(path, r"\.\w+")
-        path *= ".gif"
-    else
-        ext = last(split(path, '.'))
-        ext == "gif" || throw(EncodeError(
-            "$ext\n is not a valid format for animated images"))
-    end
+    path = _checkpath(path, ["gif"])
+
     # generate frames
     if targetsize > 0 # original keyword -- will be removed in the future
         Base.depwarn("keyword `targetsize` will be removed in the future, use `pixels` instead", :exportbitmat)
@@ -230,11 +235,7 @@ function exportqrcode( codes::AbstractVector{QRCode}
     else
         pixels = ceil(Int, pixels / matwidth) * matwidth
     end
-    code = Array{Bool}(undef, pixels, pixels, length(codes))
-    for (i, c) in enumerate(codes)
-        code[:,:,i] = _resize(qrcode(c), pixels)
-    end
-    save(path, .! code, fps=fps)
+    save(path, .! cat(qrcode.(codes)..., dims = 3), fps=fps)
 end
 
 """

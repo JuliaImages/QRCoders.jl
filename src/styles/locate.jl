@@ -94,3 +94,47 @@ function getsegments(v::Int, eclevel::ErrCorrLevel)
     ind != 0 && throw(ArgumentError("getsegments: not all data is recorded"))
     return segments, ecsegments
 end
+
+"""
+    validaligment(v::Int, imgx::Int, imgy::Int)
+
+Return the position of aligment pattern that has intersection
+with the image.
+"""
+function validaligment(v::Int, imgI::AbstractSet)
+    # version 1 does not have aligment pattern
+    v == 1 && return Tuple{Int, Int}[]
+    # skip the aligment pattern that has intersection with the time pattern
+    aligns = filter(>(6), alignmentlocation[v]) .+ 1 # off set 1
+    # keep the aligment pattern that has intersection with the image
+    [CartesianIndex(x, y) for x in aligns for y in aligns if CartesianIndex(x, y) in imgI]
+end
+
+"""
+    getversioninds(v::Int)
+
+Get indexes of the version information.
+"""
+function getversioninds(v::Int)
+    # version ≤ 6 does not have version information
+    v ≤ 6 && throw(ArgumentError("The version $v should be larger than 6."))
+    # get indexes of the version information
+    n = 17 + 4 * v
+    vcat([CartesianIndex(i, j) for i in n - 10:n-8 for j in  1:6],
+         [CartesianIndex(i, j) for i in 1:6 for j in n - 10:n-8])
+end
+getversioninds(code::QRCode) = getversioninds(code.version)
+
+"""
+    getformatinds(v::Int)
+
+Get indexes of the format information.
+"""
+function getformatinds(v::Int)
+    n = 17 + 4 * v
+    return vcat([CartesianIndex(9, i) for i in [1:6;8]],
+                [CartesianIndex(i, 9) for i in [9,8,6:-1:1...]],
+                [CartesianIndex(i, 9) for i in n:-1:n-6],
+                [CartesianIndex(9, i) for i in n-7:n])
+end
+getformatinds(code::QRCode) = getformatinds(code.version)

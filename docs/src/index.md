@@ -11,7 +11,7 @@ QRCode
 ```
 
 ## Encoding modes
-There are five several encoding mode currently supported.
+There are five encoding mode currently supported.
 
 ```@docs
 Mode
