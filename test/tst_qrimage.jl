@@ -8,36 +8,44 @@ function reshapewidth(img::AbstractMatrix, width::Int)
 end
 
 @testset "simulate image" begin
+    # code inside code
+    code = QRCode("Hello world -- Outer", version=13, eclevel=Medium(), width=4)
+    mat = qrcode(code)
+    submat = qrcode("Hello world! -- inner", version=2, width=3)
+    leftop = 17 - 3, 17 - 3
+    newmat = imageinqrcode(code, submat; leftop=leftop)
+    newmat |> exportbitmat("testimages/code-inside-code")
+    code = QRCode("HELLO WORLD", eclevel=Medium(), version=16, width=4)
+
     # image in qrcode
-    code = QRCode("HELLO WORLD", eclevel=Low(), version=20, width=4)
-    oriimg = testimage("cam")
+    img = testimage("cam")
     qrlen = qrwidth(code) - 2 * code.border # length of QR matrix
-    insidelen = qrlen - 16 # skip finder patterns
     # full inside
-    img = .!(Bool.(round.(reshapewidth(oriimg, insidelen))))
-    mat = imageinqrcode(code, img, rate=1, singlemask=false)
-    @test getimagescore(mat, img) ≤ 100
+    bitimg = .!(Bool.(round.(reshapewidth(img, fitimgwidth(code)))))
+    mat = imageinqrcode(code, bitimg, rate=1, singlemask=false, fillaligment=true)
+    @test getimagescore(mat, bitimg) ≤ 100
     exportbitmat(mat, "testimages/cam_fullinside.png")
     @test true
+    
     # full screen
-    img = .!(Bool.(round.(reshapewidth(oriimg, qrlen))))
-    mat = imageinqrcode(code, img, rate=1, singlemask=false)
+    bitimg = .!(Bool.(round.(reshapewidth(img, qrlen))))
+    mat = imageinqrcode(code, bitimg, rate=1, singlemask=false)
     exportbitmat(mat, "testimages/cam_fullscreen.png")
     @test true
 
     # QR code with too much information
     code = QRCode("hello world!"^55, width=4)
-    oriimg = testimage("cam")
+    img = testimage("cam")
     qrlen = qrwidth(code) - 2 * code.border # length of QR matrix
     insidelen = qrlen - 16 # skip finder patterns
     # full inside
-    img = .!(Bool.(round.(reshapewidth(oriimg, insidelen))))
-    mat = imageinqrcode(code, img, rate=1, singlemask=false)
+    bitimg = .!(Bool.(round.(reshapewidth(img, insidelen))))
+    mat = imageinqrcode(code, bitimg, rate=1, singlemask=false)
     exportbitmat(mat, "testimages/cam_fullinside2.png")
     @test true
     # full screen
-    img = .!(Bool.(round.(reshapewidth(oriimg, qrlen))))
-    mat = imageinqrcode(code, img, rate=1, singlemask=false)
+    img = .!(Bool.(round.(reshapewidth(img, qrlen))))
+    mat = imageinqrcode(code, bitimg, rate=1, singlemask=false)
     exportbitmat(mat, "testimages/cam_fullscreen2.png")
     @test true
 

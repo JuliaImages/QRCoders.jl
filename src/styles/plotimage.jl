@@ -1,25 +1,40 @@
 # Plot image inside QR code
-
 """
     imageinqrcode( code::QRCode
                  , img::AbstractMatrix{Bool}
                  ; rate::Real=1
-                 , singlemask::Bool=false)
+                 , singlemask::Bool=true
+                 , leftop::Tuple{Int, Int}=(-1, -1)
+                 , fillaligment::Bool=false
+                 ) where T <: Union{Bool, Nothing}
 
 Plot image inside QR code.
+
+## Arguments
+
+  * `code::QRCode`: QR code
+  * `img::AbstractMatrix{Bool}`: image to be plotted
+  * `rate::Real=1`: damage rate of the error correction codewords
+  * `singlemask::Bool=true`: use the default mask pattern
+  * `leftop::Tuple{Int,Int}=(-1, -1)`: left top corner of the image
 """
 function imageinqrcode( code::QRCode
-                      , img::AbstractMatrix{Bool}
+                      , img::AbstractMatrix{T}
                       ; rate::Real=1
-                      , singlemask::Bool=false) 
-    imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask)
+                      , singlemask::Bool=true
+                      , leftop::Tuple{Int, Int}=(-1, -1)
+                      , fillaligment::Bool=false
+                      ) where T <: Union{Bool, Nothing}
+    imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask, leftop=leftop, fillaligment=fillaligment)
 end
 function imageinqrcode!( code::QRCode
-                       , img::AbstractMatrix{Bool}
+                       , img::AbstractMatrix{T}
                        ; rate::Real=1
-                       , singlemask::Bool=false)
-    # ---- preprocess ---- #
-    ## 1.1 check input
+                       , singlemask::Bool=true
+                       , leftop::Tuple{Int,Int}=(-1, -1)
+                       , fillaligment::Bool=false
+                       ) where T <: Union{Bool, Nothing}
+    ## 1. check input
     border, code.border = code.border, 0 # set border to 0
     (imgx, imgy), qrlen = size(img), qrwidth(code)
     qrlen ≥ max(imgx, imgy) || throw(ArgumentError("The image is too large."))
@@ -27,127 +42,64 @@ function imageinqrcode!( code::QRCode
     rate > 1 && @warn(ArgumentError(
         " It could risk to destroy the message if rate is bigger that 1."))
     
-    ## 1.2 number of modified bytes for each block
+    ## 2. number of modified bytes for each block
     version, eclevel, mask = code.version, code.eclevel, code.mask
-    necwords, nb1, nc1, _, nc2 = getecinfo(version, eclevel)
+    necwords, nb1, nc1, nb2, nc2 = getecinfo(version, eclevel)
     modify = floor(Int, necwords * rate / 2)
+    msglens = vcat(fill(nc1, nb1), fill(nc2, nb2))
 
-    ## 1.3 plot image in canvas
+    ## 3. plot image in canvas
     canvas = rand(Bool, qrlen, qrlen) # canvas = similar(stdmat)
-    x1, y1 = 1 + (qrlen - imgx) >> 1, 1 + (qrlen - imgy) >> 1
-    x2, y2 = x1 + imgx - 1, y1 + imgy - 1
-    imgI = CartesianIndices((x1:x2, y1:y2))
+    if leftop == (-1, -1) # plot in the center
+        leftop = CartesianIndex((qrlen - imgx) >> 1, (qrlen - imgy) >> 1)
+    else
+        leftop = CartesianIndex(leftop)
+    end
+    imgI = findall((!isnothing).(img)) .+ Ref(leftop)
+    setimgI = Set(imgI) # for fast search
     canvas[imgI] = img
 
-    ## 1.4 get indexes of block bytes
+    ## 4. get indexes of block bytes
     bytemsginds, byteecinds = getsegments(code)
-    msglens = length.(bytemsginds)
     byteblockinds = [vcat(inds1, inds2) for (inds1, inds2) in zip(bytemsginds, byteecinds)]
     bitblockinds = [vcat(inds...) for inds in byteblockinds]
 
-    ## 1.5 information of free blocks
+    ## 5. information of free blocks
     npureblock, nfreeblock, nfreebyte = getfreeinfo(code)
-    ### one can set `nfreebyte=0` to skip modification of the partial-block
-    npurebyte = (npureblock ≥ nb1 ? nc2 : nc1) - nfreebyte # number of message bytes in the partial free block
-    bytefreeblockinds = @view(byteblockinds[npureblock + 2:end])
-    bitfreeblockinds = @view(bitblockinds[npureblock + 2:end])
-    freemsglens = @view(msglens[npureblock + 2:end])
+    npurebyte = (npureblock ≥ nb1 ? nc2 : nc1) - nfreebyte # message bytes in the partial free block
 
-    ## 1.6 allocations
-    ### current bit block vals and free bit block vals
-    bitblockvals = [Vector{Bool}(undef, length(inds)) for inds in bitblockinds]
-    bitfreeblockvals = @view(bitblockvals[npureblock + 2:end])
-
-    ## 1.7 common data for different mask
-    ### sort bytes by the intersection area with the image
-    #### free blocks
-    sortfreebytes = [sortindsample(count.(∈(imgI), bytefreeblockinds[i]), freemsglens[i]) for i in 1:nfreeblock]
-    #### partial free block
-    scores = @views count.(∈(imgI), byteblockinds[npureblock + 1][npurebyte+1:end])
-    sortparinds = vcat(1:npurebyte, # the first `npurebyte`
+    ## 6. sort bytes by the intersection area with the image
+    sortbytes = [Vector{Int}(undef, msglens[npureblock + i]) for i in 1:nfreeblock+1]
+    ### free blocks
+    for i in 1:nfreeblock
+        scores = count.(∈(setimgI), byteblockinds[npureblock + 1 + i])
+        sortbytes[i+1] = sortindsample(scores, msglens[npureblock + 1 + i])
+    end
+    ### partial free block
+    scores = @views count.(∈(setimgI), byteblockinds[npureblock + 1][npurebyte+1:end])
+    sortbytes[1] = vcat(1:npurebyte, # the first `npurebyte`
         npurebyte .+ sortindsample(scores, msglens[npureblock + 1] - npurebyte)) # the rest
 
-    # ----- find best values of the bit blocks ----- #
+    # 7. find best values of the bit blocks
     masks = singlemask ? [mask] : [0:7;]
     bestmat, bestpenalty = nothing, Inf
     distance(mat) = @views sum(mat[imgI] == img)
     for mask in masks
-        code.mask = mask
-        stdmat = qrcode(code) # standard QR code
-        ## 2.1 enumerate over masks
-        maskmat = makemask(emptymatrix(version), mask)
-        canvas .⊻= maskmat # apply mask to canvas
-
-        ## 2.2 pure message block -- read from standard QR matrix
-        for i in 1:npureblock
-            bitblockvals[i] = @view(stdmat[bitblockinds[i]])
+        stdmat = qrcode(code)
+        _filldata!(stdmat, canvas, bitblockinds, byteblockinds, setimgI, sortbytes,
+                   npureblock, nfreeblock, npurebyte, necwords, modify, mask, version)
+        penalty = distance(stdmat)
+        if penalty < bestpenalty
+            bestmat, bestpenalty = stdmat, penalty
         end
-
-        ## 2.3 free blocks -- fill blank       
-        for i in 1:nfreeblock
-            # initialize
-            bitinds, byteinds = bitfreeblockinds[i], bytefreeblockinds[i]
-            validinds = sortfreebytes[i]
-            # compute byte values
-            bytevals = Vector{UInt8}(undef, length(byteinds))
-            for j in validinds # read from canvas
-                bytevals[j] = @views bitarray2int(canvas[byteinds[j]])
-            end
-            # fill the rest of bytes
-            bytevals = fillblank(bytevals, validinds, necwords)
-            # convert to bit values
-            for (j, byte) in enumerate(bytevals)
-                bitfreeblockvals[i][j * 8 - 7:j * 8] = int2bitarray(byte)
-            end
-            # apply mask
-            bitfreeblockvals[i] .⊻= @view(maskmat[bitinds])
-        end
-        
-        ## 2.4 partial free block -- read from standard QR matrix + error correction
-        ### 2.4.1 our target: `bitvals`
-        bitinds, byteinds = bitblockinds[npureblock + 1], byteblockinds[npureblock + 1]        
-        ### 2.4.2 error correction
-        #### initialize byte values
-        bytevals = Vector{UInt8}(undef, length(byteinds))
-        for i in 1:npurebyte # read from standard QR matrix
-            # remove mask
-            bits = @views stdmat[byteinds[i]] .⊻ maskmat[byteinds[i]]
-            bytevals[i] = bitarray2int(bits)
-        end
-        for i in @views sortparinds[npurebyte+1:end] # read from canvas
-            bytevals[i] = @views bitarray2int(canvas[byteinds[i]])
-        end
-        #### fill the rest of bytes
-        bytevals = fillblank(bytevals, sortparinds, necwords)
-        #### convert to bit values
-        for (i, byte) in enumerate(bytevals)
-            bitblockvals[npureblock + 1][i * 8 - 7:i * 8] = int2bitarray(byte)
-        end
-        #### apply mask
-        bitblockvals[npureblock + 1] .⊻= @view(maskmat[bitinds])
-
-        ## 2.5 fill in the QR matrix
-        for (inds, vals) in zip(bitblockinds, bitblockvals)
-            stdmat[inds] = vals
-        end
-
-        ## 2.6 error correction
-        canvas .⊻= maskmat # remove the mask
-        bytecost(byte) = count(ind->stdmat[ind] != canvas[ind], filter(∈(imgI), byte))
-        for block in byteblockinds
-            modify == 0 && break # no need to modify
-            scores = bytecost.(block)
-            sortinds = sortindsample(scores, modify)
-            errind = @views findlast(!iszero, scores[sortinds])
-            isnothing(errind) && continue
-            for byte in @views block[sortinds[1:errind]]
-                stdmat[byte] = @view(canvas[byte])
-            end
-        end
-        ## 2.7 calculate distance
-        penaltyval = distance(stdmat)
-        if penaltyval < bestpenalty
-            bestmat, bestpenalty = stdmat, penaltyval
+    end
+    # 8. fill alignment patterns
+    if fillaligment
+        rad = CartesianIndex(2, 2) # radius of alignment patterns
+        centers = validaligment(version, setimgI)
+        for c in centers
+            inds = filter(∈(setimgI), Ref(c) .+ (-rad:rad))
+            bestmat[inds] = canvas[inds]
         end
     end
     return addborder(bestmat, border)
@@ -250,4 +202,119 @@ function sortindsample(scores::AbstractVector, msglen::Int)
     else
         @view(inds[1:msglen])
     end
+end
+
+"""
+    validaligment(v::Int, imgx::Int, imgy::Int)
+
+Return the position of aligment pattern that has intersection
+with the image.
+"""
+function validaligment(v::Int, imgI::AbstractSet)
+    # version 1 does not have aligment pattern
+    v == 1 && return Tuple{Int, Int}[]
+    qrlen = 17 + 4 * v
+    # skip the aligment pattern that has intersection with the time pattern
+    aligns = filter(>(6), alignmentlocation[v]) .+ 1 # off set 1
+    # keep the aligment pattern that has intersection with the image
+    [CartesianIndex(x, y) for x in aligns for y in aligns if CartesianIndex(x, y) in imgI]
+end
+
+"""
+    fitimgwidth(code::QRCode)
+
+Return the fitted width of the image.
+"""
+fitimgwidth(code::QRCode) = qrwidth(code) - 2 * code.border - 14
+
+"""
+Fill data in the `stdmat` with the given datas. This function
+is sperated from `imageinqrcode` to make it shorter.
+"""
+function _filldata!( stdmat::AbstractMatrix{Bool}
+                   , canvas::AbstractMatrix
+                   , bitblockinds::AbstractVector
+                   , byteblockinds::AbstractVector
+                   , setimgI::AbstractSet
+                   , sortbytes::AbstractVector
+                   , npureblock::Int
+                   , nfreeblock::Int
+                   , npurebyte::Int
+                   , necwords::Int
+                   , modify::Int
+                   , mask::Int
+                   , version::Int)
+    # 1. initialize data
+    bitblockvals = [Vector{Bool}(undef, length(inds)) for inds in bitblockinds]
+    bitfreeblockvals = @view(bitblockvals[npureblock + 2:end])
+
+    # 2. masked matrix
+    maskmat = makemask(emptymatrix(version), mask)
+    canvas .⊻= maskmat # apply mask to canvas
+
+    # 3. pure message block -- read from standard QR matrix
+    for i in 1:npureblock
+        bitblockvals[i] = @view(stdmat[bitblockinds[i]])
+    end
+
+    # 4. free blocks -- fill blank
+    for i in 1:nfreeblock
+        # initialize
+        bitinds, byteinds = bitblockinds[npureblock + 1 + i], byteblockinds[npureblock + 1 + i]
+        validinds = sortbytes[i+1]
+        # compute byte values
+        bytevals = Vector{UInt8}(undef, length(byteinds))
+        for j in validinds # read from canvas
+            bytevals[j] = @views bitarray2int(canvas[byteinds[j]])
+        end
+        # fill the rest of bytes
+        bytevals = fillblank(bytevals, validinds, necwords)
+        # convert to bit values
+        for (j, byte) in enumerate(bytevals)
+            bitfreeblockvals[i][j * 8 - 7:j * 8] = int2bitarray(byte)
+        end
+        # apply mask
+        bitfreeblockvals[i] .⊻= @view(maskmat[bitinds])
+    end
+    
+    # 5. partial free block -- read from standard QR matrix + error correction
+    ## initialize
+    bitinds, byteinds = bitblockinds[npureblock + 1], byteblockinds[npureblock + 1]        
+    validinds = sortbytes[1]
+    bytevals = Vector{UInt8}(undef, length(byteinds))
+    ## read from standard QR matrix
+    for i in 1:npurebyte
+        # remove mask
+        bits = @views stdmat[byteinds[i]] .⊻ maskmat[byteinds[i]]
+        bytevals[i] = bitarray2int(bits)
+    end
+    ## read from canvas
+    for i in @views validinds[npurebyte+1:end]
+        bytevals[i] = @views bitarray2int(canvas[byteinds[i]])
+    end
+    ## fill the rest of bytes
+    bytevals = fillblank(bytevals, validinds, necwords)
+    for (i, byte) in enumerate(bytevals)
+        bitblockvals[npureblock + 1][i * 8 - 7:i * 8] = int2bitarray(byte)
+    end
+    bitblockvals[npureblock + 1] .⊻= @view(maskmat[bitinds])
+    for (inds, vals) in zip(bitblockinds, bitblockvals)
+        stdmat[inds] = vals
+    end
+
+    ## 6. error correction
+    canvas .⊻= maskmat # remove the mask
+    bytecost(byte) = count(ind->stdmat[ind] != canvas[ind], filter(∈(setimgI), byte))
+    for block in byteblockinds
+        modify == 0 && break # no need to modify
+        scores = bytecost.(block)
+        sortinds = sortindsample(scores, modify)
+        errind = @views findlast(!iszero, scores[sortinds])
+        isnothing(errind) && continue
+        for byte in @views block[sortinds[1:errind]]
+            byte = filter(∈(setimgI), byte)
+            stdmat[byte] = @view(canvas[byte])
+        end
+    end
+    return stdmat
 end

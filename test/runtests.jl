@@ -47,29 +47,29 @@ imgpath = "testimages/"
 eclevels = [Low(), Medium(), Quartile(), High()]
 modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
 
-# operations
-include("tst_operation.jl")
-
-# format and version information
-include("tst_fmtver.jl")
-
-# encode message
-include("tst_encode.jl")
-
-# struct QRCode
-include("tst_construct.jl")
-
-# original tests
-include("tst_overall.jl")
-
-# equations
-include("tst_equation.jl")
+# qrimage
+include("tst_qrimage.jl")
 
 # style
 include("tst_style.jl")
 
-# qrimage
-include("tst_qrimage.jl")
+# equations
+include("tst_equation.jl")
+
+# original tests
+include("tst_overall.jl")
+
+# struct QRCode
+include("tst_construct.jl")
+
+# encode message
+include("tst_encode.jl")
+
+# format and version information
+include("tst_fmtver.jl")
+
+# operations
+include("tst_operation.jl")
 
 # final message
 unicodeplotbychar("https://github.com/JuliaImages/QRCoders.jl") |> println

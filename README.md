@@ -1,9 +1,8 @@
-# QRCoders
+![logo-QRCoders](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/logo-QRCoders.png)
 
 [![][action-img]][action-url]
 [![][pkgeval-img]][pkgeval-url]
 [![][codecov-img]][codecov-url]
-[![][docs-stable-img]][docs-stable-url]
 [![][docs-dev-img]][docs-dev-url]
 
 Create [QR Codes](https://en.wikipedia.org/wiki/QR_code) as data within Julia, or export as PNG.
@@ -41,10 +40,11 @@ A file will be saved at `./qrcode.png`.
 
 > ![QRCode1](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode.png)
 
-### QRCode struct
-`QRCode` is a structure type that contains the data of a QR Code.
+### QRCode type
+`QRCode` is a structure type that contains the data of a QR Code. One can use
+it as an input to call functions.
 
-```jl
+```julia
 julia> code = QRCode("Hello world!")
 █████████████████████████
 ██ ▄▄▄▄▄ █▀ █ ▄█ ▄▄▄▄▄ ██
@@ -59,10 +59,15 @@ julia> code = QRCode("Hello world!")
 ██ █▄▄▄█ █▀  █▄▀▀█▄█▄█▄██
 ██▄▄▄▄▄▄▄█▄█▄▄▄██▄█▄█▄███
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-julia> exportqrcode(code)
+julia> qrcode(code) # get the data of the QR Code
+julia> exportqrcode(code, "qrcode.png") # export to a file
+julia> qrwidth(code) # get the width of the QR Code
 ```
 
-Animated QR code is supported in version 1.3+.
+The show method of `QRCode` is a visual representation of the QR Code using
+unicode characters `['█', '▀', '▄', ' ']`.
+
+Besides, animated QR code is supported in version 1.3+.
 
 ```jl
 julia> exportqrcode(["Hello world!", "Hello Julia!"], fps=2)
@@ -71,6 +76,23 @@ julia> exportqrcode(["Hello world!", "Hello Julia!"], fps=2)
 > ![QRCode2](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/hellojulia.gif)
 
 The keyword `fps` controls the frame rate of the animation.
+
+### Styles of QRCode
+> This part is still under development, see [issue#33](https://github.com/JuliaImages/QRCoders.jl/issues/33) for more information. Feel free to contribute or propose more ideas!
+
+Plot an image inside a QRCode.
+
+```julia
+using TestImages, ColorTypes, ImageTransformations
+using QRCoders
+oriimg = testimage("cameraman")
+code = QRCode("Hello world!", version=16, width=4)
+img = imresize(oriimg, 66, 66) .|> Gray .|> round .|> Bool .|> !
+imageinqrcode(code, img; rate=0.9) |> exportbitmat("qrcode-camera.png")
+```
+> ![cameraman](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode-camera.png)
+
+Here `rate` is the damage rate of error correction codewords, it should be no greater than 1.
 
 ### Parameters
 
