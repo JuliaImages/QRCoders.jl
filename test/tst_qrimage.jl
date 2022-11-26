@@ -8,7 +8,15 @@ function reshapewidth(img::AbstractMatrix, width::Int)
 end
 
 @testset "simulate image" begin
+    # code inside code
+    code = QRCode("Hello world -- Outer", version=13, eclevel=Medium(), width=4)
+    mat = qrcode(code)
+    submat = qrcode("Hello world! -- inner", version=2, width=3)
+    leftop = 17 - 3, 17 - 3
+    newmat = imageinqrcode(code, submat; leftop=leftop)
+    newmat |> exportbitmat("testimages/code-inside-code")
     code = QRCode("HELLO WORLD", eclevel=Medium(), version=16, width=4)
+
     # image in qrcode
     img = testimage("cam")
     qrlen = qrwidth(code) - 2 * code.border # length of QR matrix
