@@ -7,7 +7,7 @@ using ImageTransformations
 using TestImages
 using StatsBase
 using QRDecoders.Syndrome: fillerasures!
-using QRDecoders: qrdecode
+using QRDecoders
 
 using QRCoders:
     # build

@@ -66,6 +66,7 @@ function imageinqrcode!( code::QRCode
 
     ## 5. information of free blocks
     npureblock, nfreeblock, nfreebyte = getfreeinfo(code)
+    # nfreebyte = 0 # set zero to skip the partial free block
     npurebyte = (npureblock ≥ nb1 ? nc2 : nc1) - nfreebyte # message bytes in the partial free block
 
     ## 6. sort bytes by the intersection area with the image
@@ -85,6 +86,7 @@ function imageinqrcode!( code::QRCode
     bestmat, bestpenalty = nothing, Inf
     distance(mat) = @views sum(mat[imgI] == img)
     for mask in masks
+        code.mask = mask
         stdmat = qrcode(code)
         _filldata!(stdmat, canvas, bitblockinds, byteblockinds, setimgI, sortbytes,
                    npureblock, nfreeblock, npurebyte, necwords, modify, mask, version)
