@@ -120,8 +120,8 @@ function getversioninds(v::Int)
     v ≤ 6 && throw(ArgumentError("The version $v should be larger than 6."))
     # get indexes of the version information
     n = 17 + 4 * v
-    vcat([CartesianIndex(i, j) for i in n - 10:n-8 for j in  1:6],
-         [CartesianIndex(i, j) for i in 1:6 for j in n - 10:n-8])
+    vcat([CartesianIndex(i, j) for j in 1:6 for i in n - 10:n-8], # left bottom
+         [CartesianIndex(i, j) for i in 1:6 for j in n - 10:n-8]) # right top
 end
 getversioninds(code::QRCode) = getversioninds(code.version)
 

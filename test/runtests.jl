@@ -26,7 +26,8 @@ using QRCoders:
     bitarray2int, int2bitarray, bits2bytes,
     # style
     unicodeplot, getindexes, getsegments, getecinfo,
-    gauss_elimination, fillblank, getimagescore
+    gauss_elimination, fillblank, getimagescore,
+    getversioninds, getformatinds
                  
 using QRCoders.Polynomial:
     # operator for GF(256) integers
