@@ -26,8 +26,8 @@ export
     # QR code style
     unicodeplot, unicodeplotbychar,
     imageinqrcode, getfreeinfo, getimagescore,
-    validaligment, fitimgwidth
-
+    validalignment, fitimgwidth, getversioninds,
+    getformatinds
 # Data types in QRCoders
 include("types.jl")
 

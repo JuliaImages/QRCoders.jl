@@ -5,7 +5,7 @@
                  ; rate::Real=1
                  , singlemask::Bool=true
                  , leftop::Tuple{Int, Int}=(-1, -1)
-                 , fillaligment::Bool=false
+                 , fillalignment::Bool=false
                  ) where T <: Union{Bool, Nothing}
 
 Plot image inside QR code.
@@ -23,16 +23,16 @@ function imageinqrcode( code::QRCode
                       ; rate::Real=1
                       , singlemask::Bool=true
                       , leftop::Tuple{Int, Int}=(-1, -1)
-                      , fillaligment::Bool=false
+                      , fillalignment::Bool=false
                       ) where T <: Union{Bool, Nothing}
-    imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask, leftop=leftop, fillaligment=fillaligment)
+    imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask, leftop=leftop, fillalignment=fillalignment)
 end
 function imageinqrcode!( code::QRCode
                        , img::AbstractMatrix{T}
                        ; rate::Real=1
                        , singlemask::Bool=true
                        , leftop::Tuple{Int,Int}=(-1, -1)
-                       , fillaligment::Bool=false
+                       , fillalignment::Bool=false
                        ) where T <: Union{Bool, Nothing}
     ## 1. check input
     border, code.border = code.border, 0 # set border to 0
@@ -66,6 +66,7 @@ function imageinqrcode!( code::QRCode
 
     ## 5. information of free blocks
     npureblock, nfreeblock, nfreebyte = getfreeinfo(code)
+    # nfreebyte = 0 # set zero to skip the partial free block
     npurebyte = (npureblock ≥ nb1 ? nc2 : nc1) - nfreebyte # message bytes in the partial free block
 
     ## 6. sort bytes by the intersection area with the image
@@ -85,6 +86,7 @@ function imageinqrcode!( code::QRCode
     bestmat, bestpenalty = nothing, Inf
     distance(mat) = @views sum(mat[imgI] == img)
     for mask in masks
+        code.mask = mask
         stdmat = qrcode(code)
         _filldata!(stdmat, canvas, bitblockinds, byteblockinds, setimgI, sortbytes,
                    npureblock, nfreeblock, npurebyte, necwords, modify, mask, version)
@@ -94,9 +96,9 @@ function imageinqrcode!( code::QRCode
         end
     end
     # 8. fill alignment patterns
-    if fillaligment
+    if fillalignment
         rad = CartesianIndex(2, 2) # radius of alignment patterns
-        centers = validaligment(version, setimgI)
+        centers = validalignment(version, setimgI)
         for c in centers
             inds = filter(∈(setimgI), Ref(c) .+ (-rad:rad))
             bestmat[inds] = canvas[inds]
@@ -202,22 +204,6 @@ function sortindsample(scores::AbstractVector, msglen::Int)
     else
         @view(inds[1:msglen])
     end
-end
-
-"""
-    validaligment(v::Int, imgx::Int, imgy::Int)
-
-Return the position of aligment pattern that has intersection
-with the image.
-"""
-function validaligment(v::Int, imgI::AbstractSet)
-    # version 1 does not have aligment pattern
-    v == 1 && return Tuple{Int, Int}[]
-    qrlen = 17 + 4 * v
-    # skip the aligment pattern that has intersection with the time pattern
-    aligns = filter(>(6), alignmentlocation[v]) .+ 1 # off set 1
-    # keep the aligment pattern that has intersection with the image
-    [CartesianIndex(x, y) for x in aligns for y in aligns if CartesianIndex(x, y) in imgI]
 end
 
 """
