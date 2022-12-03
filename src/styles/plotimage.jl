@@ -5,7 +5,7 @@
                  ; rate::Real=1
                  , singlemask::Bool=true
                  , leftop::Tuple{Int, Int}=(-1, -1)
-                 , fillaligment::Bool=false
+                 , fillalignment::Bool=false
                  ) where T <: Union{Bool, Nothing}
 
 Plot image inside QR code.
@@ -23,16 +23,16 @@ function imageinqrcode( code::QRCode
                       ; rate::Real=1
                       , singlemask::Bool=true
                       , leftop::Tuple{Int, Int}=(-1, -1)
-                      , fillaligment::Bool=false
+                      , fillalignment::Bool=false
                       ) where T <: Union{Bool, Nothing}
-    imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask, leftop=leftop, fillaligment=fillaligment)
+    imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask, leftop=leftop, fillalignment=fillalignment)
 end
 function imageinqrcode!( code::QRCode
                        , img::AbstractMatrix{T}
                        ; rate::Real=1
                        , singlemask::Bool=true
                        , leftop::Tuple{Int,Int}=(-1, -1)
-                       , fillaligment::Bool=false
+                       , fillalignment::Bool=false
                        ) where T <: Union{Bool, Nothing}
     ## 1. check input
     border, code.border = code.border, 0 # set border to 0
@@ -96,9 +96,9 @@ function imageinqrcode!( code::QRCode
         end
     end
     # 8. fill alignment patterns
-    if fillaligment
+    if fillalignment
         rad = CartesianIndex(2, 2) # radius of alignment patterns
-        centers = validaligment(version, setimgI)
+        centers = validalignment(version, setimgI)
         for c in centers
             inds = filter(∈(setimgI), Ref(c) .+ (-rad:rad))
             bestmat[inds] = canvas[inds]
