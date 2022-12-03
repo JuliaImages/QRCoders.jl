@@ -235,7 +235,7 @@ function exportqrcode( codes::AbstractVector{QRCode}
     else
         pixels = ceil(Int, pixels / matwidth) * matwidth
     end
-    save(path, .! cat(qrcode.(codes)..., dims = 3), fps=fps)
+    save(path, .! cat([_resize(qrcode(code), pixels) for code in codes]..., dims = 3), fps=fps)
 end
 
 """
