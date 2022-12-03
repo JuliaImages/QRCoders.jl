@@ -111,6 +111,7 @@ end
     exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.png")
     exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.gif")
     exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.jpg")
+    exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.jpeg")
     @test true
     @test_throws EncodeError exportqrcode("Hello, world!", imgpath * "qrcode-helloworld.svg")
     

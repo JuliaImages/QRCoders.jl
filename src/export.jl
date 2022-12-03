@@ -104,7 +104,7 @@ function exportbitmat( matrix::BitMatrix
                      ; targetsize::Int=0
                      , pixels::Int=160)
     # check whether the image format is supported
-    supportexts = ["png", "jpg", "gif"]
+    supportexts = ["png", "jpg", "jpeg", "gif"]
     path = _checkpath(path, supportexts)
 
     # resize the matrix
