@@ -281,10 +281,11 @@ Get version information bits.
 
 Replacement of the `versioninfo` table.
 """
-function qrversionbits(ver)
-    vercode = qrversion(ver)
+function qrversionbits(ver::Int)
+    vercode = qrversion(ver::Int)
     return @view int2bitarray(vercode, pad = 18)[end:-1:1]
 end
+qrversionbits(code::QRCode) = qrversionbits(code.version)
 
 """
 Bit modes of the qualities.
@@ -320,3 +321,4 @@ function qrformat(ec::ErrCorrLevel, mask::Int)
     fmt = mode2bin[ec] << 3 ⊻ mask
     return int2bitarray(qrformat(fmt); pad = 15)
 end
+qrformat(code::QRCode) = qrformat(code.eclevel, code.mask)
