@@ -123,7 +123,7 @@ const _maskrules = [
     (x, y) -> (x & y & 1 + x * y % 3) & 1,
     (x, y) -> ((x ⊻ y & 1) + (x * y % 3)) & 1
 ]
-makemask(matrix::AbstractArray, k::Int)::BitArray{2} = makemask(matrix, _maskrules[k+1])
+makemask(matrix::AbstractArray, mask::Int)::BitArray{2} = makemask(matrix, _maskrules[mask+1])
 function makemask(matrix::AbstractArray, rule::Function)::BitArray{2}
     n = size(matrix, 1)
     mask = falses(size(matrix))
@@ -134,6 +134,7 @@ function makemask(matrix::AbstractArray, rule::Function)::BitArray{2}
     end
     return mask
 end
+makemask(code::QRCode) = makemask(emptymatrix(code.version), code.mask)
 
 """
     makemasks(matrix::AbstractArray)

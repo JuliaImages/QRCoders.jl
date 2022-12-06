@@ -91,3 +91,68 @@ end
         @test tag
     end
 end
+
+@testset "general build test" begin
+    code = QRCode("hello world!", version=7, width=0)
+    stdmat = qrcode(code)
+    mat = zero(stdmat); # blank matrix
+
+    # Finder pattern
+    fdpos = getfinderinds(code)
+    fdwidth = CartesianIndex(6, 6)
+    for leftop in fdpos
+        mat[leftop:leftop+fdwidth] = finderpattern
+    end
+    @test all(mat[leftop:leftop+fdwidth] == stdmat[leftop:leftop+fdwidth] for leftop in fdpos)
+
+    # seperators
+    sepinds = getsepinds(code)
+    mat[sepinds] .= false
+    @test mat[sepinds] == stdmat[sepinds]
+
+    # timing series
+    tinds = gettiminginds(code)
+    half = length(tinds) >> 1
+    mat[tinds[1:half]] = mat[tinds[half+1:end]] = push!(repeat([false, true], half÷2), false)
+    @test mat[tinds] == stdmat[tinds]
+
+    # dark mode
+    mat[getdarkindex(code)] = true
+    @test mat[getdarkindex(code)] == stdmat[getdarkindex(code)]
+
+    # alignment pattern
+    algpos = getalignmentinds(code)
+    algwidth = CartesianIndex(4, 4)
+    for leftop in algpos
+        mat[leftop:leftop+algwidth] = alignmentpattern
+    end
+    @test all(mat[leftop:leftop+algwidth] == stdmat[leftop:leftop+algwidth] for leftop in algpos)
+
+    # version
+    vinds = getversioninds(code)
+    mat[vinds] = repeat(qrversionbits(code), 2)
+    @test mat[vinds] == stdmat[vinds]
+    # Gray.(.! mat)
+
+    # format
+    finds = getformatinds(code)
+    mat[finds] = repeat(qrformat(code), 2)
+    @test mat[finds] == stdmat[finds]
+
+    # data bits
+    databits = encodemessage(code)
+    datainds = getindexes(code)
+    mat[datainds] = databits
+
+    # apply mask
+    maskmat = makemask(code)
+    mat .⊻= maskmat
+    @test mat[datainds] == stdmat[datainds]
+
+    # decode
+    info = qrdecode(mat)
+    @test info.message == code.message &&
+          info.eclevel == code.eclevel &&
+          info.version == code.version &&
+          info.mask == code.mask
+end

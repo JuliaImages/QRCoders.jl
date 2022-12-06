@@ -16,19 +16,23 @@ export
     Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8,
     # error correction levels
     ErrCorrLevel, Low, Medium, Quartile, High,
-    # get information about QR code
-    getmode, getversion, qrwidth,
-    qrversionbits, qrformat,
+
     # polynomial operations
     Poly, geterrcode, generator_matrix,
     # error type
     EncodeError,
+
+    # information about QR code
+    getmode, getversion, qrwidth, makemask,
+    qrversionbits, qrformat, encodemessage,
+    
     # locate QR matrix
     validalignment, getversioninds,
     getformatinds, gettiminginds, getsepinds,
     getindexes, getsegments, getdarkindex,
     getalignmentinds, getfinderinds,
     finderpattern, alignmentpattern,
+
     # QR code style
     unicodeplot, unicodeplotbychar, fitimgwidth,
     imageinqrcode, getfreeinfo, getimagescore

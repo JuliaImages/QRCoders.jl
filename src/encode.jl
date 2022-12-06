@@ -292,6 +292,7 @@ function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, v
 
     return msgbits
 end
+encodemessage(code::QRCode) = encodemessage(code.message, code.mode, code.eclevel, code.version)
 
 """
     function addborder(matrix::AbstractMatrix, width::Int)
