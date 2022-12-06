@@ -17,9 +17,8 @@ export
     # error correction levels
     ErrCorrLevel, Low, Medium, Quartile, High,
     # get information about QR code
-    getmode, getversion, qrwidth, 
-    getindexes, getsegments, getdarkindex,
-    getalignmentinds, getfinderinds,
+    getmode, getversion, qrwidth,
+    qrversionbits, qrformat,
     # polynomial operations
     Poly, geterrcode, generator_matrix,
     # error type
@@ -27,6 +26,9 @@ export
     # locate QR matrix
     validalignment, getversioninds,
     getformatinds, gettiminginds, getsepinds,
+    getindexes, getsegments, getdarkindex,
+    getalignmentinds, getfinderinds,
+    finderpattern, alignmentpattern,
     # QR code style
     unicodeplot, unicodeplotbychar, fitimgwidth,
     imageinqrcode, getfreeinfo, getimagescore
