@@ -189,18 +189,19 @@ function getimagescore(mat::AbstractMatrix{Bool}, img::AbstractMatrix{<:Bool})
 end
 
 """
-    sortindsample(scores::AbstractVector, msglen::Int)
+    sortindsample(scores::AbstractVector, msglen::Int; minval::Int=8)
 
 Return the indices of the sorted scores.
 
 We pick random indexes when there are too many scores that
-equals `8`. This can help decentralized the corrections.
+are no less than `minval`. This can help decentralized the
+corrections.
 """
-function sortindsample(scores::AbstractVector, msglen::Int)
+function sortindsample(scores::AbstractVector, msglen::Int; minval::Int=8)
     inds = sortperm(scores, rev=true)
-    ind8 = findlast(==(8), scores[inds])
-    if !isnothing(ind8) && ind8 > msglen 
-        @views sample(inds[1:ind8], msglen; replace=false)
+    indx = @views findlast(≥(minval), scores[inds])
+    if !isnothing(indx) && indx > msglen 
+        @views sample(inds[1:indx], msglen; replace=false)
     else
         @view(inds[1:msglen])
     end

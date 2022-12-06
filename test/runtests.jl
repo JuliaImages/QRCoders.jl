@@ -13,7 +13,8 @@ using QRCoders:
     # build
     makeblocks, getecblock, interleave, 
     emptymatrix, makemask, makemasks, penalty,
-    placedata!, addformat!, addversion!,
+    placedata!, addformat!, addversion!, 
+    alignmentpattern, finderpattern,
     # tables
     alphanumeric, antialphanumeric, kanji, antikanji, 
     mode2bin, qrversion, qrformat, qrversionbits,
@@ -47,6 +48,9 @@ randpoly(range::AbstractVector{Int}) = randpoly(UInt8, range)
 imgpath = "testimages/"
 eclevels = [Low(), Medium(), Quartile(), High()]
 modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
+
+# decompose QR matrix
+include("tst_locate.jl")
 
 # qrimage
 include("tst_qrimage.jl")

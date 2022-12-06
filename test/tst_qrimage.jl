@@ -124,32 +124,3 @@ end
     @test_throws DecodeError qrdecode(mat)
     @test qrdecode(mat, checkrem=false).message == code.message
 end
-
-@testset "locate image" begin
-    v, mask, eclevel = rand(7:40), rand(0:7), rand(eclevels)
-    code = QRCode("hello", version=v, eclevel=eclevel, mask=mask, width=0)
-    mat = qrcode(code)
-    # test version
-    vinds = getversioninds(code)
-    vbits = mat[vinds]
-    @test length(vbits) == 36
-    @test vbits[1:18] == vbits[19:36]
-    @test vbits[1:18] == qrversionbits(v)
-    # test format
-    finds = getformatinds(code)
-    fbits = mat[finds]
-    @test length(fbits) == 30
-    @test fbits[1:15] == fbits[16:30]
-    @test fbits[1:15] == qrformat(eclevel, mask)
-
-    tag = true
-    for v in 7:40, mask in 0:7, eclevel in eclevels
-        code = QRCode("hello", version=v, eclevel=eclevel, mask=mask, width=0)
-        mat = qrcode(code)
-        vinds, finds = getversioninds(code), getformatinds(code)
-        vbits, fbits = mat[vinds][1:18], mat[finds][1:15]
-        vbits == qrversionbits(v) && fbits == qrformat(eclevel, mask) && continue
-        tag = false
-    end
-    @test tag
-end

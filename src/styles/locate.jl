@@ -138,3 +138,83 @@ function getformatinds(v::Int)
                 [CartesianIndex(9, i) for i in n-7:n])
 end
 getformatinds(code::QRCode) = getformatinds(code.version)
+
+"""
+    gettiminginds(v::Int)
+
+Get indexes of the timing pattern.
+"""
+function gettiminginds(v::Int)
+    n = 17 + 4 * v
+    return vcat([CartesianIndex(i, 7) for i in 8:n-7],
+                [CartesianIndex(7, i) for i in 8:n-7])
+end
+gettiminginds(code::QRCode) = gettiminginds(code.version)
+
+"""
+    getdarkindex(v::Int)
+
+Get the index of the dark module.
+"""
+function getdarkindex(v::Int)
+    n = 17 + 4 * v
+    return CartesianIndex(n-7, 9)
+end
+getdarkindex(code::QRCode) = getdarkindex(code.version)
+
+"""
+    getalignmentinds(v::Int)
+
+Get the left-top indexes of alignment patterns.
+"""
+function getalignmentinds(v::Int)
+    # version 1 does not have alignment pattern
+    v == 1 && return CartesianIndex{2}[]
+    n = 17 + 4 * v
+    # get indexes of the alignment pattern
+    aligns = alignmentlocation[v]
+    algpos = Vector{CartesianIndex{2}}(undef, length(aligns)^2 - 3)
+    ind = 1
+    for i in aligns, j in aligns
+        if !( (i < 9 && j < 9)   ||
+              (i < 9 && j > n - 10) ||
+              (i > n - 10 && j < 9) )
+            algpos[ind] = CartesianIndex(i-1, j-1)
+            ind += 1
+        end
+    end
+    return algpos
+end
+getalignmentinds(code::QRCode) = getalignmentinds(code.version)
+
+"""
+    getfinderinds(v::Int)
+
+Get the left-top indexes of finder patterns.
+"""
+function getfinderinds(v::Int)
+    n = 17 + 4 * v
+    return [CartesianIndex(1, 1), 
+            CartesianIndex(n-6, 1),
+            CartesianIndex(1, n-6)]
+end
+getfinderinds(code::QRCode) = getfinderinds(code.version)
+
+"""
+    getsepinds(v::Int)
+
+Get the indexes of the seperators.
+"""
+function getsepinds(v::Int)
+    n = 17 + 4 * v
+    vcat(# left top
+        CartesianIndex.(1:8, 8),
+        CartesianIndex.(8, 1:8), 
+        # left down
+        CartesianIndex.(n-7, 1:8),
+        CartesianIndex.(8, n-7:n), 
+        # right top        
+        CartesianIndex.(n-7:n, 8),
+        CartesianIndex.(1:8, n-7))
+end
+getsepinds(code::QRCode) = getsepinds(code.version)
