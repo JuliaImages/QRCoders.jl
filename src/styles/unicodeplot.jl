@@ -26,6 +26,7 @@ Uses UnicodePlots.jl to draw the QR code of `message`.
 function unicodeplot(message::AbstractString; border=:none)
     unicodeplot(qrcode(message;eclevel=Low(), width=2); border=border) 
 end
+unicodeplot(code::QRCode) = unicodeplot(qrcode(code))
 
 ## 1.2 Idea by @notinaboat
 const pixelchars = ['█', '▀', '▄', ' ']
@@ -47,6 +48,7 @@ function unicodeplotbychar(mat::AbstractMatrix)
     isodd(m) || return txt
     return @views txt * '\n' * join(pixelchar.(mat[m, :]))
 end
+unicodeplotbychar(code::QRCode)=unicodeplotbychar(qrcode(code))
 
 """
     unicodeplotbychar(message::AbstractString)

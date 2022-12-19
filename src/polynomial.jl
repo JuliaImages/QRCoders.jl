@@ -5,12 +5,12 @@ Ambiguity -- there are two kind of Reed-Solomon codes:
  - Reed Solomon's original view: The codeword as a sequence of values
  - The BCH view: The codeword as a sequence of coefficients
 
-QR code standard uses the second one.
+QR code standard uses the last one.
 
 Notations:
-    1. `m/necwords` is the number of error correction words.
-    2. `n/msglen` is the length of the message.
-    3. `m+n/msglen + necwords` is the length of the codeword.
+    1. `m/necwords` is the number of error correction code words.
+    2. `n/msglen` is the length of the message code words.
+    3. `m+n/msglen + necwords` is the length of the received codeword.
 
 Let f(x) = a_0x_0 +...+ a_mx_m be a message polynomial,
     and g(x) = b_0x_0 +...+ b_nx_n be the generator polynomial,
@@ -24,12 +24,12 @@ For computational reasons, we use an ascending order in `Poly`,
 i.e. use `Poly([f_0, ..., f_n])` to represents `f(x)`.
 
 The Generator matrix of a linear code, in particular, of the Reed-Solomon
-code, is the matrix G such that G⋅f = c.
+code, is the matrix G such that G⋅f(x) = c(x).
 
 G can be computed by
     [encode(x^{m-1}); encode(x^{m-2}); ...; encode(x^0)]
 
-In our notations, the generator matrix is rotate by 180 degrees.
+In our notations, the generator matrix is rotated by 180 degrees.
 =#
 
 module Polynomial

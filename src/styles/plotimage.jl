@@ -27,6 +27,8 @@ function imageinqrcode( code::QRCode
                       ) where T <: Union{Bool, Nothing}
     imageinqrcode!(copy(code), img; rate=rate, singlemask=singlemask, leftop=leftop, fillalignment=fillalignment)
 end
+imageinqrcode(code::QRCode; args...) = img -> imageinqrcode(code, img; args...)
+
 function imageinqrcode!( code::QRCode
                        , img::AbstractMatrix{T}
                        ; rate::Real=1
