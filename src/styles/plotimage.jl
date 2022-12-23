@@ -137,7 +137,7 @@ function getfreeinfo( msg::AbstractString
                     , mode::Mode
                     , eclevel::ErrCorrLevel
                     , version::Int)
-    msgbyte = getnumofmsgbyte(msg, mode, eclevel, version)
+    msgbyte = countmsgbyte(msg, mode, eclevel, version)
     # number of blocks
     _, nb1, nc1, nb2, nc2 = getecinfo(version, eclevel)
     # number of bytes of *real* message bits
@@ -171,17 +171,17 @@ end
 getrequiredlen(code::QRCode) = getrequiredlen(code.eclevel, code.version)
 
 """
-    getnumofmsgbyte( msg::AbstractString
-                   , mode::Mode
-                   , eclevel::ErrCorrLevel
-                   , version::Int)
+    countmsgbyte( msg::AbstractString
+                , mode::Mode
+                , eclevel::ErrCorrLevel
+                , version::Int)
 
 Return the number of pure message bytes.
 """
-function getnumofmsgbyte( msg::AbstractString
-                        , mode::Mode
-                        , eclevel::ErrCorrLevel
-                        , version::Int)
+function countmsgbyte( msg::AbstractString
+                     , mode::Mode
+                     , eclevel::ErrCorrLevel
+                     , version::Int)
     modelen = 4 # length of mode indicator
     i = (version ≥ 1) + (version ≥ 10) + (version ≥ 27)
     cclen = charactercountlength[mode][i] # length of character count bits
@@ -196,7 +196,7 @@ function getnumofmsgbyte( msg::AbstractString
     end
     return numofmsgbits >> 3
 end
-getnumofmsgbyte(code::QRCode) = getnumofmsgbyte(code.message, code.mode, code.eclevel, code.version)
+countmsgbyte(code::QRCode) = countmsgbyte(code.message, code.mode, code.eclevel, code.version)
 
 """
     getimagescore(mat::AbstractMatrix{Bool}, img::AbstractMatrix{<:Bool})

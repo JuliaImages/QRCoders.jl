@@ -92,6 +92,37 @@ end
     end
 end
 
+@testset "count pure message byte" begin
+    # pure message bits
+    ## encodemessage
+    msg, mode, eclevel, version = "123", Numeric(), Medium(), 1
+    modeindicator = modeindicators[mode]
+    msglen = mode != UTF8() ? length(msg) : utf8len(msg) ## utf-8 has flexialbe length
+    ccindicator = getcharactercountindicator(msglen, version, mode)
+    encodedbits = encodedata(msg, mode)
+    catbits = vcat(modeindicator, ccindicator, encodedbits)
+    necwords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
+    requiredlen = 8 * (nb1 * nc1 + nb2 * nc2)
+    ## padencodedmessage
+    totalbits = vcat(catbits, falses(min(4, requiredlen - length(catbits))))
+    if length(totalbits) & 7 != 0
+        totalbits = vcat(totalbits, falses(8 - length(totalbits) & 7))
+    end
+    # pad bits
+    pattern = BitArray{1}([1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1])
+    pad = repeat(pattern, ceil(Int, requiredlen - length(totalbits) >> 4))
+    data = vcat(totalbits, @view(pad[1:requiredlen - length(totalbits)]))
+    # error correction bits
+    blocks = makeblocks(data, nb1, nc1, nb2, nc2)
+    ecblocks = getecblock.(blocks, necwords)
+    msgbits = interleave(blocks, ecblocks, necwords, nb1, nc1, nb2, nc2, version)
+    # test results
+    code = QRCode(msg, mode=mode, eclevel=eclevel, version=version, width=0)
+    @test getrequiredlen(code) == requiredlen == getrequiredlen(eclevel, version)
+    @test countmsgbyte(code) == length(totalbits) >> 3 == countmsgbyte(msg, mode, eclevel, version)
+    @test encodemessage(code) == msgbits 
+end
+
 @testset "general build test" begin
     code = QRCode("hello world!", version=7, width=0)
     stdmat = qrcode(code)
