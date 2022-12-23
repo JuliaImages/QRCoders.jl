@@ -161,11 +161,11 @@ end
 
 Pad the encoded message.
 """
-function padencodedmessage(data::BitArray{1}, requiredlength::Int)
-    length(data) > requiredlength && throw(EncodeError("padencodedmessage: the input data is too long"))
+function padencodedmessage(data::BitArray{1}, requiredlen::Int)
+    length(data) > requiredlen && throw(EncodeError("padencodedmessage: the input data is too long"))
     
     # Add up to 4 zeros to terminate the message
-    data = vcat(data, falses(min(4, requiredlength - length(data))))
+    data = vcat(data, falses(min(4, requiredlen - length(data))))
 
     # Add zeros to make the length a multiple of 8
     if length(data) & 7 != 0
@@ -174,8 +174,8 @@ function padencodedmessage(data::BitArray{1}, requiredlength::Int)
 
     # Add the repeated pattern until reaching required length
     pattern = BitArray{1}([1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1])
-    pad = repeat(pattern, ceil(Int, requiredlength - length(data) / 8))
-    data = vcat(data, @view(pad[1:requiredlength - length(data)]))
+    pad = repeat(pattern, ceil(Int, requiredlen - length(data) >> 4))
+    data = vcat(data, @view(pad[1:requiredlen - length(data)]))
 
     return data
 end
@@ -271,20 +271,20 @@ function encodemessage(msg::AbstractString, mode::Mode, eclevel::ErrCorrLevel, v
     ccindicator = getcharactercountindicator(msglen, version, mode)
 
     # Encoded data: main part of the encoded message
-    encodeddata = encodedata(msg, mode)
+    encodedbits = encodedata(msg, mode)
 
     # Getting parameters for the error correction
     # Number of error correction codewords per block, number of blocks in
     # group 1/2, number of data codewords per block in group 1/2
     necwords, nb1, nc1, nb2, nc2 = ecblockinfo[eclevel][version, :]
-    requiredbits = 8 * (nb1 * nc1 + nb2 * nc2)
+    requiredlen = 8 * (nb1 * nc1 + nb2 * nc2)
 
     # Pad encoded message before error correction
-    encoded = vcat(modeindicator, ccindicator, encodeddata)
-    encoded = padencodedmessage(encoded, requiredbits)
+    totalbits = padencodedmessage(
+        vcat(modeindicator, ccindicator, encodedbits), requiredlen)
 
     # Getting error correction codes
-    blocks = makeblocks(encoded, nb1, nc1, nb2, nc2)
+    blocks = makeblocks(totalbits, nb1, nc1, nb2, nc2)
     ecblocks = getecblock.(blocks, necwords)
 
     # Interleave code blocks

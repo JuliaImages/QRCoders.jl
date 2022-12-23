@@ -22,7 +22,8 @@ end
     qrlen = qrwidth(code) - 2 * code.border # length of QR matrix
     # full inside
     bitimg = .!(Bool.(round.(reshapewidth(img, fitimgwidth(code)))))
-    mat = imageinqrcode(code, bitimg, rate=1, singlemask=false, fillalignment=true)
+    fembed = imageinqrcode(code, rate=1, singlemask=false, fillalignment=true)
+    mat = fembed(bitimg)
     @test getimagescore(mat, bitimg) ≤ 100
     exportbitmat(mat, "testimages/cam_fullinside.png")
     @test true

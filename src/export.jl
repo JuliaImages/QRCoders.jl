@@ -1,5 +1,8 @@
 # Generate and export QR codes
 
+"""supported extensions"""
+const supportexts = ["png", "jpg", "jpeg", "gif"]
+
 """
     qrcode( message::AbstractString
           ; eclevel::ErrCorrLevel = Medium()
@@ -104,7 +107,7 @@ function exportbitmat( matrix::BitMatrix
                      ; targetsize::Int=0
                      , pixels::Int=160)
     # check whether the image format is supported
-    supportexts = ["png", "jpg", "jpeg", "gif"]
+    # supportexts = ["png", "jpg", "jpeg", "gif"] read from the predifined const
     path = _checkpath(path, supportexts)
 
     # resize the matrix

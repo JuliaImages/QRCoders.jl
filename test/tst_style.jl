@@ -15,6 +15,11 @@
         canvas = unicodeplotbychar(msg)
     end
     @test true
+
+    # test for struct type QRCode
+    code = QRCode("hello world!")
+    unicodeplot(code)
+    unicodeplotbychar(code)
 end
 
 @testset "locate msg bits" begin

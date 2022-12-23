@@ -32,6 +32,7 @@ export
     getindexes, getsegments, getdarkindex,
     getalignmentinds, getfinderinds,
     finderpattern, alignmentpattern,
+    getecinfo, countmsgbyte, getrequiredlen,
 
     # QR code style
     unicodeplot, unicodeplotbychar, fitimgwidth,
