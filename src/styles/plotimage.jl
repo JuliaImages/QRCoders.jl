@@ -103,7 +103,7 @@ function imageinqrcode!( code::QRCode
         centers = validalignment(version, setimgI)
         for c in centers
             inds = filter(∈(setimgI), Ref(c) .+ (-rad:rad))
-            bestmat[inds] = canvas[inds]
+            bestmat[inds] = @view(canvas[inds])
         end
     end
     return addborder(bestmat, border)
@@ -137,29 +137,13 @@ function getfreeinfo( msg::AbstractString
                     , mode::Mode
                     , eclevel::ErrCorrLevel
                     , version::Int)
+    msgbyte = getnumofmsgbyte(msg, mode, eclevel, version)
     # number of blocks
     _, nb1, nc1, nb2, nc2 = getecinfo(version, eclevel)
-
-    # length of non-padbits
-    modelen = 4 # length of mode indicator
-    i = (version ≥ 1) + (version ≥ 10) + (version ≥ 27)
-    cclen = charactercountlength[mode][i] # length of character count bits
-    datalen = length(encodedata(msg, mode)) # length of data bits
-    nonpadbits = modelen + cclen + datalen
-    # pad 0 to make the length of bits a multiple of 8
-    mod8 = nonpadbits & 7
-    if mod8 != 0
-        nonpadbits += 8 - mod8
-    end
-    # length of required bits
-    requiredlen = 8 * (nb1 * nc1 + nb2 * nc2)
-    nonpadbits ≥ requiredlen && return nb1 + nb2 - 1, 0, 0 # no free/partial-free block
-
     # number of bytes of *real* message bits
-    msgbyte = nonpadbits >> 3
     grp1 = nb1 * nc1 # number of bytes of group 1
     if msgbyte ≤ grp1
-         # number of blocks of the message
+        # number of blocks of the message
         nmsgblock = ceil(Int, msgbyte / nc1)
         nfreeblock = nb2 + nb1 - nmsgblock
         nfreebyte = nc1 * nmsgblock - msgbyte
@@ -174,6 +158,45 @@ function getfreeinfo( msg::AbstractString
     return npureblock, nfreeblock, nfreebyte
 end
 getfreeinfo(code::QRCode) = getfreeinfo(code.message, code.mode, code.eclevel, code.version)
+
+"""
+    getrequiredlen(eclevel::ErrCorrLevel, version::Int)
+
+Return the number of required bits.
+"""
+function getrequiredlen(eclevel::ErrCorrLevel, version::Int)
+    _, nb1, nc1, nb2, nc2 = getecinfo(version, eclevel)
+    return 8 * (nb1 * nc1 + nb2 * nc2)
+end
+getrequiredlen(code::QRCode) = getrequiredlen(code.eclevel, code.version)
+
+"""
+    getnumofmsgbyte( msg::AbstractString
+                   , mode::Mode
+                   , eclevel::ErrCorrLevel
+                   , version::Int)
+
+Return the number of pure message bytes.
+"""
+function getnumofmsgbyte( msg::AbstractString
+                        , mode::Mode
+                        , eclevel::ErrCorrLevel
+                        , version::Int)
+    modelen = 4 # length of mode indicator
+    i = (version ≥ 1) + (version ≥ 10) + (version ≥ 27)
+    cclen = charactercountlength[mode][i] # length of character count bits
+    datalen = length(encodedata(msg, mode)) # length of data bits
+    numofmsgbits = modelen + cclen + datalen
+    # Add up to 4 zeros to terminate the message
+    requiredlength = getrequiredlen(eclevel, version)
+    numofmsgbits += min(4, requiredlength - numofmsgbits)
+    # Add zeros to make the length a multiple of 8
+    if numofmsgbits & 7 != 0
+        numofmsgbits += 8 - numofmsgbits & 7
+    end
+    return numofmsgbits >> 3
+end
+getnumofmsgbyte(code::QRCode) = getnumofmsgbyte(code.message, code.mode, code.eclevel, code.version)
 
 """
     getimagescore(mat::AbstractMatrix{Bool}, img::AbstractMatrix{<:Bool})
