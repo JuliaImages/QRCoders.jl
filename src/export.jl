@@ -102,7 +102,7 @@ end
     
 Export the `BitMatrix` `matrix` to an image with file path `path`.
 """
-function exportbitmat( matrix::BitMatrix
+function exportbitmat( matrix::AbstractMatrix{Bool}
                      , path::AbstractString
                      ; targetsize::Int=0
                      , pixels::Int=160)
