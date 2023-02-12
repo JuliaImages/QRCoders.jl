@@ -1,0 +1,14 @@
+[deps]
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+ImageCore = "a09fc81d-aa75-5fe9-8630-4744c3626534"
+ImageTransformations = "02fcd773-0e25-5acc-982a-7f6622650795"
+QRDecoders = "d4999880-6331-4276-8b7d-7ee1f305cff8"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"
+ZBar = "ae056753-435e-4d6b-8005-e923ff6e8938"
+
+[compat]
+julia = "1.6"
+ZBar = "0.1.1"
