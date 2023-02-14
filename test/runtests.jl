@@ -1,13 +1,7 @@
-using QRCoders
-using Test
-using FileIO
-using Random
-using ImageCore
-using ImageTransformations
-using TestImages
-using StatsBase
+using Test, Random, StatsBase
+using FileIO, ImageCore, TestImages, ImageTransformations
+using QRCoders, QRDecoders, ZBar
 using QRDecoders.Syndrome: fillerasures!
-using QRDecoders
 
 using QRCoders:
     # build
@@ -48,6 +42,9 @@ randpoly(range::AbstractVector{Int}) = randpoly(UInt8, range)
 imgpath = "testimages/"
 eclevels = [Low(), Medium(), Quartile(), High()]
 modes = [Numeric(), Alphanumeric(), Byte(), Kanji()]
+
+# interact with ZBar.jl
+include("tst_zbar.jl")
 
 # decompose QR matrix
 include("tst_locate.jl")
