@@ -12,7 +12,7 @@ function unicodeplot(mat::AbstractMatrix{Bool}; border=:none)
     return heatmap(@view(mat[end:-1:1,:]);
                   labels=false, 
                   border=border, 
-                  colormap=:gray,
+                  colormap=:grays,
                   width=width,
                   height=height)
 end

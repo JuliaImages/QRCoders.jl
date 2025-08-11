@@ -7,11 +7,10 @@ using ImageCore
 using FileIO
 using UnicodePlots
 using StatsBase
-
 export
     # create QR code
     qrcode, exportqrcode, QRCode,
-    exportbitmat, addborder,
+    exportbitmat, addborder,exportsvg,matrix2svg,
     # supported modes
     Mode, Numeric, Alphanumeric, Byte, Kanji, UTF8,
     # error correction levels
@@ -25,7 +24,7 @@ export
     # information about QR code
     getmode, getversion, qrwidth, makemask,
     qrversionbits, qrformat, encodemessage,
-    
+
     # locate QR matrix
     validalignment, getversioninds,
     getformatinds, gettiminginds, getsepinds,

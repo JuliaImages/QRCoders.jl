@@ -1,21 +1,25 @@
 name = "QRCoders"
 uuid = "f42e9828-16f3-11ed-2883-9126170b272d"
 authors = ["Jérémie Gillet <jie.gillet@gmail.com> and contributors"]
-version = "1.4.5"
+version = "1.4.6"
 
 [deps]
+ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 ImageCore = "a09fc81d-aa75-5fe9-8630-4744c3626534"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
 ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+ImageTransformations = "02fcd773-0e25-5acc-982a-7f6622650795"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 
 [compat]
+ColorTypes = "0.11 - 0.12"
 FileIO = "1"
-ImageCore = "0.8, 0.9"
-ImageIO = "0.4, 0.5, 0.6"
+ImageCore = "0.8 - 0.10"
+ImageIO = "0.4 - 0.6"
 ImageMagick = "1"
-StatsBase = "0.33"
-UnicodePlots = "2.7 - 2.12"
-julia = "1.3"
+ImageTransformations = "0.9 - 0.10.2"
+StatsBase = "0.33 - 0.34"
+UnicodePlots = "3 - 3.8"
+julia = "1.6"

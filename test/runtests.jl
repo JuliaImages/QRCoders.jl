@@ -73,5 +73,8 @@ include("tst_fmtver.jl")
 # operations
 include("tst_operation.jl")
 
+# svg
+include("tst_svg.jl")
+
 # final message
 unicodeplotbychar("https://github.com/JuliaImages/QRCoders.jl") |> println

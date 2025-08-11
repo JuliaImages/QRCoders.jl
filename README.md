@@ -40,6 +40,35 @@ A file will be saved at `./qrcode.png`.
 
 > ![QRCode1](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode.png)
 
+
+### Export or Display as SVG
+
+You can generate a QR code as an SVG string, control its size and colors, and write it to a file.
+
+#### Simple usage
+
+```julia
+julia> using QRCoders
+
+julia> svgstr = exportsvg("Hello!");  # Black on white SVG string
+
+julia> tmp = mktempdir();
+
+julia> file_path = joinpath(tmp, "hello.svg")
+
+julia> exportsvg("Another code"; path=file_path)   # Writes SVG file
+```
+
+#### Custom colors
+
+You can set module/background CSS colors:
+
+```julia
+julia> s = exportsvg("Color Demo"; darkcolor="navy", lightcolor="#ffb");
+```
+
+You can then display the SVG in a browser, include it in an HTML page, or use it directly in web applications.
+
 ### QRCode type
 `QRCode` is a structure type that contains the data of a QR Code. One can use
 it as an input to call functions.
@@ -83,13 +112,42 @@ The keyword `fps` controls the frame rate of the animation.
 Plot an image inside a QRCode.
 
 ```julia
-using TestImages, ColorTypes, ImageTransformations
-using QRCoders
-oriimg = testimage("cameraman")
-code = QRCode("Hello world!", version=16, width=4)
-img = imresize(oriimg, 66, 66) .|> Gray .|> round .|> Bool .|> !
-imageinqrcode(code, img; rate=0.9) |> exportbitmat("qrcode-camera.png")
+julia> using TestImages, ColorTypes, ImageTransformations
+
+julia> using QRCoders
+
+julia> oriimg = testimage("cameraman")
+
+julia> code = QRCode("Hello world!", version=16, width=4)
+
+julia> img = imresize(oriimg, 66, 66) .|> Gray .|> round .|> Bool .|> !
+
+julia> imageinqrcode(code, img; rate=0.9) |> exportbitmat("qrcode-camera.png")
 ```
+
+For SGV do this:
+
+
+#### Advanced: Render any Boolean matrix as SVG
+
+To display a QR code or styled/custom QR overlays (e.g. using images), use `matrix2svg`:
+
+```julia
+julia> using TestImages, ColorTypes, ImageTransformations
+
+julia> oriimg = testimage("cameraman")
+
+julia> code = QRCode("Hello world!", version=16, width=4)
+
+julia> img = imresize(oriimg, 66, 66) .|> Gray .|> round .|> Bool .|> !
+
+julia> qrmat = imageinqrcode(code, img; rate=0.9)
+
+julia> svgout = matrix2svg(qrmat; darkcolor="maroon", lightcolor="#faf9f1")
+
+julia> open("myfancyqr.svg", "w") do f; write(f, svgout); end
+```
+
 > ![cameraman](https://cdn.jsdelivr.net/gh/juliaimages/QRCoders.jl@assets/qrcode-camera.png)
 
 Here `rate` is the damage rate of error correction codewords, it should be no greater than 1.
