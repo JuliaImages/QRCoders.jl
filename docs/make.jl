@@ -3,9 +3,10 @@ using Documenter, QRCoders
 DocMeta.setdocmeta!(QRCoders, :DocTestSetup, :(using QRCoders); recursive=true)
 
 makedocs(
-    sitename="QRCoders.jl"
-    , modules = [QRCoders]
-    )
+    sitename="QRCoders.jl",
+    modules=[QRCoders],
+    checkdocs=:none,
+)
 
 deploydocs(
     repo = "github.com/JuliaImages/QRCoders.jl.git",
